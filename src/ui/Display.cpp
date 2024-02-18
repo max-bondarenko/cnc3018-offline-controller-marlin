@@ -133,6 +133,7 @@ void Display::drawStatusBar() {
         return;
 
     u8g2.setFont(u8g2_font_nokiafc22_tr);
+    u8g2.setDrawColor(1);
     // allow 2 lines in status bar
     constexpr int fH = 8; // 8x8
     int x = 2, y = -1;
@@ -156,7 +157,6 @@ void Display::drawStatusBar() {
         else
             str[0] = 'P';
         str[9] = 0;
-        u8g2.setDrawColor(1);
         u8g2.drawStr(48, y, str);
     }
 }

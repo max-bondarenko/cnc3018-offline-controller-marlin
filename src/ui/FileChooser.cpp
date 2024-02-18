@@ -91,7 +91,8 @@ void FileChooser::drawContents() {
             u8g2.setDrawColor(1);
             u8g2.drawBox(0, y, u8g2.getWidth(), h);
             u8g2.setDrawColor(0);
-        } else u8g2.setDrawColor(1);
+        } else 
+            u8g2.setDrawColor(1);
 
         u8g2.drawStr(2, y, files[topLine + i].c_str());
         y += h;
