@@ -1,22 +1,20 @@
 #pragma once
 
 #include "GCodeDevice.h"
-
+#include <etl/vector.h>
 
 class GrblDevice : public GCodeDevice {
 public:
+    const etl::vector<u_int16_t, sizeof(u_int16_t) * 5> SPINDLE_VALS{0, 1, 10, 100, 1000};
 
-    enum class Status {
+    enum class GrblStatus {
         Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
     };
 
-    GrblDevice(WatchedSerial * s):
-        GCodeDevice(s)
-    {
-        sentCounter = &sentQueue;
+    GrblDevice(WatchedSerial* s, Job* job) :
+            GCodeDevice(s, job) {
         canTimeout = false;
     };
-    GrblDevice() : GCodeDevice() { sentCounter = &sentQueue; }
 
     virtual ~GrblDevice() {}
 
@@ -26,67 +24,65 @@ public:
 
     void begin() override {
         GCodeDevice::begin();
-        schedulePriorityCommand("$I");
-        requestStatusUpdate();
+        schedulePriorityCommand("$I"); // TODO actual depends on realisation see inside fn
+        requestStatusUpdate(); //TODO how this all begin works in real GRBL ???
     }
 
     void reset() override {
-        panic = false;
-        cleanupQueue();
-        char c = 0x18;
-        schedulePriorityCommand(&c, 1);
+        lastStatus = DeviceStatus::OK;
+        GCodeDevice::cleanupQueue();
+        // ^x, reset
+        schedulePriorityCommand("\x18", 1);
     }
 
     void requestStatusUpdate() override {
-        if(panic) return; // grbl does not respond in panic anyway
-        char c = '?';
-        schedulePriorityCommand(&c, 1);
+        if (lastStatus == DeviceStatus::ALARM)
+            return; // grbl does not respond in panic anyway
+        schedulePriorityCommand("?", 1);
     }
 
-    bool schedulePriorityCommand( const char* cmd, size_t len=0) override {
-        if(txLocked) return false;
-        if(len==0) len = strlen(cmd);
-        if(isCmdRealtime(cmd, len) ) {
-            printerSerial->write((const uint8_t*)cmd, len);
-            GD_DEBUGF("<  (f%3d,%3d) '%c' RT\n", sentCounter->getFreeLines(), sentCounter->getFreeBytes(), cmd[0] );
-            return true;
+    bool schedulePriorityCommand(const char* cmd, size_t len = 0) override {
+        if (txLocked) return false;
+        if (len == 0) {
+            len = strlen(cmd);
         }
-        return GCodeDevice::schedulePriorityCommand(cmd, len);
+        if (isCmdRealtime(cmd, len)) {
+            printerSerial->write((const uint8_t*) cmd, len);
+            return true;
+        } else {
+            return GCodeDevice::schedulePriorityCommand(cmd, len);
+        }
     }
+
+    const etl::ivector<u_int16_t>& getSpindleValues() const override;
 
     /// WPos = MPos - WCO
-    float getXOfs() { return ofsX; }
-    float getYOfs() { return ofsY; }
-    float getZOfs() { return ofsZ; }
-    uint32_t getSpindleVal() { return spindleVal; }
-    uint32_t getFeed() { return feed; }
-    Status getStatus() { return status; }
-    const char* getStatusStr();
-    String & getLastResponse() { return lastResponse; }
+    float getXOfs() const { return ofsX; }
 
-    static void sendProbe(Stream &serial);
-    static bool checkProbeResponse(const String s);
+    float getYOfs() const { return ofsY; }
+
+    float getZOfs() const { return ofsZ; }
+
+    const char* getStatusStr() const override;
+
+    static void sendProbe(Stream& serial);
+
+    static bool checkProbeResponse(String s);
 
 protected:
     void trySendCommand() override;
 
-    void tryParseResponse( char* cmd, size_t len ) override;
+    void tryParseResponse(char* cmd, size_t len) override;
 
 private:
-
-    SimpleCounter<15,128> sentQueue;
-
-    String lastResponse;
-
-    Status status;
+    GrblStatus status;
 
     //WPos = MPos - WCO
-    float ofsX,ofsY,ofsZ;
-    uint32_t feed, spindleVal;
+    float ofsX, ofsY, ofsZ;
 
-    void parseGrblStatus(char* v);
+    void parseStatus(char* v);
 
-    bool setStatus(const char* s);
+    void setStatus(const char* s);
 
     static bool isCmdRealtime(const char* data, size_t len);
 

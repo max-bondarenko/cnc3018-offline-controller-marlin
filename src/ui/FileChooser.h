@@ -1,11 +1,11 @@
 #pragma once
-
-#include "Screen.h"
-
 #include <SD.h>
 #include <functional>
 #include <etl/vector.h>
 
+#include "Screen.h"
+
+using CallbackFn = std::function<void(bool, const char*)>;
 
 class FileChooser: public Screen {
 public:
@@ -14,19 +14,24 @@ public:
 
     void onShow() override;
 
-    void setCallback(const std::function<void(bool, String)> &cb) {
+    void setCallback(const CallbackFn &cb) {
         returnCallback = cb;
     }
+protected:
+
+    void drawContents() override;
+
+    void onButton(int bt, Evt evt) override;
+
 
 private:
-    std::function<void(bool, String)> returnCallback;
+    CallbackFn returnCallback;
+    static constexpr size_t MAX_FILES = 50;
+    static constexpr size_t VISIBLE_FILES = 4;
     bool haveCard;
     size_t selLine;
     size_t topLine;
     File cDir;
-    static constexpr size_t MAX_FILES = 50;
-    static constexpr size_t VISIBLE_FILES = 4;
-    //String files[MAX_FILES];
     etl::vector<String, MAX_FILES> files;
     etl::vector<String, 5> trail;
 
@@ -35,11 +40,5 @@ private:
     bool isGCode(const String &s);
 
     String currentPath();
-
-protected:
-
-    void drawContents() override;
-
-    void onButton(int bt, Evt evt) override;
 
 };
