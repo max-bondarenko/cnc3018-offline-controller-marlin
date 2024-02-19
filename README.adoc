@@ -41,6 +41,7 @@ An SWD programmer will also be needed.
 
 ## Goals of the project:
 
+. Add support for Marlin
 . Reverse-engineer the schematic of the board (to the required extent)
 . Make custom firmware with these features:
 .. Move axes via buttons, display coordinates on screen, etc.
@@ -52,9 +53,10 @@ An SWD programmer will also be needed.
 * [x] Jogging
 * [x] Spindle control (with 1% option for laser "pointer")
 * [x] File chooser UI
-* [ ] Job control (pause/cancel)
+* [x] Job control (pause/cancel)
 * [x] Grbl state tracking (alarm, error)
 * [x] Menu
+* [x] Different menus for each device  
 ** [x] Change work offsets (set zero to current position). Only G54 supported.
 ** [x] Homing ($H), unlocking ($X)
 ** [x] Grbl reset (Ctrl+X)
@@ -62,6 +64,8 @@ An SWD programmer will also be needed.
 * [ ] Bridge GRBL and USB UART
 * [x] Detection of GRBL USB connection via dedicated pin (works to some extent)
 * [ ] Improve continuous jogging
+* [x] Marlin supoort
+** [ ] Marlin detect futures/status polling  
 
 ## Schematic and hardware
 
@@ -119,6 +123,28 @@ Due to non-standard configuration used for >64k firmware, if you need to debug t
 This way, the programmer packages are downloaded and installed.
 
 Original backup firmware from my controller can be found link:docs/original.hex[here].
+
+### Job states
+
+    ┌──────────┐
+    │          │
+    │   init   ├────┬───setFile───────────┐ ┌──────resume─────┐
+    │          │    │                     │ │                 │
+    └──────────┘    │                    ┌▼─▼────┐            │
+                    │   ┌────complete────┤       ├───pause──┐ │
+                    │   │                │ Ready │          │ │
+                    │   │            ┌───┤       │◄────┐ ┌──▼─┴─────┐
+                    │   │            │   └───────┘     │ │          │
+                    │   │       send cmd              ack│  Pause   │
+                    │   │            │  ┌──────────┐   │ │          │
+              ┌─────┴───▼┐           │  │          ├───┘ └──▲──┬────┘
+              │          │           └──►  Wait    │        │  │
+              │  finish  │              │ response ├─pause──┘  │
+              │          ◄────err───────┤          │           │
+              └──────────┘              └───▲──────┘           │
+                                            │                  │
+                                            └──────resume──────┘
+
 
 
 ## Links
