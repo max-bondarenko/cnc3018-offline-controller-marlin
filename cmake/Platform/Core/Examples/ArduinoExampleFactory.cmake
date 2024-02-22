@@ -29,7 +29,7 @@ function(make_arduino_example TARGET_NAME EXAMPLE_NAME OUTPUT_VAR)
             message(SEND_ERROR "${CATEGORY_NAME} example category doesn't exist, please check your spelling")
             return()
         endif ()
-        INCREMENT_EXAMPLE_CATEGORY_INDEX(CATEGORY_INDEX)
+increment_example_category_index (CATEGORY_INDEX)
         set(CATEGORY_NAME ${CATEGORY_INDEX}.${CATEGORY_NAME})
         file(GLOB EXAMPLES RELATIVE ${ARDUINO_EXAMPLES_PATH}/${CATEGORY_NAME}
                 ${ARDUINO_EXAMPLES_PATH}/${CATEGORY_NAME}/*)

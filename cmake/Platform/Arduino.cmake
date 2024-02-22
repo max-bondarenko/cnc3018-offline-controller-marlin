@@ -9,18 +9,19 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 #=============================================================================#
 
-cmake_minimum_required(VERSION 3.8.5)
+cmake_minimum_required(VERSION 3.8)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Initialization)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/BoardFlags)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Libraries)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Targets)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Sketch)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Examples)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Extras)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Generation)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Initialization
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/BoardFlags
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Libraries
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Targets
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Sketch
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/Examples
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Extras
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Generation
+        )
 
 include(CMakeParseArguments)
 

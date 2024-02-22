@@ -73,4 +73,3 @@ if (ARDUINO_SDK_VERSION VERSION_LESS 0.19)
 endif ()
 
 message(STATUS "Arduino SDK version ${ARUDINO_SDK_FULL_VERSION}: ${ARDUINO_SDK_PATH}")
-#dump_all()

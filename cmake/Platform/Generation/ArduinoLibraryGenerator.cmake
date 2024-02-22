@@ -31,7 +31,7 @@ function(generate_arduino_library INPUT_NAME)
     find_arduino_libraries(TARGET_LIBS "${ALL_SRCS}" "")
     set(LIB_DEP_INCLUDES)
     foreach (LIB_DEP ${TARGET_LIBS})
-        LIST(APPEND LIB_DEP_INCLUDES ${LIB_DEP})
+list (APPEND LIB_DEP_INCLUDES ${LIB_DEP})
     endforeach ()
 
     list(APPEND ALL_LIBS ${CORE_LIB} ${INPUT_LIBS})

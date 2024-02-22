@@ -13,24 +13,28 @@ set(_IS_TOOLCHAIN_PROCESSED True)
 
 macro(dump_all)
     get_cmake_property(_variableNames VARIABLES)
-    list (SORT _variableNames)
+    list(SORT _variableNames)
     foreach (_variableName ${_variableNames})
-        message(STATUS "${_variableName}=${${_variableName}}")
-    endforeach()
-endmacro(dump_all)
+        message(DEBUG "${_variableName}=${${_variableName}}")
+    endforeach ()
+endmacro()
 
-IF(NOT DEFINED PLATFORM_ARCHITECTURE)
-    SET(PLATFORM_ARCHITECTURE "avr")
-ENDIF(NOT DEFINED PLATFORM_ARCHITECTURE)
+function(FATAL_BANNER msg)
+    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    message(STATUS "${msg}")
+    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    message(FATAL_ERROR "${msg}")
+endfunction(FATAL_BANNER msg)
+
 
 set(CMAKE_SYSTEM_NAME Arduino)
 # Add current directory to CMake Module path automatically
-IF(NOT DEFINED ARDUINO_CMAKE_TOP_FOLDER)
+if (NOT DEFINED ARDUINO_CMAKE_TOP_FOLDER)
     if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/Platform/Arduino.cmake)
         set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "")
     endif ()
-    SET(ARDUINO_CMAKE_TOP_FOLDER ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "")
-ENDIF(NOT DEFINED ARDUINO_CMAKE_TOP_FOLDER)
+    set(ARDUINO_CMAKE_TOP_FOLDER ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "")
+endif (NOT DEFINED ARDUINO_CMAKE_TOP_FOLDER)
 
 #=============================================================================#
 #                         System Paths                                        #
@@ -51,7 +55,15 @@ endif ()
 #=============================================================================#
 #                         Detect Arduino SDK                                  #
 #=============================================================================#
-if ((NOT ARDUINO_SDK_PATH) AND (NOT DEFINED ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH}))
+if (DEFINED PLATFORM_PATH)
+    set(ARDUINO_SDK_PATH ${PLATFORM_PATH})
+    set(ARDUINO_CMAKE_SKIP_DETECT_VERSION True CACHE BOOL "Skip from detect")
+    if (PLATFORM_PATH MATCHES ".*avr|stm32|esp32$")
+        string(REGEX REPLACE ".*(avr|stm32|esp32)$" "\\1" PLATFORM_ARCHITECTURE ${PLATFORM_PATH})
+    endif ()
+endif ()
+
+if (NOT ARDUINO_SDK_PATH AND NOT DEFINED ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH})
     set(ARDUINO_PATHS)
 
     foreach (DETECT_VERSION_MAJOR 1)
@@ -90,21 +102,26 @@ if ((NOT ARDUINO_SDK_PATH) AND (NOT DEFINED ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUIN
             PATH_SUFFIXES share/arduino Arduino.app/Contents/Resources/Java/ Arduino.app/Contents/Java/ ${ARDUINO_PATHS}
             HINTS ${SDK_PATH_HINTS}
             DOC "Arduino SDK base directory")
-elseif ((NOT ARDUINO_SDK_PATH) AND (DEFINED ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH}))
+elseif (NOT ARDUINO_SDK_PATH AND DEFINED ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH})
     set(ARDUINO_SDK_PATH "$ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH}")
 endif ()
 
-MESSAGE(STATUS "Architecture is ${PLATFORM_ARCHITECTURE}, System is ${CMAKE_SYSTEM_NAME}")
-STRING(TOUPPER "${PLATFORM_ARCHITECTURE}" upper_arch)
-IF("${upper_arch}" MATCHES "STM32.*" )
-    SET(PLATFORM_ARCHITECTURE_POSTFIX "Stm32")
-ELSEIF(PLATFORM_ARCHITECTURE STREQUAL "avr" )
-    SET(PLATFORM_ARCHITECTURE_POSTFIX "Avr")
-ELSEIF(PLATFORM_ARCHITECTURE STREQUAL "ESP32" )
-    SET(PLATFORM_ARCHITECTURE_POSTFIX "Esp32")
-ELSE(PLATFORM_ARCHITECTURE STREQUAL "ESP32" )
-    MESSAGE(FATAL_ERROR "Unknown architecture : ${PLATFORM_ARCHITECTURE} (${upper_arch})")
-ENDIF("${upper_arch}" MATCHES "STM32.*" )
+
+if (NOT DEFINED PLATFORM_ARCHITECTURE)
+    set(PLATFORM_ARCHITECTURE "avr")
+endif ()
+
+
+message(STATUS "Architecture is ${PLATFORM_ARCHITECTURE}, System is ${CMAKE_SYSTEM_NAME}")
+string(TOUPPER "${PLATFORM_ARCHITECTURE}" upper_arch)
+if ("${upper_arch}" MATCHES "STM32.*")
+    set(PLATFORM_ARCHITECTURE_POSTFIX "Stm32")
+elseif (PLATFORM_ARCHITECTURE STREQUAL "avr")
+    set(PLATFORM_ARCHITECTURE_POSTFIX "Avr")
+elseif (PLATFORM_ARCHITECTURE STREQUAL "ESP32")
+    set(PLATFORM_ARCHITECTURE_POSTFIX "Esp32")
+else (PLATFORM_ARCHITECTURE STREQUAL "ESP32")
+    message(FATAL_ERROR "Unknown architecture : ${PLATFORM_ARCHITECTURE} (${upper_arch})")
+endif ()
+
 include(${CMAKE_CURRENT_LIST_DIR}/ArduinoToolchain${PLATFORM_ARCHITECTURE_POSTFIX}.cmake)
-
-

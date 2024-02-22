@@ -16,9 +16,9 @@
 #
 #=============================================================================#
 
-MACRO(DBG)
+macro (DBG)
         #MESSAGE(STATUS ${ARGN})
-ENDMACRO(DBG)
+endmacro (DBG)
 
 function(create_arduino_firmware_target TARGET_NAME BOARD_ID ALL_SRCS ALL_LIBS
         COMPILE_FLAGS LINK_FLAGS MANUAL)
@@ -31,17 +31,17 @@ function(create_arduino_firmware_target TARGET_NAME BOARD_ID ALL_SRCS ALL_LIBS
 
     set_board_flags(ARDUINO_COMPILE_FLAGS ARDUINO_LINK_FLAGS ${BOARD_ID} ${MANUAL})
     # Add ld script
-    MESSAGE(STATUS "ARDUINO_LINK_FLAGS ${ARDUINO_LINK_FLAGS},  LINK_FLAGS: ${LINK_FLAGS}")
+message (STATUS "ARDUINO_LINK_FLAGS ${ARDUINO_LINK_FLAGS},  LINK_FLAGS: ${LINK_FLAGS}")
     set_target_properties(${TARGET_NAME} PROPERTIES
             COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS} ${COMPILE_FLAGS}"
             LINK_FLAGS "${ARDUINO_LINK_FLAGS} ${BOOTLOADER_LINK_OPT} ${LINK_FLAGS} ${MAP_OPT} ${LINK_FLAGS}")
             
     list(REMOVE_DUPLICATES ALL_LIBS)
-          FOREACH(item ${ALL_LIBS})
-            DBG("\tFINAL LINK FLAGS : ${item}")
-            SET(FLAT_LIBS "${item} ${FLAT_LIBS}")
+foreach (item ${ALL_LIBS})
+dbg ("\tFINAL LINK FLAGS : ${item}")
+set (FLAT_LIBS "${item} ${FLAT_LIBS}")
             target_link_libraries(${TARGET_NAME} ${item})
-          ENDFOREACH(item ${ALL_LIBS})
+endforeach (item ${ALL_LIBS})
     
     if (NOT EXECUTABLE_OUTPUT_PATH)
         set(EXECUTABLE_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})

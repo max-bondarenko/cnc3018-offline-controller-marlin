@@ -12,12 +12,11 @@ if (NOT ARDUINO_FOUND AND ARDUINO_SDK_PATH)
 
     include(RegisterHardwarePlatform)
     include(FindPrograms)
-    include(SetDefaults)
-    include(SetupFirmwareSizeScript)
-    include(SetupLibraryBlacklist)
+#    include(SetDefaults) # TODO
+    include(SetupFirmwareSizeScript) # TODO
+    include(SetupLibraryBlacklist) # TODO nahua
 
-    include(TestSetup)
-    include(DefineAdvancedVariables)
+#    include(TestSetup)  TODO
 
     set(ARDUINO_FOUND True CACHE INTERNAL "Arduino Found")
 

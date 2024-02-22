@@ -59,10 +59,10 @@ function(make_arduino_library VAR_NAME BOARD_ID LIB_PATH COMPILE_FLAGS LINK_FLAG
             if (LIB_INCLUDES)
                 string(REPLACE ";" " " LIB_INCLUDES_SPACE_SEPARATED "${LIB_INCLUDES}")
             endif ()
-            IF(${LIB_NAME}_EXTRA_CFLAGS)
-                SET(EXTRA ${${LIB_NAME}_EXTRA_CFLAGS})
-                MESSAGE(STATUS "Adding new flags for lib ${LIB_NAME}: ${EXTRA}")
-            ENDIF(${LIB_NAME}_EXTRA_CFLAGS)
+if (${LIB_NAME}_EXTRA_CFLAGS)
+set (EXTRA ${${LIB_NAME}_EXTRA_CFLAGS})
+message (STATUS "Adding new flags for lib ${LIB_NAME}: ${EXTRA}")
+endif (${LIB_NAME}_EXTRA_CFLAGS)
                 
             set_target_properties(${TARGET_LIB_NAME} PROPERTIES
                     COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS} ${LIB_INCLUDES_SPACE_SEPARATED} -I\"${LIB_PATH}\" -I\"${LIB_PATH}/utility\" ${COMPILE_FLAGS} ${EXTRA}"
