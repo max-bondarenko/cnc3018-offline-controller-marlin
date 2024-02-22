@@ -12,7 +12,8 @@
 # Enable skipping detection for builds that do not require 
 # Arduino. This mainly concerns virtual builds.
 #
-if(ARDUINO_CMAKE_SKIP_DETECT_VERSION)
+if(ARDUINO_CMAKE_SKIP_DETECT_VERSION OR DEFINED ARDUINO_SDK_VERSION)
+   set(ARDUINO_SDK_VERSION "1.8.6" CACHE STRING "Arduino SDK Version") # todo workaround
    return()
 endif()
 

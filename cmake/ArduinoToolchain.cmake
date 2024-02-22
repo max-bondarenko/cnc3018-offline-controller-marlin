@@ -6,10 +6,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this file,
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 #=============================================================================#
-if (_IS_TOOLCHAIN_PROCESSED)
-    return()
-endif ()
-set(_IS_TOOLCHAIN_PROCESSED True)
 
 macro(dump_all)
     get_cmake_property(_variableNames VARIABLES)
@@ -125,3 +121,5 @@ else (PLATFORM_ARCHITECTURE STREQUAL "ESP32")
 endif ()
 
 include(${CMAKE_CURRENT_LIST_DIR}/ArduinoToolchain${PLATFORM_ARCHITECTURE_POSTFIX}.cmake)
+
+set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES ARDUINO_CMAKE_SKIP_DETECT_VERSION _IS_TOOLCHAIN_PROCESSED IS_SCRIPT_PROCESSED)

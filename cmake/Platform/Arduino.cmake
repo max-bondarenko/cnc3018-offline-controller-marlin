@@ -10,8 +10,12 @@
 #=============================================================================#
 
 cmake_minimum_required(VERSION 3.8)
+if (IS_SCRIPT_PROCESSED)
+    return()
+endif ()
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform
+set(CMAKE_MODULE_PATH
+        ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/
         ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Initialization
         ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core
         ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/BoardFlags
@@ -25,17 +29,14 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform
 
 include(CMakeParseArguments)
 
+include(Util)
 include(VariableValidator)
 include(Initializer)
 
-include(Macros)
 include(BoardPropertiesReader)
 include(FlagsSetter)
 include(SourceFinder)
 include(LibraryFinder)
-include(DebugOptions)
-include(Printer)
-include(GeneratorSettingsLoader)
 
 include(ArduinoSketchToCppConverter)
 include(ArduinoSketchFactory)
@@ -63,9 +64,6 @@ include(ArduinoFirmwareGenerator)
 include(ArduinoExampleGenerator)
 include(ArduinoLibraryExampleGenerator)
 
-if (IS_SCRIPT_PROCESSED)
-    return()
-endif ()
 include(SetupRecursiveLibraries)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} CACHE INTERNAL "")

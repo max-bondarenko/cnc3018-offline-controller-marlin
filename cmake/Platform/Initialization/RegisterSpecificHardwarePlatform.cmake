@@ -54,7 +54,7 @@ find_file(${PLATFORM}_PLATFORM_FILE_PATH
 
 # some libraries are in platform path in versions 1.5 and greater
 if (ARDUINO_SDK_VERSION VERSION_GREATER 1.0.5)
-    find_FILE(${PLATFORM}_PLATFORM_LIBRARIES_PATH
+    find_file(${PLATFORM}_PLATFORM_LIBRARIES_PATH
             NAMES libraries
             PATHS ${PLATFORM_PATH} ${PLATFORM_PATH}/${PLATFORM_ARCHITECTURE}
             REQUIRED

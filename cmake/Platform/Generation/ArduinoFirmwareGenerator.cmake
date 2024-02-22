@@ -1,5 +1,3 @@
-include(FixRedundantTargetCompileFlags)
-
 #=============================================================================#
 # generate_arduino_firmware
 # [PUBLIC/USER]

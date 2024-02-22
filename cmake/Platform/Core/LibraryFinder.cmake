@@ -30,7 +30,7 @@
 #=============================================================================#
 function(find_arduino_libraries VAR_NAME SRCS ARDLIBS)
 
-    include(CheckPathExistsCaseSensitive)
+#    include(CheckPathExistsCaseSensitive)
     
     set(ARDUINO_LIBS)
 
