@@ -53,7 +53,11 @@
 #
 #=============================================================================#
 if (NOT ${SETTINGS_LIST} AND EXISTS ${SETTINGS_PATH})
-    file(STRINGS ${SETTINGS_PATH} FILE_ENTRIES)  # Settings file split into lines
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0126 OLD)
+
+    file(STRINGS ${SETTINGS_PATH} FILE_ENTRIES REGEX "^[^#]+$")  # Settings file split into lines
+
 
     foreach (FILE_ENTRY ${FILE_ENTRIES})
         if ("${FILE_ENTRY}" MATCHES "^[^#]+=.*")
@@ -75,6 +79,9 @@ if (NOT ${SETTINGS_LIST} AND EXISTS ${SETTINGS_PATH})
 
             # Add entry to settings list if it does not exist
             list(GET ENTRY_NAME_TOKENS 0 ENTRY_NAME)
+            if(ENTRY_NAME STREQUAL "menu")
+                continue()
+            endif()
             list(FIND ${SETTINGS_LIST} ${ENTRY_NAME} ENTRY_NAME_INDEX)
             if (ENTRY_NAME_INDEX LESS 0)
                 # Add entry to main list
@@ -113,7 +120,7 @@ if (NOT ${SETTINGS_LIST} AND EXISTS ${SETTINGS_PATH})
                     # Search for special cpu sub-settings
                     list(GET ENTRY_NAME_TOKENS 2 ENTRY_SUBSETTING)
                     string(TOLOWER ${ENTRY_SUBSETTING} ENTRY_SUBSETTING)
-                    if ("${ENTRY_SUBSETTING}" STREQUAL "cpu")
+                    if ("${ENTRY_SUBSETTING}" MATCHES "cpu|pnum")
                         # cpu setting found, determine architecture
                         list(GET ENTRY_NAME_TOKENS 3 ENTRY_SUBSETTING)
                         set(ENTRY_SUBSETTING_LIST ${ENTRY_NAME}.${ENTRY_SETTING}.CPUS)
@@ -140,4 +147,5 @@ if (NOT ${SETTINGS_LIST} AND EXISTS ${SETTINGS_PATH})
     set(${SETTINGS_LIST} ${${SETTINGS_LIST}}
             CACHE STRING "List of detected Arduino Board configurations")
     mark_as_advanced(${SETTINGS_LIST})
+    cmake_policy(POP)
 endif ()

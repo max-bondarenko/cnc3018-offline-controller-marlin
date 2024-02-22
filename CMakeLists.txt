@@ -1,45 +1,36 @@
-cmake_minimum_required(VERSION 3.0.0)
-cmake_policy(SET CMP0126 OLD)
-cmake_policy(SET CMP0066 NEW)
-cmake_policy(SET CMP0065 NEW)
-cmake_policy(SET CMP0056 NEW)
-cmake_policy(SET CMP0102 NEW)
+cmake_minimum_required(VERSION 3.0)
 
-
-#SET(ARDU)
 file(GLOB_RECURSE SRCS_HELO src/*)
-if (TRUE)
     SET(PLATFORM_ARCHITECTURE "STM32F1") # STM32F1xx
     SET(PLATFORM_TOOLCHAIN_PATH "$ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi")
     SET(PLATFORM_PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
+#SET(PLATFORM_PATH $ENV{HOME}/.arduino15/packages/STMicroelectronics/hardware/stm32/2.7.1)
     SET(CMAKE_TOOLCHAIN_FILE cmake/ArduinoToolchain.cmake)
     project(cnc_3018 C CXX ASM)
     SET(CMAKE_C_STANDARD 11)
     set(CMAKE_CXX_STANDARD 11)
     print_board_list()
+    print_board_settings(GenF1)
+    print_programmer_list()
+
+    SET(ARDUINO_UPLOAD_METHOD STLink)
+
     generate_arduino_firmware(hello
             MANUAL
             SRCS ${SRCS_HELO}
             BOARD GenF1
-            BOARD_CPU atmega328
-            PORT ${ARDUINO_DEFAULT_PORT}
+            BOARD_CPU BLUEPILL_F103C6
+            PORT /dev/ttyACM0
             )
 
-else ()
-    SET(CMAKE_TOOLCHAIN_FILE cmake/ArduinoToolchain.cmake)
-    project(cnc_3018 C CXX ASM)
-    SET(CMAKE_C_STANDARD 11)
-    set(CMAKE_CXX_STANDARD 11)
-    print_board_list()
-    generate_arduino_firmware(hello
-            MANUAL
-            SRCS ${SRCS_HELO}
-            BOARD nano
-            BOARD_CPU atmega328
-            PORT ${ARDUINO_DEFAULT_PORT}
-            )
+    #    generate_arduino_firmware(hello
+#            MANUAL
+#            SRCS ${SRCS_HELO}
+#            BOARD nano
+##            BOARD_CPU atmega328
+#            PORT ${ARDUINO_DEFAULT_PORT}
+#            )
 
-endif ()
 
 
 SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")
@@ -52,7 +43,7 @@ SET(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects ${COMMON_FLAGS}")
 #  DFUUpload: Arduino
 #
 # that changes the way the binary is linked, better to use DFU in all cases !
-#SET(ARDUINO_UPLOAD_METHOD STLink)
+
 #
 ##
 ##set(ARDUINO_DEFAULT_BOARD GenF1) # Default Board ID, when not specified

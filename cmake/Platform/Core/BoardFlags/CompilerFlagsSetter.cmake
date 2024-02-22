@@ -12,9 +12,7 @@
 # '-DSOME_MACRO="foo"' would become "-DSOME_MACRO=\"foo\"".
 #
 #=============================================================================#
-function(_sanitize_quotes
-   CMD_LINE_VARIABLE
-)
+function(_sanitize_quotes CMD_LINE_VARIABLE)
    if(CMAKE_HOST_WIN32)
    
       # Important: The order of the statements below does matter!
@@ -58,7 +56,7 @@ function(set_board_compiler_flags COMPILER_FLAGS NORMALIZED_SDK_VERSION BOARD_ID
 
     if (NOT IS_MANUAL)
         _get_board_property(${BOARD_ID} build.core BOARD_CORE)
-        set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${${BOARD_CORE}.path}\" -I\"${ARDUINO_LIBRARIES_PATH}\"")
+        set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${${BOARD_CORE}.path}\" -I\"${ARDUINO_LIBRARIES_PATH}\"") # TODO _PATH
         if (${ARDUINO_PLATFORM_LIBRARIES_PATH})
             set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${ARDUINO_PLATFORM_LIBRARIES_PATH}\"")
         endif ()
@@ -66,7 +64,7 @@ function(set_board_compiler_flags COMPILER_FLAGS NORMALIZED_SDK_VERSION BOARD_ID
     if (ARDUINO_SDK_VERSION VERSION_GREATER 1.0 OR ARDUINO_SDK_VERSION VERSION_EQUAL 1.0)
         if (NOT IS_MANUAL)
             _get_board_property(${BOARD_ID} build.variant VARIANT)
-            set(PIN_HEADER ${${VARIANT}.path})
+            set(PIN_HEADER ${${VARIANT}.path}) # should resolve to path but not
             if (PIN_HEADER)
                 set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${PIN_HEADER}\"")
             endif ()

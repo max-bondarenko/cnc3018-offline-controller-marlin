@@ -111,7 +111,7 @@ function(_get_board_property BOARD_ID PROPERTY_NAME OUTPUT_VAR)
 endfunction()
 
 #=============================================================================#
-# _get_board_property_if_exists
+# _try_get_board_property
 # [PRIVATE/INTERNAL]
 #
 # _get_board_property_if_exists(BOARD_ID PROPERTY_NAME OUTPUT_VAR)

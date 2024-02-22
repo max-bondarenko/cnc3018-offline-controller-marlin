@@ -11,8 +11,8 @@ set(ARCHITECTURE_ID ${PLATFORM_ARCHITECTURE})
 # Avoid defining a platform multiple times if it has already been defined before
 string(TOUPPER ${PLATFORM} PLATFORM)
 list(FIND ARDUINO_PLATFORMS ${PLATFORM} PLATFORM_EXISTS)
-MESSAGE(VERBOSE "BASE = ${BASE_PATH} PLATFORM_PATH =${PLATFORM_PATH} VENDOR=${VENDOR_ID} PLATFORM_ARCHITECTURE=${PLATFORM_ARCHITECTURE}")
-MESSAGE(VERBOSE "PLATFORM = ${PLATFORM}")
+MESSAGE(STATUS "BASE = ${BASE_PATH} PLATFORM_PATH =${PLATFORM_PATH} VENDOR=${VENDOR_ID} PLATFORM_ARCHITECTURE=${PLATFORM_ARCHITECTURE}")
+MESSAGE(STATUS "PLATFORM = ${PLATFORM}")
 
 
 if (PLATFORM_EXISTS GREATER -1)
@@ -20,7 +20,7 @@ if (PLATFORM_EXISTS GREATER -1)
 endif ()
 
 SET(PLATFORM ARDUINO)
-set(${PLATFORM}_PLATFORM_PATH ${PLATFORM_PATH} CACHE INTERNAL "The path to ${PLATFORM}")
+set(${PLATFORM}_PLATFORM_PATH ${PLATFORM_PATH} CACHE PATH "The path to ${PLATFORM}")
 set(ARDUINO_PLATFORMS ${ARDUINO_PLATFORMS} ${PLATFORM} CACHE INTERNAL "A list of registered platforms")
 
 find_file(${PLATFORM}_CORES_PATH
@@ -83,6 +83,7 @@ if (${PLATFORM}_VARIANTS_PATH)
             get_filename_component(variant ${dir} NAME)
             set(VARIANTS ${VARIANTS} ${variant} CACHE INTERNAL "A list of registered variant boards")
             set(${variant}.path ${dir} CACHE INTERNAL "The path to the variant ${variant}")
+            MESSAGE(STATUS "REgisterd variants ${${variant}.path}")
         endif ()
     endforeach ()
 endif ()
@@ -105,6 +106,10 @@ if (${PLATFORM}_CORES_PATH)
         endif ()
     endforeach ()
 endif ()
+
+
+unset(PLATFORM)
+SET(PLATFORM ARDUINO CACHE INTERNAL "Current platform")
 
 if (${PLATFORM}_PLATFORM_FILE_PATH)
     set(SETTINGS_LIST ${PLATFORM}_PLATFORM)

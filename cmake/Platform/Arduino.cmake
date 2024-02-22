@@ -9,7 +9,7 @@
 # You can obtain one at http://mozilla.org/MPL/2.0/.
 #=============================================================================#
 
-cmake_minimum_required(VERSION 2.8.5)
+cmake_minimum_required(VERSION 3.8.5)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Initialization)
@@ -61,13 +61,13 @@ include(ArduinoLibraryGenerator)
 include(ArduinoFirmwareGenerator)
 include(ArduinoExampleGenerator)
 include(ArduinoLibraryExampleGenerator)
-# Mean00 : Needs to be included every time ????
-include(SetupRecursiveLibraries)
 
 if (IS_SCRIPT_PROCESSED)
     return()
 endif ()
+include(SetupRecursiveLibraries)
 
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} CACHE INTERNAL "")
 # Setup libraries known to be recursive only once
 
 set(IS_SCRIPT_PROCESSED True CACHE BOOL

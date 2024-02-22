@@ -35,8 +35,6 @@ function(generate_arduino_firmware INPUT_NAME)
 
     _get_board_id(${INPUT_BOARD} "${INPUT_BOARD_CPU}" ${INPUT_NAME} BOARD_ID)
 
-#    todo getCPU
-
     set(ALL_LIBS)
     set(ALL_SRCS ${INPUT_SRCS} ${INPUT_HDRS})
     set(LIB_DEP_INCLUDES)
