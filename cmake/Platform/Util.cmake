@@ -74,7 +74,7 @@ endfunction()
 # Print the entry settings (see load_arduino_syle_settings()).
 #
 #=============================================================================#
-function(print_settings ENTRY_NAME)
+function(print_settings ENTRY_NAME) # TODO fix parser for STM32
     if (${ENTRY_NAME}.SETTINGS)
 
         foreach (ENTRY_SETTING ${${ENTRY_NAME}.SETTINGS})

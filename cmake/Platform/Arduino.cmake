@@ -10,9 +10,6 @@
 #=============================================================================#
 
 cmake_minimum_required(VERSION 3.8)
-if (IS_SCRIPT_PROCESSED)
-    return()
-endif ()
 
 set(CMAKE_MODULE_PATH
         ${ARDUINO_CMAKE_TOP_FOLDER}/Platform/
@@ -64,10 +61,15 @@ include(ArduinoFirmwareGenerator)
 include(ArduinoExampleGenerator)
 include(ArduinoLibraryExampleGenerator)
 
-include(SetupRecursiveLibraries)
+# Define the 'RECURSE' flag for libraries known to depend on it
+set(Wire_RECURSE True)
+set(Ethernet_RECURSE True)
+set(Robot_Control_RECURSE True)
+set(SD_RECURSE True)
+set(Servo_RECURSE True)
+set(Temboo_RECURSE True)
+set(TFT_RECURSE True)
+set(WiFi_RECURSE True)
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} CACHE INTERNAL "")
 # Setup libraries known to be recursive only once
-
-set(IS_SCRIPT_PROCESSED True CACHE BOOL
-        "Indicates whether platform script has already been processed")

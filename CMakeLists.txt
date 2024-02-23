@@ -16,9 +16,9 @@ SET(PLATFORM_ARCHITECTURE "STM32F1") # STM32F1xx
 project(cnc_3018 C CXX ASM)
 SET(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
-print_board_list()
-print_board_settings(GenF1)
-print_programmer_list()
+#print_board_list()
+#print_board_settings(GenF1)
+#print_programmer_list()
 
 #SET(ARDUINO_UPLOAD_METHOD STLink)
 

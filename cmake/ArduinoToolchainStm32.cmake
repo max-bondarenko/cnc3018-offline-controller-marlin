@@ -1,11 +1,3 @@
-#=============================================================================#
-# Author: Tomasz Bogdal (QueezyTheGreat)
-# Home:   https://github.com/queezythegreat/arduino-cmake
-#
-# This Source Code Form is subject to the terms of the Mozilla Public
-# License, v. 2.0. If a copy of the MPL was not distributed with this file,
-# You can obtain one at http://mozilla.org/MPL/2.0/.
-#=============================================================================#
 message(VERBOSE "Setting up STM32 arduino cmake environment")
 
 if (NOT PLATFORM_TOOLCHAIN_PATH)
@@ -46,7 +38,7 @@ else ()
 endif ()
 
 # TODO ???
-set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER>   <CMAKE_CXX_LINK_FLAGS>  <LINK_FLAGS> -lgcc -Wl,--start-group  <OBJECTS> <LINK_LIBRARIES> -Wl,--end-group   -o <TARGET> ")
+set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> -Wl,--start-group <OBJECTS> <LINK_LIBRARIES> -Wl,--end-group -o <TARGET> ")
 
 message(STATUS "C   compiler ${CMAKE_C_COMPILER}")
 message(STATUS "C++ compiler ${CMAKE_CXX_COMPILER}")

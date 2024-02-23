@@ -1,5 +1,28 @@
 include(CompilerFlagsSetter)
 include(LinkerFlagsSetter)
+#=============================================================================#
+# _append_suffix_zero_to_version_if_required
+# [PRIVATE/INTERNAL]
+#
+# _append_suffix_zero_to_version_if_required(VERSION_PART VERSION_LIMIT OUTPUT_VAR)
+#
+#       VERSION_PART - Version to check and possibly append to.
+#                 Must be a version part - Major, Minor or Patch.
+#       VERSION_LIMIT - Append limit. For a version greater than this number
+#                       a zero will NOT be appended.
+#       OUTPUT_VAR - Returned variable storing the normalized version.
+#
+# Appends a suffic zero to the given version part if it's below than the given limit.
+# Otherwise, the version part is returned as it is.
+#
+#=============================================================================#
+macro(_append_suffix_zero_to_version_if_required VERSION_PART VERSION_LIMIT OUTPUT_VAR)
+    if (${VERSION_PART} LESS ${VERSION_LIMIT})
+        set(${OUTPUT_VAR} "${VERSION_PART}0")
+    else ()
+        set(${OUTPUT_VAR} "${VERSION_PART}")
+    endif ()
+endmacro()
 
 #=============================================================================#
 # set_board_flags
@@ -34,29 +57,6 @@ function(set_board_flags COMPILER_FLAGS LINKER_FLAGS BOARD_ID IS_MANUAL)
 
 endfunction()
 
-#=============================================================================#
-# _append_suffix_zero_to_version_if_required
-# [PRIVATE/INTERNAL]
-#
-# _append_suffix_zero_to_version_if_required(VERSION_PART VERSION_LIMIT OUTPUT_VAR)
-#
-#       VERSION_PART - Version to check and possibly append to.
-#                 Must be a version part - Major, Minor or Patch.
-#       VERSION_LIMIT - Append limit. For a version greater than this number
-#                       a zero will NOT be appended.
-#       OUTPUT_VAR - Returned variable storing the normalized version.
-#
-# Appends a suffic zero to the given version part if it's below than the given limit.
-# Otherwise, the version part is returned as it is.
-#
-#=============================================================================#
-macro(_append_suffix_zero_to_version_if_required VERSION_PART VERSION_LIMIT OUTPUT_VAR)
-    if (${VERSION_PART} LESS ${VERSION_LIMIT})
-        set(${OUTPUT_VAR} "${VERSION_PART}0")
-    else ()
-        set(${OUTPUT_VAR} "${VERSION_PART}")
-    endif ()
-endmacro()
 #=============================================================================#
 # _get_normalized_sdk_version
 # [PRIVATE/INTERNAL]

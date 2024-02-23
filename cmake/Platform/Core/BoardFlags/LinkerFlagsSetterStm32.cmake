@@ -12,6 +12,5 @@ function(set_board_linker_flags LINKER_FLAGS BOARD_ID IS_MANUAL)
         endif (ARDUINO_USE_FLOAT_PRINTF)
     endif (ARDUINO_USE_NEWLIB) # smaller
 
-    #-Wl,--warn-unresolved-symbols -lstdc++")
-    set(${LINKER_FLAGS} "${LINK_FLAGS}" PARENT_SCOPE)
+    set(${LINKER_FLAGS}  "${LINK_FLAGS} -Wl,--warn-unresolved-symbols -lstdc++" PARENT_SCOPE)
 endfunction()
