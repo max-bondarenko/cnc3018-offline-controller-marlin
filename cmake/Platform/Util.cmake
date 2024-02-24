@@ -157,25 +157,25 @@ function(_check_path_exists_case_sensitive_brute_force result_var_ absolute_path
     math(EXPR n_tokens "${n_tokens__} - 1")
 
     set(cur_path "/")
-    foreach(id RANGE 0 ${n_tokens})
+    foreach (id RANGE 0 ${n_tokens})
 
         list(GET path_tokens ${id} cur_token)
 
-        if("${cur_token}" STREQUAL "")
+        if ("${cur_token}" STREQUAL "")
             continue()
-        endif()
+        endif ()
 
         file(GLOB dir_entries RELATIVE "${cur_path}" "${cur_path}*")
 
         list(FIND dir_entries "${cur_token}" index)
-        if(NOT ${index} GREATER -1)
+        if (NOT ${index} GREATER -1)
             message("- ${absolute_path_}")
             set(${result_var_} FALSE PARENT_SCOPE)
             return()
-        endif()
+        endif ()
 
         set(cur_path "${cur_path}${cur_token}/")
-    endforeach()
+    endforeach ()
 
     message("+ ${absolute_path_}")
     set(${result_var_} TRUE PARENT_SCOPE)
@@ -203,7 +203,7 @@ function(_check_path_exists_case_sensitive result_var_ absolute_path_)
     # Important: First check for APPLE as CMAKE_HOST_UNIX reports true even
     #            if CMAKE_HOST_APPLE is true
     #
-    if(CMAKE_HOST_APPLE)
+    if (CMAKE_HOST_APPLE)
 
         # On MacOS there is no appropriate command that enables a safe check
         # for a path to exist given a case sensitive name. This is because
@@ -215,17 +215,17 @@ function(_check_path_exists_case_sensitive result_var_ absolute_path_)
 
         return()
 
-    elseif(CMAKE_HOST_UNIX)
+    elseif (CMAKE_HOST_UNIX)
 
-        if(EXISTS "${absolute_path_}")
+        if (EXISTS "${absolute_path_}")
             set(${result_var_} TRUE PARENT_SCOPE)
-        else()
+        else ()
             set(${result_var_} FALSE PARENT_SCOPE)
-        endif()
+        endif ()
 
         return()
 
-    elseif(CMAKE_HOST_WIN32)
+    elseif (CMAKE_HOST_WIN32)
 
         # From this point on, we only deal with Windows
 
@@ -243,15 +243,15 @@ function(_check_path_exists_case_sensitive result_var_ absolute_path_)
                 COMMAND cmd /C dir /S /B "${native_path}"
         )
 
-        if("${actual_path}" STREQUAL "${native_path}")
+        if ("${actual_path}" STREQUAL "${native_path}")
             set(${result_var_} TRUE PARENT_SCOPE)
-        else()
+        else ()
             set(${result_var_} FALSE PARENT_SCOPE)
-        endif()
+        endif ()
 
         return()
 
-    endif()
+    endif ()
 
     message(FATAL_ERROR "Strange host system")
 
@@ -428,6 +428,15 @@ macro(INCREMENT_EXAMPLE_CATEGORY_INDEX OUTPUT_VAR)
         set(${OUTPUT_VAR} ${INC_INDEX})
     endif ()
 endmacro()
+
+
+macro(fatal_banner msg)
+    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    message(STATUS "${msg}")
+    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    message(FATAL_ERROR)
+endmacro()
+
 
 
 

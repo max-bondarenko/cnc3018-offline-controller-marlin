@@ -8,9 +8,10 @@ cmake_minimum_required(VERSION 3.8)
 #    cmake_policy(SET CMP0056 OLD)
 
 file(GLOB_RECURSE SRCS_HELO src/*)
+#SET(PLATFORM_ARCHITECTURE "STM32F1") # STM32F1xx
 SET(PLATFORM_PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
 SET(PLATFORM_TOOLCHAIN_PATH "$ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi")
-SET(PLATFORM_ARCHITECTURE "STM32F1") # STM32F1xx
+
 #SET(PLATFORM_PATH $ENV{HOME}/.arduino15/packages/STMicroelectronics/hardware/stm32/2.7.1)
 
 project(cnc_3018 C CXX ASM)
@@ -22,26 +23,26 @@ set(CMAKE_CXX_STANDARD 11)
 
 #SET(ARDUINO_UPLOAD_METHOD STLink)
 
-generate_arduino_firmware(hello
-        MANUAL
-        SRCS ${SRCS_HELO}
-        BOARD GenF1
-        BOARD_CPU BLUEPILL_F103C6
-        PORT /dev/ttyACM0
-        )
+#generate_arduino_firmware(hello
+#        MANUAL
+#        SRCS ${SRCS_HELO}
+#        BOARD GenF1
+#        BOARD_CPU BLUEPILL_F103C6
+#        PORT /dev/ttyACM0
+#        )
 
 #    generate_arduino_firmware(hello
 #            MANUAL
 #            SRCS ${SRCS_HELO}
 #            BOARD nano
-##            BOARD_CPU atmega328
+#            BOARD_CPU atmega328
 #            PORT ${ARDUINO_DEFAULT_PORT}
 #            )
 
 
-SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")
-SET(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics  -std=gnu++11  ${COMMON_FLAGS}") #-fpermissive")
-SET(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects ${COMMON_FLAGS}")
+#SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")
+#SET(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics  -std=gnu++11  ${COMMON_FLAGS}") #-fpermissive")
+#SET(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects ${COMMON_FLAGS}")
 
 # Possible choice for STM32
 #  BMP    : BlackMagic

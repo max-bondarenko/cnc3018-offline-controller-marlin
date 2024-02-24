@@ -30,6 +30,9 @@ include(Util)
 include(VariableValidator)
 include(Initializer)
 
+#TODO ABI & Check for working C compiler EROORS
+return()
+
 include(BoardPropertiesReader)
 include(FlagsSetter)
 include(SourceFinder)
