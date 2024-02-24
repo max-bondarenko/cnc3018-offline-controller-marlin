@@ -1,4 +1,11 @@
 set(CMAKE_SYSTEM_NAME Arduino)
+set(CMAKE_SYSTEM_VERSION 1.0)
+set(PLATFORM "arduino" CACHE STRING "Arduino SDK platform")
+if (DEFINED PLATFORM_PATH AND DEFINED PLATFORM_TOOLCHAIN_PATH)
+    MESSAGE(STATUS "Skip setup in SubBuild")
+    return()
+endif ()
+
 # Add current directory to CMake Module path automatically
 if (NOT DEFINED ARDUINO_CMAKE_TOP_FOLDER)
     if (EXISTS ${CMAKE_CURRENT_LIST_DIR}/Platform/Arduino.cmake)
@@ -6,6 +13,14 @@ if (NOT DEFINED ARDUINO_CMAKE_TOP_FOLDER)
     endif ()
     set(ARDUINO_CMAKE_TOP_FOLDER ${CMAKE_CURRENT_LIST_DIR} CACHE INTERNAL "")
 endif ()
+
+macro(fatal_banner msg)
+    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    message(STATUS "${msg}")
+    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
+    message(FATAL_ERROR)
+endmacro()
+
 
 #=============================================================================#
 #                         System Paths                                        #
@@ -50,10 +65,12 @@ if (NOT DEFINED PLATFORM_PATH)
             HINTS ${SDK_PATH_HINTS})
 
     if (EXISTS ${PATH})
+        set(ARDUINO_IDE TRUE CACHE BOOL "we  work with Arduino Default IDE")
         SET(PLATFORM_PATH ${PATH} CACHE PATH "Arduino SDK base directory")
-        SET(PLATFORM "avr" CACHE STRING "Arduino SDK platform")
-        list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PATH}/hardware/tools/avr)
-        list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PATH}/hardware/tools/avr/utils)
+        SET(PLATFORM_TOOLCHAIN_PATH ${PATH}/hardware/tools/ CACHE PATH "Arduino SDK base directory")
+        SET(CMAKE_SYSTEM_PROCESSOR "avr" CACHE INTERNAL "")
+        list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PLATFORM_TOOLCHAIN_PATH}/avr)
+        list(APPEND CMAKE_SYSTEM_PREFIX_PATH ${PLATFORM_TOOLCHAIN_PATH}/avr/utils)
 
         set(CMAKE_C_COMPILER avr-gcc)
         set(CMAKE_ASM_COMPILER avr-gcc)
@@ -62,7 +79,7 @@ if (NOT DEFINED PLATFORM_PATH)
 
     #elseif (NOT ARDUINO_SDK_PATH AND DEFINED ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH})
     #  TODO   set(ARDUINO_SDK_PATH "$ENV{_ARDUINO_CMAKE_WORKAROUND_ARDUINO_SDK_PATH}")
-else()
+else ()
     include(${CMAKE_CURRENT_LIST_DIR}/ArduinoToolchainStm32.cmake)
 endif ()
 
@@ -74,10 +91,8 @@ SET(CMAKE_VERBOSE_MAKEFILE TRUE)
 #
 set(CMAKE_TRY_COMPILE_PLATFORM_VARIABLES
         CMAKE_SYSTEM_NAME
-        ARDUINO_CMAKE_SKIP_DETECT_VERSION
+        ARDUINO_SDK_VERSION
         PLATFORM_PATH
         PLATFORM_TOOLCHAIN_PATH
-        PLATFORM_ARCHITECTURE
-        ARDUINO_SDK_PATH
-        PLATFORM_ARCHITECTURE_POSTFIX
-        ARDUINO_CMAKE_TOP_FOLDER)
+        PLATFORM
+        ARDUINO_IDE)

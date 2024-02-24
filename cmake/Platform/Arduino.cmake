@@ -30,11 +30,13 @@ include(Util)
 include(VariableValidator)
 include(Initializer)
 
-#TODO ABI & Check for working C compiler EROORS
-return()
 
-include(BoardPropertiesReader)
+#include(BoardPropertiesReader)
+
+return()
 include(FlagsSetter)
+#TODO ABI & Check for working C compiler EROORS
+
 include(SourceFinder)
 include(LibraryFinder)
 
@@ -73,6 +75,57 @@ set(Servo_RECURSE True)
 set(Temboo_RECURSE True)
 set(TFT_RECURSE True)
 set(WiFi_RECURSE True)
+
+#TODO find place in target actions
+#if (${PLATFORM}_BOARDS_PATH)
+#    set(SETTINGS_LIST ${PLATFORM}_BOARDS)
+#    set(SETTINGS_PATH "${${PLATFORM}_BOARDS_PATH}")
+#    include(LoadArduinoPlatformSettings)
+#endif ()
+#
+#if (${PLATFORM}_PROGRAMMERS_PATH)
+#    set(SETTINGS_LIST ${PLATFORM}_PROGRAMMERS)
+#    set(SETTINGS_PATH "${${PLATFORM}_PROGRAMMERS_PATH}")
+#    include(LoadArduinoPlatformSettings)
+#endif ()
+#
+#if (${PLATFORM}_VARIANTS_PATH)
+#    file(GLOB sub-dir ${${PLATFORM}_VARIANTS_PATH}/*)
+#    foreach (dir ${sub-dir})
+#        if (IS_DIRECTORY ${dir})
+#            get_filename_component(variant ${dir} NAME)
+#            set(VARIANTS ${VARIANTS} ${variant} CACHE INTERNAL "A list of registered variant boards")
+#            set(${variant}.path ${dir} CACHE INTERNAL "The path to the variant ${variant}")
+#            message(VERBOSE "Registerd variants ${${variant}.path}")
+#        endif ()
+#    endforeach ()
+#endif ()
+#
+#if (${PLATFORM}_CORES_PATH)
+#    file(GLOB sub-dir ${${PLATFORM}_CORES_PATH}/*)
+#    foreach (dir ${sub-dir})
+#        if (IS_DIRECTORY ${dir})
+#            get_filename_component(core ${dir} NAME)
+#            set(CORES ${CORES} ${core} CACHE INTERNAL "A list of registered cores")
+#            set(${core}.path ${dir} CACHE INTERNAL "The path to the core ${core}")
+#
+#            # See https://github.com/arduino/Arduino/wiki/Arduino-IDE-1.5-3rd-party-Hardware-specification#referencing-another-core-variant-or-tool
+#            # for an explanation why cores must also be available as <vendor_id>:<core_id>
+#            # and <vendor_id>:<architecture_id>:<core_id>
+#            set(CORES ${CORES} "${VENDOR_ID}:${core}" CACHE INTERNAL "A list of registered cores")
+#            set(${VENDOR_ID}:${core}.path ${dir} CACHE INTERNAL "The path to the core ${core}")
+#            set(CORES ${CORES} "${VENDOR_ID}:${ARCHITECTURE_ID}:${core}" CACHE INTERNAL "A list of registered cores")
+#
+#        endif ()
+#    endforeach ()
+#endif ()
+#
+#
+#if (${PLATFORM}_PLATFORM_FILE_PATH)
+#    set(SETTINGS_LIST ${PLATFORM}_PLATFORM)
+#    set(SETTINGS_PATH "${${PLATFORM}_PLATFORM_FILE_PATH}")
+#    include(LoadArduinoPlatformSettings)
+#endif ()
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} CACHE INTERNAL "")
 # Setup libraries known to be recursive only once

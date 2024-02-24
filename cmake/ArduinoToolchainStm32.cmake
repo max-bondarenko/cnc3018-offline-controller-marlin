@@ -1,11 +1,15 @@
 message(VERBOSE "Setting up STM32 arduino cmake environment")
 
+if (NOT DEFINED TOOLCHAIN_PATH)
+    fatal_banner("No TOOLCHAIN_PATH specified")
+endif ()
+
 if (DEFINED PLATFORM_PATH)
     set(STM32_TOOLCHAIN_PREFIX arm-none-eabi-)
 
     file(GLOB PLATFORM_TOOLCHAIN_PATH_HINTS
             ${PLATFORM_PATH}/*
-            ${PLATFORM_TOOLCHAIN_PATH}/*
+            ${TOOLCHAIN_PATH}/*
             )
 
     find_program(PLATFORM_TOOLCHAIN_GCC
@@ -29,7 +33,7 @@ if (DEFINED PLATFORM_PATH)
         list(APPEND CMAKE_SYSTEM_PREFIX_PATH "${PLATFORM_TOOLCHAIN_PATH}")
     endif ()
 
-    set(PLATFORM "stm32" CACHE STRING "Stm32 platform")
+    set(CMAKE_SYSTEM_PROCESSOR "stm32" CACHE STRING "Stm32 platform")
     set(ARDUINO_SDK_VERSION "1.8.6" CACHE STRING "Arduino SDK Version") # todo workaround
 
     set(CMAKE_C_COMPILER_ID "GNU" CACHE INTERNAL "")

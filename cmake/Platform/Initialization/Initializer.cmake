@@ -5,7 +5,7 @@
 #=============================================================================#
 #                              C Flags
 #=============================================================================#
-include(${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Initialization/DefaultCFlags_${PLATFORM}.cmake)
+include(${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Initialization/DefaultCFlags_${CMAKE_SYSTEM_PROCESSOR}.cmake)
 
 if (NOT DEFINED ARDUINO_C_FLAGS) # todo may be for adnv setup
     set(ARDUINO_C_FLAGS "${ARDUINO_DEFAULT_CFLAGS}" CACHE INTERNAL "")
@@ -63,49 +63,37 @@ set(CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO "" CACHE STRING "")
 
 SET(CMAKE_TRY_COMPILE_CONFIGURATION "Debug" CACHE STRING "")
 #todo  this may depend on PLATFORM
-set(ARDUINO_OBJCOPY_EEP_FLAGS -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load
+set(${CMAKE_SYSTEM_PROCESSOR}_OBJCOPY_EEP_FLAGS -O ihex -j .eeprom --set-section-flags=.eeprom=alloc,load
         --no-change-warnings --change-section-lma .eeprom=0 CACHE STRING "")
-set(ARDUINO_OBJCOPY_HEX_FLAGS -O ihex -R .eeprom CACHE STRING "")
-set(ARDUINO_AVRDUDE_FLAGS -V CACHE STRING "")
+set(${CMAKE_SYSTEM_PROCESSOR}_OBJCOPY_HEX_FLAGS -O ihex -R .eeprom CACHE STRING "")
+set(${CMAKE_SYSTEM_PROCESSOR}_AVRDUDE_FLAGS -V CACHE STRING "")
 
 include(DetectVersion)
-
-#include(RegisterHardwarePlatform)
-
-return()
-
-
+include(FindHardwarePlatform)
 include(FindPrograms)
-
-set(ARDUINO_DEFAULT_BOARD uno CACHE STRING "Default Arduino Board ID when not specified.")
-set(ARDUINO_DEFAULT_BOARD_CPU CACHE STRING "Default Arduino Board CPU when not specified.")
-set(ARDUINO_DEFAULT_PORT CACHE STRING "Default Arduino port when not specified.")
-set(ARDUINO_DEFAULT_SERIAL CACHE STRING "Default Arduino Serial command when not specified.")
-set(ARDUINO_DEFAULT_PROGRAMMER CACHE STRING "Default Arduino Programmer ID when not specified.")
-set(ARDUINO_CMAKE_RECURSION_DEFAULT FALSE CACHE BOOL "The default recursion behavior during library setup")
-
-include(SetupFirmwareSizeScript) # TODO
+#set(ARDUINO_DEFAULT_BOARD uno CACHE STRING "Default Arduino Board ID when not specified.")
+#set(ARDUINO_DEFAULT_BOARD_CPU CACHE STRING "Default Arduino Board CPU when not specified.")
+#set(ARDUINO_DEFAULT_PORT CACHE STRING "Default Arduino port when not specified.")
+#set(ARDUINO_DEFAULT_SERIAL CACHE STRING "Default Arduino Serial command when not specified.")
+#set(ARDUINO_DEFAULT_PROGRAMMER CACHE STRING "Default Arduino Programmer ID when not specified.")
+#set(ARDUINO_CMAKE_RECURSION_DEFAULT FALSE CACHE BOOL "The default recursion behavior during library setup")
 
 set(ARDUINO_LIBRARY_BLACKLIST "" CACHE STRING
         "A list of absolute paths to Arduino libraries that are meant to be ignored during library search")
 
-if (NOT ARDUINO_CMAKE_SKIP_TEST_SETUP)
+if (ARDUINO_IDE)
     # Ensure that all required paths are found
     validate_variables_not_empty(VARS
-            ARDUINO_PLATFORMS
-            ARDUINO_CORES_PATH
-            ARDUINO_BOOTLOADERS_PATH
-            ARDUINO_LIBRARIES_PATH
-            ARDUINO_BOARDS_PATH
-            ARDUINO_PROGRAMMERS_PATH
-            #                ARDUINO_VERSION_PATH TODO
-            ARDUINO_AVRDUDE_FLAGS
-            ARDUINO_AVRDUDE_PROGRAM
-            ARDUINO_AVRDUDE_CONFIG_PATH
+            avr_CORES_PATH
+            avr_BOOTLOADERS_PATH
+            avr_LIBRARIES_PATH
+            avr_BOARDS_PATH
+            avr_PROGRAMMERS_PATH
             AVRSIZE_PROGRAM
+            avr_AVRDUDE_PROGRAM
+            avr_AVRDUDE_FLAGS
+            avr_AVRDUDE_CONFIG_PATH
             ${ADDITIONAL_REQUIRED_VARS}
-            MSG "Invalid Arduino SDK path (${ARDUINO_SDK_PATH}).\n")
+            MSG "Invalid Arduino SDK path (${PLATFORM_PATH}).\n")
 endif ()
-set(ARDUINO_FOUND True CACHE INTERNAL "Arduino Found")
-
-
+set(ARDUINO_FOUND True CACHE INTERNAL "Arduino Found") #TODO ??

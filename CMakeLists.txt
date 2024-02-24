@@ -8,13 +8,11 @@ cmake_minimum_required(VERSION 3.8)
 #    cmake_policy(SET CMP0056 OLD)
 
 file(GLOB_RECURSE SRCS_HELO src/*)
-#SET(PLATFORM_ARCHITECTURE "STM32F1") # STM32F1xx
+
 SET(PLATFORM_PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
-SET(PLATFORM_TOOLCHAIN_PATH "$ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi")
+SET(TOOLCHAIN_PATH "$ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi")
 
-#SET(PLATFORM_PATH $ENV{HOME}/.arduino15/packages/STMicroelectronics/hardware/stm32/2.7.1)
-
-project(cnc_3018 C CXX ASM)
+project(cnc_3018 C CXX)
 SET(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 #print_board_list()

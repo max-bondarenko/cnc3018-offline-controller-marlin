@@ -430,12 +430,6 @@ macro(INCREMENT_EXAMPLE_CATEGORY_INDEX OUTPUT_VAR)
 endmacro()
 
 
-macro(fatal_banner msg)
-    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    message(STATUS "${msg}")
-    message(STATUS "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-    message(FATAL_ERROR)
-endmacro()
 
 
 

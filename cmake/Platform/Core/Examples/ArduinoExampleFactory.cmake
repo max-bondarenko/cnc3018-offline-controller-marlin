@@ -23,6 +23,11 @@ function(make_arduino_example TARGET_NAME EXAMPLE_NAME OUTPUT_VAR)
     string(TOLOWER ${EXAMPLE_NAME} EXAMPLE_NAME)
 
     if (CATEGORY_NAME)
+        # TODO moved from init
+        if (EXISTS "${${CMAKE_SYSTEM_PROCESSOR}_EXAMPLES_PATH}")
+            include(SetupExampleCategories)
+        endif ()
+
         string(TOLOWER ${CATEGORY_NAME} LOWER_CATEGORY_NAME)
         list(FIND ARDUINO_EXAMPLE_CATEGORIES ${LOWER_CATEGORY_NAME} CATEGORY_INDEX)
         if (${CATEGORY_INDEX} LESS 0)
