@@ -1,26 +1,19 @@
 SET(CMAKE_TOOLCHAIN_FILE cmake/ArduinoToolchain.cmake)
 cmake_minimum_required(VERSION 3.8)
-#if (POLICY CMP0126)
-#    cmake_policy(SET CMP0126 NEW)
-#endif ()
 
-#    cmake_policy(SET CMP0066 OLD)
-#    cmake_policy(SET CMP0056 OLD)
+#file(GLOB_RECURSE SRCS_HELO src/*)
 
-file(GLOB_RECURSE SRCS_HELO src/*)
-
-SET(PLATFORM_PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
-SET(TOOLCHAIN_PATH "$ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi")
+#SET(PLATFORM_PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
+#SET(TOOLCHAIN_PATH "$ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi")
 
 project(cnc_3018 C CXX)
 SET(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
+
 #print_board_list()
-#print_board_settings(GenF1)
+#print_board_settings(nano)
 #print_programmer_list()
-
-#SET(ARDUINO_UPLOAD_METHOD STLink)
-
+#
 #generate_arduino_firmware(hello
 #        MANUAL
 #        SRCS ${SRCS_HELO}
@@ -29,13 +22,10 @@ set(CMAKE_CXX_STANDARD 11)
 #        PORT /dev/ttyACM0
 #        )
 
-#    generate_arduino_firmware(hello
-#            MANUAL
-#            SRCS ${SRCS_HELO}
-#            BOARD nano
-#            BOARD_CPU atmega328
-#            PORT ${ARDUINO_DEFAULT_PORT}
-#            )
+generate_arduino_library(printfloat
+        SRCS lib/printfloat/printfloat.cpp lib/printfloat/printfloat.h
+        BOARD nano
+        BOARD_CPU atmega328)
 
 
 #SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")

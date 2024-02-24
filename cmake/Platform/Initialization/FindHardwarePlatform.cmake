@@ -11,34 +11,16 @@ endif ()
 get_filename_component(VENDOR_ID ${PLATFORM_PATH} NAME)
 get_filename_component(BASE_PATH ${PLATFORM_PATH} PATH)
 
-
-#if (PLATFORM_PATH)
-#    set(ORIGINAL_PLATFORM_PATH ${PLATFORM_PATH} CACHE INTERNAL "")
-#endif ()
-#set(PLATFORM_PATH "${BASE_PATH}/${VENDOR_ID}")
-#set(PLATFORM "${VENDOR_ID}")
-#set(ARCHITECTURE_ID ${PLATFORM_ARCHITECTURE})
-#
-## Avoid defining a platform multiple times if it has already been defined before
-#string(TOUPPER ${PLATFORM} PLATFORM)
-#list(FIND ARDUINO_PLATFORMS ${PLATFORM} PLATFORM_EXISTS)
-#message(STATUS "BASE = ${BASE_PATH} PLATFORM_PATH =${PLATFORM_PATH} VENDOR=${VENDOR_ID} PLATFORM_ARCHITECTURE=${PLATFORM_ARCHITECTURE}")
-#message(STATUS "PLATFORM = ${PLATFORM}")
-#
-#set(${PLATFORM}_PLATFORM_PATH ${PLATFORM_PATH} CACHE PATH "The path to ${PLATFORM}")
-#set(ARDUINO_PLATFORMS ${ARDUINO_PLATFORMS} ${PLATFORM} CACHE INTERNAL "A list of registered platforms")
-
 set(HINTS ${PLATFORM_PATH}/hardware/${PLATFORM}/${CMAKE_SYSTEM_PROCESSOR}
         ${PLATFORM_PATH}/${PLATFORM}
         ${PLATFORM_PATH}/*
-        ${PLATFORM_PATH}
-        )
-
+        ${PLATFORM_PATH})
 
 find_file(${CMAKE_SYSTEM_PROCESSOR}_CORES_PATH
         NAMES cores
         PATHS ${HINTS}
         DOC "Path to directory containing the Arduino core sources.")
+
 find_file(${CMAKE_SYSTEM_PROCESSOR}_VARIANTS_PATH
         NAMES variants
         PATHS ${HINTS}

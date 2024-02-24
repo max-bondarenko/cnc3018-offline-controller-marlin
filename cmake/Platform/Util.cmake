@@ -1,99 +1,4 @@
 #=============================================================================#
-# print_board_list
-# [PUBLIC/USER]
-#
-# print_board_list()
-#
-# see documentation at top
-#=============================================================================#
-function(print_board_list)
-    foreach (PLATFORM ${ARDUINO_PLATFORMS})
-        if (${PLATFORM}_BOARDS)
-            message(STATUS "${PLATFORM} Boards:")
-            print_list(${PLATFORM}_BOARDS)
-            message(STATUS "")
-        endif ()
-    endforeach ()
-endfunction()
-
-#=============================================================================#
-# print_programmer_list
-# [PUBLIC/USER]
-#
-# print_programmer_list()
-#
-# see documentation at top
-#=============================================================================#
-function(print_programmer_list)
-    foreach (PLATFORM ${ARDUINO_PLATFORMS})
-        if (${PLATFORM}_PROGRAMMERS)
-            message(STATUS "${PLATFORM} Programmers:")
-            print_list(${PLATFORM}_PROGRAMMERS)
-        endif ()
-        message(STATUS "")
-    endforeach ()
-endfunction()
-
-#=============================================================================#
-# print_programmer_settings
-# [PUBLIC/USER]
-#
-# print_programmer_settings(PROGRAMMER)
-#
-# see documentation at top
-#=============================================================================#
-function(print_programmer_settings PROGRAMMER)
-    if (${PROGRAMMER}.SETTINGS)
-        message(STATUS "Programmer ${PROGRAMMER} Settings:")
-        print_settings(${PROGRAMMER})
-    endif ()
-endfunction()
-
-#=============================================================================#
-# print_board_settings
-# [PUBLIC/USER]
-#
-# print_board_settings(ARDUINO_BOARD)
-#
-# see documentation at top
-function(print_board_settings ARDUINO_BOARD)
-    if (${ARDUINO_BOARD}.SETTINGS)
-        message(STATUS "Arduino ${ARDUINO_BOARD} Board:")
-        print_settings(${ARDUINO_BOARD})
-    endif ()
-endfunction()
-
-#=============================================================================#
-# print_settings
-# [PRIVATE/INTERNAL]
-#
-# print_settings(ENTRY_NAME)
-#
-#      ENTRY_NAME - name of entry
-#
-# Print the entry settings (see load_arduino_syle_settings()).
-#
-#=============================================================================#
-function(print_settings ENTRY_NAME) # TODO fix parser for STM32
-    if (${ENTRY_NAME}.SETTINGS)
-
-        foreach (ENTRY_SETTING ${${ENTRY_NAME}.SETTINGS})
-            if (${ENTRY_NAME}.${ENTRY_SETTING})
-                message(STATUS "   ${ENTRY_NAME}.${ENTRY_SETTING}=${${ENTRY_NAME}.${ENTRY_SETTING}}")
-            endif ()
-            if (${ENTRY_NAME}.${ENTRY_SETTING}.SUBSETTINGS)
-                foreach (ENTRY_SUBSETTING ${${ENTRY_NAME}.${ENTRY_SETTING}.SUBSETTINGS})
-                    if (${ENTRY_NAME}.${ENTRY_SETTING}.${ENTRY_SUBSETTING})
-                        message(STATUS "   ${ENTRY_NAME}.${ENTRY_SETTING}.${ENTRY_SUBSETTING}=${${ENTRY_NAME}.${ENTRY_SETTING}.${ENTRY_SUBSETTING}}")
-                    endif ()
-                endforeach ()
-            endif ()
-            message(STATUS "")
-        endforeach ()
-    endif ()
-endfunction()
-
-#=============================================================================#
 # print_list
 # [PRIVATE/INTERNAL]
 #
@@ -147,37 +52,29 @@ endfunction()
 #            _check_path_exists_case_sensitive
 #=============================================================================#
 function(_check_path_exists_case_sensitive_brute_force result_var_ absolute_path_)
-
     # We recursively traverse the absolute_path_ from its root and
     # check it any path token cannot be found (early exit)
-
     string(REPLACE "/" ";" path_tokens "${absolute_path_}")
 
     list(LENGTH path_tokens n_tokens__)
     math(EXPR n_tokens "${n_tokens__} - 1")
-
     set(cur_path "/")
+
     foreach (id RANGE 0 ${n_tokens})
-
         list(GET path_tokens ${id} cur_token)
-
         if ("${cur_token}" STREQUAL "")
             continue()
         endif ()
-
         file(GLOB dir_entries RELATIVE "${cur_path}" "${cur_path}*")
-
         list(FIND dir_entries "${cur_token}" index)
         if (NOT ${index} GREATER -1)
             message("- ${absolute_path_}")
             set(${result_var_} FALSE PARENT_SCOPE)
             return()
         endif ()
-
         set(cur_path "${cur_path}${cur_token}/")
     endforeach ()
-
-    message("+ ${absolute_path_}")
+    message(VERBOSE "+ ${absolute_path_}")
     set(${result_var_} TRUE PARENT_SCOPE)
 endfunction()
 
@@ -199,12 +96,10 @@ endfunction()
 # on Windows (at least not up to CMake version 3.9.6).
 #=============================================================================#
 function(_check_path_exists_case_sensitive result_var_ absolute_path_)
-
     # Important: First check for APPLE as CMAKE_HOST_UNIX reports true even
     #            if CMAKE_HOST_APPLE is true
     #
     if (CMAKE_HOST_APPLE)
-
         # On MacOS there is no appropriate command that enables a safe check
         # for a path to exist given a case sensitive name. This is because
         # MacOS file systems are mostly case insensitive by default.
@@ -212,26 +107,18 @@ function(_check_path_exists_case_sensitive result_var_ absolute_path_)
         #
         _check_path_exists_case_sensitive_brute_force(tmp_result "${absolute_path_}")
         set(${result_var_} ${tmp_result} PARENT_SCOPE)
-
         return()
-
     elseif (CMAKE_HOST_UNIX)
-
         if (EXISTS "${absolute_path_}")
             set(${result_var_} TRUE PARENT_SCOPE)
         else ()
             set(${result_var_} FALSE PARENT_SCOPE)
         endif ()
-
         return()
-
     elseif (CMAKE_HOST_WIN32)
-
         # From this point on, we only deal with Windows
-
         file(TO_NATIVE_PATH "${absolute_path_}" native_path)
         string(REPLACE "/" "\\" native_path "${native_path}")
-
         # Check what is found when a globbing expression is used to
         # find the file. The output (actual_path) will be the case
         # sensitive path name or nothing.
@@ -242,45 +129,15 @@ function(_check_path_exists_case_sensitive result_var_ absolute_path_)
                 OUTPUT_STRIP_TRAILING_WHITESPACE
                 COMMAND cmd /C dir /S /B "${native_path}"
         )
-
         if ("${actual_path}" STREQUAL "${native_path}")
             set(${result_var_} TRUE PARENT_SCOPE)
         else ()
             set(${result_var_} FALSE PARENT_SCOPE)
         endif ()
-
         return()
-
     endif ()
-
     message(FATAL_ERROR "Strange host system")
-
 endfunction()
-
-#=============================================================================#
-# arduino_debug_on()
-# [PRIVATE/INTERNAL]
-#
-#  arduino_debug_on()
-#
-# Enables Arduino module debugging.
-#=============================================================================#
-function(arduino_debug_on)
-    set(ARDUINO_DEBUG True PARENT_SCOPE)
-endfunction()
-
-#=============================================================================#
-# arduino_debug_on()
-# [PRIVATE/INTERNAL]
-#
-#  arduino_debug_off()
-#
-# Disables Arduino module debugging.
-#=============================================================================#
-function(arduino_debug_off)
-    set(ARDUINO_DEBUG False PARENT_SCOPE)
-endfunction()
-
 #=============================================================================#
 # arduino_debug_msg
 # [PRIVATE/INTERNAL]
@@ -297,9 +154,8 @@ function(arduino_debug_msg MSG)
         message("## ${MSG}")
     endif ()
 endfunction()
-
 #=============================================================================#
-# set_board_flags
+# _fix_redundant_target_compile_flags
 # [PRIVATE/INTERNAL]
 #
 # _fix_redundant_target_compile_flags(TARGET)
@@ -313,28 +169,22 @@ endfunction()
 # many redundant -I... entries to appear in compiler command lines.
 #=============================================================================#
 function(_fix_redundant_target_compile_flags target_)
-
     # Get the current compile flags of a target
     #
     get_target_property(compile_flags ${target_} COMPILE_FLAGS)
-
     # Turn the space separated list of compile flags into a semicolon
     # separated list. Also consider single quotes arguments.
     #
     string(REGEX REPLACE " +('*-)" ";\\1" new_compile_flags "${compile_flags}")
-
     # Remove any duplicate flags (includes directory specifications, ...)
     #
     list(REMOVE_DUPLICATES new_compile_flags)
-
     # Convert the semicolon separated list back into a space separated one
     #
     string(REGEX REPLACE ";('*-)" " \\1" new_compile_flags "${new_compile_flags}")
-
     # Replace the bad (redundant) compile flags
     #
     set_target_properties(${target_} PROPERTIES COMPILE_FLAGS "${new_compile_flags}")
-
 endfunction()
 #=============================================================================#
 # load_generator_settings
@@ -368,8 +218,6 @@ function(load_generator_settings TARGET_NAME PREFIX)
         endif ()
     endforeach ()
 endfunction()
-
-
 #=============================================================================#
 # parse_generator_arguments
 # [PRIVATE/INTERNAL]
@@ -385,12 +233,11 @@ endfunction()
 # Parses generator options from either variables or command arguments
 #
 #=============================================================================#
-macro(PARSE_GENERATOR_ARGUMENTS TARGET_NAME PREFIX OPTIONS ARGS MULTI_ARGS)
+macro(parse_generator_arguments TARGET_NAME PREFIX OPTIONS ARGS MULTI_ARGS)
     cmake_parse_arguments(${PREFIX} "${OPTIONS}" "${ARGS}" "${MULTI_ARGS}" ${ARGN})
     error_for_unparsed(${PREFIX})
     load_generator_settings(${TARGET_NAME} ${PREFIX} ${OPTIONS} ${ARGS} ${MULTI_ARGS})
 endmacro()
-
 #=============================================================================#
 # get_mcu
 # [PRIVATE/INTERNAL]
@@ -407,7 +254,6 @@ endmacro()
 macro(GET_MCU FULL_MCU_NAME OUTPUT_VAR)
     string(REGEX MATCH "^.+[^p]" ${OUTPUT_VAR} "FULL_MCU_NAME" PARENT_SCOPE)
 endmacro()
-
 #=============================================================================#
 # increment_example_category_index
 # [PRIVATE/INTERNAL]
@@ -420,7 +266,7 @@ endmacro()
 # which is defined (Some SDK's or OSs use a leading '0' in single-digit numbers.
 #
 #=============================================================================#
-macro(INCREMENT_EXAMPLE_CATEGORY_INDEX OUTPUT_VAR)
+macro(increment_example_category_index OUTPUT_VAR)
     math(EXPR INC_INDEX "${${OUTPUT_VAR}}+1")
     if (EXAMPLE_CATEGORY_INDEX_LENGTH GREATER 1 AND INC_INDEX LESS 10)
         set(${OUTPUT_VAR} "0${INC_INDEX}")

@@ -96,4 +96,5 @@ if (ARDUINO_IDE)
             ${ADDITIONAL_REQUIRED_VARS}
             MSG "Invalid Arduino SDK path (${PLATFORM_PATH}).\n")
 endif ()
+
 set(ARDUINO_FOUND True CACHE INTERNAL "Arduino Found") #TODO ??
