@@ -8,9 +8,6 @@ if (CUSTOM_PLATFORM_REGISTRATION_SCRIPT)
     return()
 endif ()
 
-get_filename_component(VENDOR_ID ${PLATFORM_PATH} NAME)
-get_filename_component(BASE_PATH ${PLATFORM_PATH} PATH)
-
 set(HINTS ${PLATFORM_PATH}/hardware/${PLATFORM}/${CMAKE_SYSTEM_PROCESSOR}
         ${PLATFORM_PATH}/${PLATFORM}
         ${PLATFORM_PATH}/*

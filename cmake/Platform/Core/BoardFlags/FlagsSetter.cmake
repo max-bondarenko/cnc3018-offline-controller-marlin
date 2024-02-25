@@ -35,10 +35,10 @@ function(set_board_compiler_flags COMPILER_FLAGS NORMALIZED_SDK_VERSION BOARD_ID
     include(${ARDUINO_CMAKE_TOP_FOLDER}/Platform/Core/BoardFlags/CompilerFlagsSetter_${CMAKE_SYSTEM_PROCESSOR}.cmake)
     _try_get_board_property(${BOARD_ID} build.vid VID)
     _try_get_board_property(${BOARD_ID} build.pid PID)
-    if (VID)
+    if (NOT ${VID} STREQUAL "")
         set(COMPILE_FLAGS "${COMPILE_FLAGS} -DUSB_VID=${VID}")
     endif ()
-    if (PID)
+    if (NOT ${PID} STREQUAL "")
         set(COMPILE_FLAGS "${COMPILE_FLAGS} -DUSB_PID=${PID}")
     endif ()
 
@@ -48,7 +48,7 @@ function(set_board_compiler_flags COMPILER_FLAGS NORMALIZED_SDK_VERSION BOARD_ID
         _sanitize_quotes(EXTRA_FLAGS)
         set(COMPILE_FLAGS "${COMPILE_FLAGS} ${EXTRA_FLAGS}")
     endif ()
-
+       # TODO this does not substitute usb flags form platform !! fix
     _try_get_board_property(${BOARD_ID} build.usb_flags USB_FLAGS)
     if (NOT "${USB_FLAGS}" STREQUAL "")
         _sanitize_quotes(USB_FLAGS)
@@ -57,9 +57,9 @@ function(set_board_compiler_flags COMPILER_FLAGS NORMALIZED_SDK_VERSION BOARD_ID
 
     if (NOT IS_MANUAL)
         _get_board_property(${BOARD_ID} build.core BOARD_CORE)
-        set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${${BOARD_CORE}.path}\" -I\"${ARDUINO_LIBRARIES_PATH}\"") # TODO _PATH
-        if (${ARDUINO_PLATFORM_LIBRARIES_PATH})
-            set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${ARDUINO_PLATFORM_LIBRARIES_PATH}\"")
+        set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${${BOARD_CORE}.path}\" -I\"${${CMAKE_SYSTEM_PROCESSOR}_LIBRARIES_PATH}\"") # TODO _PATH
+        if (${${CMAKE_SYSTEM_PROCESSOR}_PLATFORM_LIBRARIES_PATH})
+            set(COMPILE_FLAGS "${COMPILE_FLAGS} -I\"${${CMAKE_SYSTEM_PROCESSOR}_PLATFORM_LIBRARIES_PATH}\"")
         endif ()
     endif ()
     if (ARDUINO_SDK_VERSION VERSION_GREATER 1.0 OR ARDUINO_SDK_VERSION VERSION_EQUAL 1.0)
@@ -99,8 +99,6 @@ function(set_board_flags COMPILER_FLAGS LINKER_FLAGS BOARD_ID IS_MANUAL)
 
     _get_board_property(${BOARD_ID} build.core BOARD_CORE)
     if (BOARD_CORE)
-        _get_normalized_sdk_version(NORMALIZED_SDK_VERSION)
-
         set_board_compiler_flags(COMPILE_FLAGS ${NORMALIZED_SDK_VERSION} ${BOARD_ID} ${IS_MANUAL})
         set_board_linker_flags(LINK_FLAGS ${BOARD_ID} ${IS_MANUAL})
 

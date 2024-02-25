@@ -1,6 +1,6 @@
 SET(CMAKE_TOOLCHAIN_FILE cmake/ArduinoToolchain.cmake)
 cmake_minimum_required(VERSION 3.8)
-
+#TODO ABI & Check for working C compiler EROORS
 #file(GLOB_RECURSE SRCS_HELO src/*)
 
 #SET(PLATFORM_PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
@@ -21,11 +21,21 @@ set(CMAKE_CXX_STANDARD 11)
 #        BOARD_CPU BLUEPILL_F103C6
 #        PORT /dev/ttyACM0
 #        )
-
-generate_arduino_library(printfloat
-        SRCS lib/printfloat/printfloat.cpp lib/printfloat/printfloat.h
+set(ASD)
+#make_core_library(ASD "nano.atmega328")
+#make_arduino_example(blink "Blink" ALL_SRCS "Basics" )
+#make_arduino_sketch(blink "/opt/arduino-1.8.19/examples/01.Basics/Blink" SKETCH_CPP )
+generate_arduino_example(blink
+        CATEGORY Basics
+        EXAMPLE Blink
         BOARD nano
-        BOARD_CPU atmega328)
+        BOARD_CPU atmega328
+        )
+
+#generate_arduino_library(printfloat
+#        SRCS lib/printfloat/printfloat.cpp lib/printfloat/printfloat.h
+#        BOARD nano
+#        BOARD_CPU atmega328)
 
 
 #SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")

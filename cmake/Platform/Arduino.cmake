@@ -32,12 +32,9 @@ include(Initializer)
 ############ Utils for targets ##############
 include(FlagsSetter)
 include(BoardPropertiesReader)
-#TODO ABI & Check for working C compiler EROORS
 include(SourceFinder)
 include(LibraryFinder)
-
 include(ArduinoSketchToCppConverter)
-
 include(ArduinoSketchFactory)
 include(CoreLibraryFactory)
 include(ArduinoLibraryFactory)

@@ -10,7 +10,6 @@ function(generate_arduino_example INPUT_NAME)
             "SERIAL;AFLAGS"                                     # Multi Value Keywords
             ${ARGN})
 
-
     if (NOT INPUT_BOARD)
         set(INPUT_BOARD ${ARDUINO_DEFAULT_BOARD})
     endif ()
@@ -28,9 +27,7 @@ function(generate_arduino_example INPUT_NAME)
     endif ()
     validate_variables_not_empty(VARS INPUT_EXAMPLE INPUT_BOARD
             MSG "must define for target ${INPUT_NAME}")
-
     _get_board_id(${INPUT_BOARD} "${INPUT_BOARD_CPU}" ${INPUT_NAME} BOARD_ID)
-
     message(STATUS "Generating ${INPUT_NAME}")
 
     set(ALL_LIBS)

@@ -26,7 +26,7 @@ function(make_arduino_library VAR_NAME BOARD_ID LIB_PATH COMPILE_FLAGS LINK_FLAG
 
     # Detect if recursion is needed
     if (NOT DEFINED ${LIB_SHORT_NAME}_RECURSE)
-       set(${LIB_SHORT_NAME}_RECURSE ${ARDUINO_CMAKE_RECURSION_DEFAULT})
+        set(${LIB_SHORT_NAME}_RECURSE ${ARDUINO_CMAKE_RECURSION_DEFAULT})
     endif ()
 
     # As make_arduino_library is called recursively, LIB_SRCS and LIB_HDRS
@@ -34,13 +34,13 @@ function(make_arduino_library VAR_NAME BOARD_ID LIB_PATH COMPILE_FLAGS LINK_FLAG
     #
     set(LIB_SRCS)
     set(LIB_HDRS)
-    
+
     find_sources(LIB_SRCS ${LIB_PATH} ${${LIB_SHORT_NAME}_RECURSE})
     find_headers(LIB_HDRS ${LIB_PATH} ${${LIB_SHORT_NAME}_RECURSE})
-    
+
     if (LIB_SRCS)
-        
-       if (NOT TARGET ${TARGET_LIB_NAME})
+
+        if (NOT TARGET ${TARGET_LIB_NAME})
 
             arduino_debug_msg("Generating Arduino ${LIB_NAME} library")
             add_library(${TARGET_LIB_NAME} STATIC ${LIB_SRCS})
@@ -59,11 +59,11 @@ function(make_arduino_library VAR_NAME BOARD_ID LIB_PATH COMPILE_FLAGS LINK_FLAG
             if (LIB_INCLUDES)
                 string(REPLACE ";" " " LIB_INCLUDES_SPACE_SEPARATED "${LIB_INCLUDES}")
             endif ()
-if (${LIB_NAME}_EXTRA_CFLAGS)
-set (EXTRA ${${LIB_NAME}_EXTRA_CFLAGS})
-message (STATUS "Adding new flags for lib ${LIB_NAME}: ${EXTRA}")
-endif (${LIB_NAME}_EXTRA_CFLAGS)
-                
+            if (${LIB_NAME}_EXTRA_CFLAGS)
+                set(EXTRA ${${LIB_NAME}_EXTRA_CFLAGS})
+                message(STATUS "Adding new flags for lib ${LIB_NAME}: ${EXTRA}")
+            endif (${LIB_NAME}_EXTRA_CFLAGS)
+
             set_target_properties(${TARGET_LIB_NAME} PROPERTIES
                     COMPILE_FLAGS "${ARDUINO_COMPILE_FLAGS} ${LIB_INCLUDES_SPACE_SEPARATED} -I\"${LIB_PATH}\" -I\"${LIB_PATH}/utility\" ${COMPILE_FLAGS} ${EXTRA}"
                     LINK_FLAGS "${ARDUINO_LINK_FLAGS} ${LINK_FLAGS}")
@@ -72,13 +72,13 @@ endif (${LIB_NAME}_EXTRA_CFLAGS)
             if (LIB_TARGETS)
                 list(REMOVE_ITEM LIB_TARGETS ${TARGET_LIB_NAME})
             endif ()
-            
-            if(NOT ARDUINO_CMAKE_GENERATE_SHARED_LIBRARIES)
+
+            if (NOT ARDUINO_CMAKE_GENERATE_SHARED_LIBRARIES)
                 # MEANX: this will duplicate core libs target_link_libraries(${TARGET_LIB_NAME} ${BOARD_ID}_CORE ${LIB_TARGETS})
-            endif()
+            endif ()
 
         endif ()
-           
+
         list(APPEND LIB_TARGETS ${TARGET_LIB_NAME})
 
     else ()
@@ -126,7 +126,7 @@ function(make_arduino_libraries VAR_NAME BOARD_ID ARDLIBS COMPILE_FLAGS LINK_FLA
         list(APPEND LIB_TARGETS ${LIB_DEPS})
         list(APPEND LIB_INCLUDES ${LIB_DEPS_INCLUDES})
     endforeach ()
-    
+
     list(REMOVE_DUPLICATES LIB_TARGETS)
     list(REMOVE_DUPLICATES LIB_INCLUDES)
 

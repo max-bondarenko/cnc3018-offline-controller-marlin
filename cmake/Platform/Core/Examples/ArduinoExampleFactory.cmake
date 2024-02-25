@@ -12,7 +12,6 @@
 # Creates an Arduino example from the built-in categories.
 #=============================================================================#
 function(make_arduino_example TARGET_NAME EXAMPLE_NAME OUTPUT_VAR)
-
     set(OPTIONAL_ARGUMENTS ${ARGN})
     list(LENGTH OPTIONAL_ARGUMENTS ARGC)
     if (${ARGC} GREATER 0)
@@ -23,26 +22,24 @@ function(make_arduino_example TARGET_NAME EXAMPLE_NAME OUTPUT_VAR)
     string(TOLOWER ${EXAMPLE_NAME} EXAMPLE_NAME)
 
     if (CATEGORY_NAME)
-        # TODO moved from init
-        if (EXISTS "${${CMAKE_SYSTEM_PROCESSOR}_EXAMPLES_PATH}")
+        if (EXISTS "${${CMAKE_SYSTEM_PROCESSOR}_EXAMPLES_PATH}" AND NOT ${CMAKE_SYSTEM_PROCESSOR}_EXAMPLE_CATEGORIES)
             include(SetupExampleCategories)
         endif ()
-
         string(TOLOWER ${CATEGORY_NAME} LOWER_CATEGORY_NAME)
-        list(FIND ARDUINO_EXAMPLE_CATEGORIES ${LOWER_CATEGORY_NAME} CATEGORY_INDEX)
+        list(FIND ${CMAKE_SYSTEM_PROCESSOR}_EXAMPLE_CATEGORIES ${LOWER_CATEGORY_NAME} CATEGORY_INDEX)
         if (${CATEGORY_INDEX} LESS 0)
             message(SEND_ERROR "${CATEGORY_NAME} example category doesn't exist, please check your spelling")
             return()
         endif ()
-increment_example_category_index (CATEGORY_INDEX)
+        increment_example_category_index(CATEGORY_INDEX)
         set(CATEGORY_NAME ${CATEGORY_INDEX}.${CATEGORY_NAME})
-        file(GLOB EXAMPLES RELATIVE ${ARDUINO_EXAMPLES_PATH}/${CATEGORY_NAME}
-                ${ARDUINO_EXAMPLES_PATH}/${CATEGORY_NAME}/*)
+        file(GLOB EXAMPLES RELATIVE ${${CMAKE_SYSTEM_PROCESSOR}_EXAMPLES_PATH}/${CATEGORY_NAME}
+                ${${CMAKE_SYSTEM_PROCESSOR}_EXAMPLES_PATH}/${CATEGORY_NAME}/*)
         foreach (EXAMPLE_PATH ${EXAMPLES})
             string(TOLOWER ${EXAMPLE_PATH} LOWER_EXAMPLE_PATH)
             if (${LOWER_EXAMPLE_PATH} STREQUAL ${EXAMPLE_NAME})
                 set(EXAMPLE_SKETCH_PATH
-                        "${ARDUINO_EXAMPLES_PATH}/${CATEGORY_NAME}/${EXAMPLE_PATH}")
+                        "${${CMAKE_SYSTEM_PROCESSOR}_EXAMPLES_PATH}/${CATEGORY_NAME}/${EXAMPLE_PATH}")
                 break()
             endif ()
         endforeach ()

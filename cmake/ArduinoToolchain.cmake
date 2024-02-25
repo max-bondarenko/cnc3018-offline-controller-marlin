@@ -1,5 +1,7 @@
 set(CMAKE_SYSTEM_NAME Arduino)
 set(CMAKE_SYSTEM_VERSION 1.0)
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAl "Arduino do not use SHARED libs")
+
 set(PLATFORM "arduino" CACHE STRING "Arduino SDK platform")
 if (DEFINED PLATFORM_PATH AND DEFINED PLATFORM_TOOLCHAIN_PATH)
     MESSAGE(STATUS "Skip setup in SubBuild")
@@ -83,9 +85,9 @@ else ()
     include(${CMAKE_CURRENT_LIST_DIR}/ArduinoToolchainStm32.cmake)
 endif ()
 
-if(NOT DEFINED PLATFORM_TOOLCHAIN_PATH)
+if (NOT DEFINED PLATFORM_TOOLCHAIN_PATH)
     fatal_banner("NO platform specified")
-endif()
+endif ()
 
 SET(CMAKE_VERBOSE_MAKEFILE TRUE)
 #

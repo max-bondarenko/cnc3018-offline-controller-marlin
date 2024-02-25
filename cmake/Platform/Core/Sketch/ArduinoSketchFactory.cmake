@@ -38,7 +38,7 @@ function(make_arduino_sketch TARGET_NAME SKETCH_PATH OUTPUT_VAR)
                 COMMAND ${CMAKE_COMMAND} ${CMAKE_SOURCE_DIR}
                 WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
                 DEPENDS ${MAIN_SKETCH} ${SKETCH_SOURCES}
-                COMMENT "Regnerating ${SKETCH_NAME} Sketch")
+                COMMENT "Regenerating ${SKETCH_NAME} Sketch")
         set_source_files_properties(${SKETCH_CPP} PROPERTIES GENERATED TRUE)
         # Mark file that it exists for find_file
         set_source_files_properties(${SKETCH_CPP} PROPERTIES GENERATED_SKETCH TRUE)

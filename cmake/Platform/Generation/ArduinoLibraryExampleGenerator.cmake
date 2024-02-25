@@ -25,6 +25,7 @@ function(generate_arduino_library_example INPUT_NAME)
     if (NOT INPUT_PROGRAMMER)
         set(INPUT_PROGRAMMER ${ARDUINO_DEFAULT_PROGRAMMER})
     endif ()
+
     validate_variables_not_empty(VARS INPUT_LIBRARY INPUT_EXAMPLE INPUT_BOARD
             MSG "must define for target ${INPUT_NAME}")
     _get_board_id(${INPUT_BOARD} "${INPUT_BOARD_CPU}" ${INPUT_NAME} BOARD_ID)
