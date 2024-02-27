@@ -39,6 +39,12 @@ public:
     }
 };
 
+class ErrorState : public FinishState {
+    etl::fsm_state_id_t on_enter_state() override {
+        return StateId::ERROR;
+    }
+};
+
 class ReadyState
         : public etl::fsm_state<JobFsm, ReadyState, StateId::READY,
                 StartMessage, SendMessage, PauseMessage, CompleteMessage, ResendMessage> {
@@ -66,7 +72,7 @@ public:
     }
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
-        return StateId::FINISH;
+        return event.byError ? StateId::ERROR : StateId::FINISH;
     }
 
     etl::fsm_state_id_t on_event_unknown(const etl::imessage& msg) {
@@ -123,11 +129,12 @@ class Job : public etl::observable<JobObserver, 3> {
     JobFsm* fsm;
     InitState initState;
     FinishState finishState;
+    ErrorState errorState;
     ReadyState readyState;
     WaitState waitState;
     PauseState pauseState;
     etl::ifsm_state* stateList[StateId::NUMBER_OF_STATES] =
-            {&initState, &finishState, &readyState, &waitState, &pauseState};
+            {&initState, &finishState, &errorState, &readyState, &waitState, &pauseState};
 public:
 
     Job() {
@@ -169,6 +176,10 @@ public:
 
     bool inline isValid() {
         return fsm->get_state_id() != StateId::INIT;
+    }
+
+    bool inline isError() {
+        return StateId::ERROR == fsm->get_state_id() ;
     }
 
     uint8_t getCompletion() {

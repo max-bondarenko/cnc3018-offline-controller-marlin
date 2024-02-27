@@ -6,13 +6,13 @@
 
 constexpr int VISIBLE_MENUS = 5;
 
-Display *Display::inst = nullptr;
+Display* Display::inst = nullptr;
 
 uint16_t Display::buttStates;
 
-Display *Display::getDisplay() { return inst; }
+Display* Display::getDisplay() { return inst; }
 
-void Display::setScreen(Screen *screen) {
+void Display::setScreen(Screen* screen) {
     if (cScreen != nullptr)
         cScreen->onHide();
     cScreen = screen;
@@ -23,7 +23,7 @@ void Display::setScreen(Screen *screen) {
     dirty = true;
 }
 
-void Display::setDevice(GCodeDevice *dev_) {
+void Display::setDevice(GCodeDevice* dev_) {
     dev = dev_;
 }
 
@@ -98,7 +98,7 @@ void Display::processMenuButton(uint8_t bt, ButtonEvent evt) {
             setDirty();
         }
         if (bt == BT_CENTER) {
-            MenuItem &item = cScreen->menuItems[selMenuItem];
+            MenuItem& item = cScreen->menuItems[selMenuItem];
             if (!item.togglable) { item.on = !item.on; }
             item.cmd(item);
             menuShown = false;
@@ -141,23 +141,27 @@ void Display::drawStatusBar() {
     if (!dev->isConnected()) {
         u8g2.drawGlyph(x, y, 'X');
     } else if (dev->isLocked()) {
-        u8g2.drawXBM(x, 0, locked_width, locked_height, (const uint8_t *) locked_bits);
+        u8g2.drawXBM(x, 0, locked_width, locked_height, (const uint8_t*) locked_bits);
     } else {
-        u8g2.drawXBM(x, 0, connected_width, connected_height, (const uint8_t *) connected_bits);
+        u8g2.drawXBM(x, 0, connected_width, connected_height, (const uint8_t*) connected_bits);
     }
     memcpy(str, dev->getStatusStr(), LEN);
-    str[LEN-1] = 0;
-    u8g2.drawStr(LEN, y + fH, str);
+    str[LEN - 1] = 0;
+    u8g2.drawStr(LEN, y, str);
     //job status
     if (job.isValid()) {
         uint8_t p = job.getCompletion();
         snprintf(str, 9, "% 2d%%", p);
         if (job.isRunning())
             str[0] = 'R';
-        else
-            str[0] = 'P';
+        else {
+            if (job.isError())
+                str[0] = 'E';
+            else
+                str[0] = 'P';
+        }
         str[9] = 0;
-        u8g2.drawStr(48, y, str);
+        u8g2.drawStr(u8g2.getDisplayWidth() - 5 * fH + 1, y, str);
     }
 }
 
@@ -190,7 +194,7 @@ void Display::drawMenu() {
             u8g2.setDrawColor(1);
             u8g2.drawBox(x, y + i * lh, w, lh);
         }
-        MenuItem &item = cScreen->menuItems[idx];
+        MenuItem& item = cScreen->menuItems[idx];
         if (item.font != nullptr) u8g2.setFont(item.font);
         u8g2.setDrawColor(2);
         u8g2.drawStr(x + 2, y + i * lh - 1, item.text.c_str());

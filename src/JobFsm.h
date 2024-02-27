@@ -15,6 +15,7 @@ struct StateId {
     enum {
         INIT,
         FINISH,
+        ERROR,
         READY,
         WAIT_RESP,
         PAUSED,
@@ -39,6 +40,7 @@ struct SetFileMessage : public etl::message<EventId::FILE> {
     const char* fileName;
 };
 struct CompleteMessage : public etl::message<EventId::COMPLETE> {
+    bool byError = false;
 };
 struct StartMessage : public etl::message<EventId::START> {
 };
