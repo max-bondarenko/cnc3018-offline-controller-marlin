@@ -21,14 +21,34 @@ find_path(ARDUINO_SDK_PATH
         ${ARDUINO_PATHS}
         HINTS ${SDK_PATH_HINTS}
         DOC "Arduino SDK path.")
+set(CMAKE_FIND_DEBUG_MODE TRUE)
+
+find_file(ETL_PATH
+        NAMES "Embedded Template Library"
+        PATHS ${CMAKE_CURRENT_SOURCE_DIR}/libdeps/debug
+        HINTS "${CMAKE_CURRENT_SOURCE_DIR}/.pio/libdeps/debug/")
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
-
 project(cnc_3018)
+
+function(ard_lib lib_name lib_path_name lib_path)
+    if (lib_path)
+        set(${lib_name}_path ${lib_path}/libraries/${lib_name}/src)
+    else ()
+        set(${lib_name}_path ${ARDUINO_SDK_PATH}/libraries/${lib_name}/src)
+    endif ()
+
+    file(GLOB_RECURSE _src ${${lib_name}_path}/*.c ${${lib_name}_path}/*.cpp)
+    add_library(${lib_name} ${_src})
+    target_include_directories(${lib_name} PUBLIC ${${lib_name}_path})
+
+
+    set(${lib_path_name} ${${lib_name}_path} PARENT_SCOPE)
+endfunction()
 
 
 set(board STM32F1)
@@ -46,9 +66,6 @@ add_compile_definitions(${board}03xB)
 add_compile_definitions(BOARD_NAME=\"${board_name}\")
 add_compile_definitions(ARDUINO_${board_name})
 add_compile_definitions(VARIANT_H=\"variant_generic.h\")
-
-
-#add_compile_definitions(USE_FULL_LL_DRIVER)
 
 
 set(core_path ${PLATFORM-PATH}/cores/arduino)
@@ -74,7 +91,7 @@ add_compile_definitions(USBD_USE_CDC)
 add_compile_definitions(ENABLE_HWSERIAL1)
 add_compile_definitions(HAL_UART_MODULE_ENABLED)
 add_compile_definitions(HAL_PCD_MODULE_ENABLED)
-
+add_compile_definitions(USE_FULL_LL_DRIVER)
 
 set(usb_device_path ${PLATFORM-PATH}/system/Middlewares/ST/STM32_USB_Device_Library/Core)
 set(usb_path ${stm_core_path}/usb)
@@ -112,6 +129,9 @@ include_directories(
         ${CMSIS-PATH}/DSP/Include
         ${CMSIS-PATH}/DSP/PrivateInclude
 )
+target_compile_options(core PRIVATE -Wdeprecated-declarations)
+
+#todo CMSIS as independent
 
 
 set(openAmp_path ${stm_core_path}/OpenAMP)
@@ -120,42 +140,69 @@ add_library(OpenAMP STATIC ${openAmp_src})
 target_include_directories(OpenAMP PUBLIC ${openAmp_path})
 
 
-SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")
-SET(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -std=gnu++11 ${COMMON_FLAGS}")
-SET(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects ${COMMON_FLAGS}")
-
 SET(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
 SET(CMAKE_C_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-gcc")
 SET(CMAKE_CXX_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-g++")
+SET(OBJCOPY ${TOOL-PATH}/bin/arm-none-eabi-objcopy)
 
-
-#add_definitions(-D'U8G2_16BIT')
-
-add_library(U8g2 PUBLIC)
-
-#include_directories("${CMAKE_CURRENT_LIST_DIR}/.pio/libdeps/controller/U8g2/src")
-#include_directories("${CMAKE_CURRENT_LIST_DIR}/.pio/libdeps/controller/Embedded Template Library/include")
-#include_directories("${CMAKE_CURRENT_LIST_DIR}/.pio/libdeps/controller/Embedded Template Library")
-#include_directories("${CMAKE_CURRENT_LIST_DIR}/.pio/libdeps/controller/SD/src")
 
 add_subdirectory(lib)
 
-file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-        src/*.cpp)
-add_library(controller STATIC ${SRC_LIST})
+ard_lib(SD SD_path "")
+ard_lib(SPI SPI_path ${PLATFORM-PATH})
+ard_lib(Wire Wire_path ${PLATFORM-PATH})
+target_include_directories(SD PUBLIC ${SPI_path})
+
+set(u8g2_path ${ETL_PATH}/../U8g2)
+file(GLOB_RECURSE U8g2_src ${u8g2_path}/src/*.c ${u8g2_path}/src/*.cpp)
+add_library(U8g2 ${U8g2_src})
+
+target_compile_definitions(U8g2 PRIVATE U8G2_16BIT)
+target_compile_options(U8g2 PRIVATE -Wno-deprecated -Wno-deprecated-declarations)
+target_include_directories(U8g2 PUBLIC ${u8g2_path}/src)
+target_link_libraries(U8g2 PUBLIC SPI Wire)
+
+file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
+list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
+add_library(controller ${SRC_LIST})
 set(main_include src sec/ui src/gcode src/)
 target_include_directories(controller PUBLIC ${main_include})
 target_compile_definitions(controller PUBLIC LOG_DEBUG)
 
-target_link_libraries(controller STATIC core printfloat)
+target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src lib/printfloat/)
+
+
 
 #
 #SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -T ${FRAMEWORK}/system/ldscript.ld")
 
 #link_directories(BEFORE ${PLATFORMIO_HOME}/toolchain-gccarmnoneeabi/lib)
 #link_directories(${PLATFORMIO_HOME}/toolchain-gccarmnoneeabi/lib/gcc/arm-none-eabi/9.2.1)
+
+
+SET(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto")
+SET(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -std=gnu++11 ${COMMON_FLAGS}")
+SET(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects  ${COMMON_FLAGS}")
+
+#set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F446RETx_FLASH.ld)
+#set(CMAKE_EXE_LINKER_FLAGS "-Wl,-gc-sections -T ${LINKER_SCRIPT}")
+
+
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
+set(HEX_FILE ${PROJECT_NAME}.hex)
+set(BIN_FILE ${PROJECT_NAME}.bin)
+
+add_executable(${PROJECT_NAME}.elf src/main.cpp)
+target_link_libraries(${PROJECT_NAME}.elf core controller printfloat U8g2 SD SPI)
+
+add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
+        COMMAND ${OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> ${HEX_FILE}
+        COMMAND ${OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
+        COMMENT "Building ${HEX_FILE} \nBuilding ${BIN_FILE}"
+        VERBATIM)
+
 
 
 
