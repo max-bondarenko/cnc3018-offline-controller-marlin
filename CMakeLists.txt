@@ -75,11 +75,11 @@ file(GLOB ARDUINO_SRC
         ${usb_path}/*.c
         ${usb_path}/cdc/*.c
         ${stm_core_path}/*.c
+        ${stm_core_path}/*.S #startup code
         ${stm_core_path}/*.cpp
 
         "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/*.cpp"
         "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/*.c"
-        "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/*.S"
         ${PLATFORM-PATH}/system/Drivers/${variant}_HAL_Driver/Src/*.c
 
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/*.c
@@ -109,11 +109,12 @@ include_directories(
         ${PLATFORM-PATH}/system/${variant}
         "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)"
         ${PLATFORM-PATH}/system/Drivers/CMSIS/Device/ST/${variant}/Include
+        ${PLATFORM-PATH}/system/Drivers/CMSIS/Device/ST/${variant}/Source/Templates/gcc
         ${PLATFORM-PATH}/system/Drivers/${variant}_HAL_Driver/Inc
         ${CMSIS-PATH}/Core/Include
         ${PLATFORM-PATH}/libraries/SrcWrapper/src
         ${PLATFORM-PATH}/system/Drivers/${variant}_HAL_Driver/Src
-        ${PLATFORM-PATH}/libraries/SrcWrapper/src/LL ## LL refernce to _HAL_Driver/Src`s .c files
+        ${PLATFORM-PATH}/libraries/SrcWrapper/src/LL ## LL reference to _HAL_Driver/Src`s .c files
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/stm32
 )
 
@@ -128,7 +129,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_C_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-gcc")
 set(CMAKE_CXX_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-g++")
 set(CMAKE_ASM_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-g++")
-set(OBJCOPY ${TOOL-PATH}/bin/arm-none-eabi-objcopy)
+set(CMAKE_OBJCOPY ${TOOL-PATH}/bin/arm-none-eabi-objcopy)
 set(CMAKE_AR ${TOOL-PATH}/bin/arm-none-eabi-ar)
 
 
@@ -188,7 +189,7 @@ find_library(cortexM3_math
         PATHS ${CMSIS-PATH}/DSP/Lib/GCC
         REQUIRED)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map ")
 set(HEX_FILE ${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_NAME}.bin)
 
@@ -199,32 +200,30 @@ target_link_libraries(${PROJECT_NAME}.elf
         controller
         printfloat
         SD
-        Wire
-        )
+        Wire)
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
-        COMMAND ${OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> -R .eeprom ${HEX_FILE}
-        COMMAND ${OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
+        COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> -R .eeprom ${HEX_FILE}
+        COMMAND ${CMAKE_OBJCOPY} -Obinary $<TARGET_FILE:${PROJECT_NAME}.elf> ${BIN_FILE}
         BYPRODUCTS ${HEX_FILE} ${BIN_FILE}
         COMMENT "Building ${HEX_FILE} \nBuilding ${BIN_FILE}"
         VERBATIM)
 
 set(OCD_PATH ${PLATFORM-PATH}/../tool-openocd)
-add_custom_target(size
+add_custom_target(${PROJECT_NAME}-size
         COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -A -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf
         COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -B -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf
         DEPENDS ${PROJECT_NAME}.elf
         )
 
-add_custom_target(upload-ocd
+add_custom_target(${PROJECT_NAME}-upload-ocd
         COMMAND ${OCD_PATH}/bin/openocd
         -s ${OCD_PATH}/scripts
         -c \"set FLASH_SIZE 0x20000\"
         -f interface/stlink.cfg
         -c \"transport select hla_swd\"
         -f target/stm32f1x.cfg
-        -d3
-        -c \"program { ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf } verify reset; shutdown;\"
+        -d0
+        -c \"program  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf  verify reset\; shutdown\;\"
         DEPENDS ${PROJECT_NAME}.elf
         )
-
