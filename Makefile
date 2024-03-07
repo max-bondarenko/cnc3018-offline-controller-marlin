@@ -1,114 +1,37 @@
-
+#HARDWARE_MOTHERBOARD ?= 1020
 #
-#  1. Modify the line containing "ARDUINO_INSTALL_DIR" to point to the directory that
-#     contains the Arduino installation (for example, under macOS, this
-#     might be /Applications/Arduino.app/Contents/Resources/Java).
-#
-#  2. Modify the line containing "UPLOAD_PORT" to refer to the filename
-#     representing the USB or serial connection to your Arduino board
-#     (e.g. UPLOAD_PORT = /dev/tty.USB0).  If the exact name of this file
-#     changes, you can use * as a wild card (e.g. UPLOAD_PORT = /dev/tty.usb*).
-#
-#  3. Set the line containing "MCU" to match your board's processor. Set
-#     "PROG_MCU" as the AVR part name corresponding to "MCU". You can use the
-#     following command to get a list of correspondences: `avrdude -c alf -p x`
-#     Older boards are atmega8 based, newer ones like Arduino Mini, Bluetooth
-#     or Diecimila have the atmega168.  If you're using a LilyPad Arduino,
-#     change F_CPU to 8000000. If you are using Gen7 electronics, you
-#     probably need to use 20000000. Either way, you must regenerate
-#     the speed lookup table with create_speed_lookuptable.py.
-#
-#  4. Type "make" and press enter to compile/verify your program.
-#
-#  5. Type "make upload", reset your Arduino board, and press enter to
-#     upload your program to the Arduino board.
-#
-# Note that all settings at the top of this file can be overridden from
-# the command line with, for example, "make HARDWARE_MOTHERBOARD=71"
-#
-# To compile for RAMPS (atmega2560) with Arduino 1.6.9 at root/arduino you would use...
-#
-#   make ARDUINO_VERSION=10609 AVR_TOOLS_PATH=/root/arduino/hardware/tools/avr/bin/ \
-#   HARDWARE_MOTHERBOARD=1200 ARDUINO_INSTALL_DIR=/root/arduino
-#
-# To compile and upload simply add "upload" to the end of the line...
-#
-#   make ARDUINO_VERSION=10609 AVR_TOOLS_PATH=/root/arduino/hardware/tools/avr/bin/ \
-#   HARDWARE_MOTHERBOARD=1200 ARDUINO_INSTALL_DIR=/root/arduino upload
-#
-# If uploading doesn't work try adding the parameter "AVRDUDE_PROGRAMMER=wiring" or
-# start upload manually (using stk500) like so:
-#
-#   avrdude -C /root/arduino/hardware/tools/avr/etc/avrdude.conf -v -p m2560 -c stk500 \
-#   -U flash:w:applet/Marlin.hex:i -P /dev/ttyUSB0
-#
-# Or, try disconnecting USB to power down and then reconnecting before running avrdude.
-#
-
-# This defines the board to compile for (see boards.h for your board's ID)
-# 1020 in mega2560 RAMPS 1.4
-HARDWARE_MOTHERBOARD ?= 1020
-
-ifeq ($(OS),Windows_NT)
-  # Windows
-  ARDUINO_INSTALL_DIR ?= ${HOME}/Arduino
-  ARDUINO_USER_DIR ?= ${HOME}/Arduino
-else
-  UNAME_S := $(shell uname -s)
-  ifeq ($(UNAME_S),Linux)
-    # Linux
-    ARDUINO_INSTALL_DIR ?= /opt/arduino-1.8.19
-    ARDUINO_USER_DIR ?= ${HOME}/Arduino
-  endif
-  ifeq ($(UNAME_S),Darwin)
-    # Darwin (macOS)
-    ARDUINO_INSTALL_DIR ?= /Applications/Arduino.app/Contents/Java
-    ARDUINO_USER_DIR ?= ${HOME}/Documents/Arduino
-    AVR_TOOLS_PATH ?= /Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/
-  endif
-endif
+#ifeq ($(OS),Windows_NT)
+#  # Windows
+#  ARDUINO_INSTALL_DIR ?= ${HOME}/Arduino
+#  ARDUINO_USER_DIR ?= ${HOME}/Arduino
+#else
+#  UNAME_S := $(shell uname -s)
+#  ifeq ($(UNAME_S),Linux)
+#    # Linux
+#    ARDUINO_INSTALL_DIR ?= /opt/arduino-1.8.19
+#    ARDUINO_USER_DIR ?= ${HOME}/Arduino
+#  endif
+#  ifeq ($(UNAME_S),Darwin)
+#    # Darwin (macOS)
+#    ARDUINO_INSTALL_DIR ?= /Applications/Arduino.app/Contents/Java
+#    ARDUINO_USER_DIR ?= ${HOME}/Documents/Arduino
+#    AVR_TOOLS_PATH ?= /Applications/Arduino.app/Contents/Java/hardware/tools/avr/bin/
+#  endif
+#endif
 
 # Arduino source install directory, and version number
 # On most linuxes this will be /usr/share/arduino
-ARDUINO_INSTALL_DIR  ?=
-ARDUINO_VERSION      ?= 10819
+#ARDUINO_INSTALL_DIR  ?=
+#ARDUINO_VERSION      ?= 10819
 
-# The installed Libraries are in the User folder
-ARDUINO_USER_DIR ?= ${HOME}/Arduino
+TOOL_PATH = ${HOME}/.platformio/packages/toolchain-gccarmnoneeabi
+PLATFORM_PATH = ${HOME}/.platformio/packages/framework-arduinoststm32
+CMSIS_PATH = ${PLATFORM_PATH}/../framework-cmsis/CMSIS)
 
-# You can optionally set a path to the avr-gcc tools.
-# Requires a trailing slash. For example, /usr/local/avr-gcc/bin/
-AVR_TOOLS_PATH ?= $(ARDUINO_INSTALL_DIR)/hardware/tools/avr/bin/
-
-# Programmer configuration
-UPLOAD_RATE        ?= 57600
-AVRDUDE_PROGRAMMER ?= arduino
-# On most linuxes this will be /dev/ttyACM0 or /dev/ttyACM1
-UPLOAD_PORT        ?= /dev/ttyUSB0
-
-# Directory used to build files in, contains all the build files, from object
-# files to the final hex file on linux it is best to put an absolute path
-# like /home/username/tmp .
-BUILD_DIR          ?= applet
-
-# This defines whether Liquid_TWI2 support will be built
-LIQUID_TWI2        ?= 0
-
-# This defines if Wire is needed
-WIRE               ?= 1
-
-# This defines if Tone is needed (i.e., SPEAKER is defined in Configuration.h)
-# Disabling this (and SPEAKER) saves approximately 350 bytes of memory.
-TONE               ?= 0
 
 # This defines if U8GLIB is needed (may require RELOC_WORKAROUND)
 U8GLIB             ?= 0
 
-# This defines whether to include the Trinamic TMCStepper library
-TMC                ?= 0
-
-# This defines whether to include the AdaFruit NeoPixel library
-NEOPIXEL           ?= 0
 
 ############
 # Try to automatically determine whether RELOC_WORKAROUND is needed based
@@ -124,207 +47,35 @@ ifeq ($(shell test $(CC_VER) -lt 40901 && echo 1),1)
   RELOC_WORKAROUND = 1
 endif
 
-############################################################################
-# Below here nothing should be changed...
 
-# Here the Arduino variant is selected by the board type
-# HARDWARE_VARIANT = "arduino", "Sanguino", "Gen7", ...
-# MCU = "atmega1280", "Mega2560", "atmega2560", "atmega644p", ...
+BOARD = STM32F1
+VARIANT = STM32F1xx
+NAME = F103C
+SERIES = $(NAME)BT # F103CBT
+BOARD_NAME = GENERIC_$(SERIES)X) #GENERIC_F103CBTX
 
-ifeq ($(HARDWARE_MOTHERBOARD),0)
+DEFINES = ARDUINO_ARCH_STM32 \
+PLATFORMIO=60111 \
+ARDUINO=10808 \
+$(BOARD) \
+$(VARIANT) \
+$(BOARD)03xB \
+BOARD_NAME=\"$(BOARD_NAME)\" \
+ARDUINO_$(BOARD_NAME) \
+VARIANT_H=\"variant_generic.h\"
 
-  # No motherboard selected
 
-#
-# RAMPS 1.3 / 1.4 - ATmega1280, ATmega2560
-#
+HARDWARE_VARIANT ?= arduino
 
-# MEGA/RAMPS up to 1.2
-else ifeq ($(HARDWARE_MOTHERBOARD),1000)
-
-# Minitronics v1.0/1.1
-else ifeq ($(HARDWARE_MOTHERBOARD),1400)
-  MCU              ?= atmega1281
-  PROG_MCU         ?= m1281
-# Silvergate v1.0
-
-endif
-
-# Be sure to regenerate speed_lookuptable.h with create_speed_lookuptable.py
-# if you are setting this to something other than 16MHz
-# Do not put the UL suffix, it's done later on.
-# Set to 16Mhz if not yet set.
-F_CPU ?= 16000000
-
-# Set to microcontroller if IS_MCU not yet set
-IS_MCU ?= 1
-
-ifeq ($(IS_MCU),1)
-  # Set to arduino, ATmega2560 if not yet set.
-  HARDWARE_VARIANT ?= arduino
-  MCU              ?= atmega2560
-  PROG_MCU         ?= m2560
-
-  TOOL_PREFIX = avr
-  MCU_FLAGS   = -mmcu=$(MCU)
-  SIZE_FLAGS  = --mcu=$(MCU) -C
-else
-  TOOL_PREFIX = arm-none-eabi
-  CPU_FLAGS   = -mthumb -mcpu=$(MCPU)
-  SIZE_FLAGS  = -A
-endif
-
-# Arduino contained the main source code for the Arduino
-# Libraries, the "hardware variant" are for boards
-# that derives from that, and their source are present in
-# the main Marlin source directory
+CPU_FLAGS   = -mthumb -mcpu=$(MCPU)
+SIZE_FLAGS  = -A
 
 TARGET = $(notdir $(CURDIR))
 
-# VPATH tells make to look into these directory for source files,
-# there is no need to specify explicit pathnames as long as the
-# directory is added here
-
-# The Makefile for previous versions of Marlin used VPATH for all
-# source files, but for Marlin 2.0, we use VPATH only for arduino
-# library files.
-
 VPATH = .
-VPATH += $(BUILD_DIR)
 VPATH += $(HARDWARE_SRC)
 
-ifeq ($(HARDWARE_VARIANT), $(filter $(HARDWARE_VARIANT),arduino Teensy Sanguino))
-  # Old libraries (avr-core 1.6.21 < / Arduino < 1.6.8)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SPI
-  # New libraries (avr-core >= 1.6.21 / Arduino >= 1.6.8)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SPI/src
-endif
-
-ifeq ($(IS_MCU),1)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/cores/arduino
-
-  # Old libraries (avr-core 1.6.21 < / Arduino < 1.6.8)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SPI
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SoftwareSerial
-  # New libraries (avr-core >= 1.6.21 / Arduino >= 1.6.8)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SPI/src
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SoftwareSerial/src
-endif
-
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/LiquidCrystal/src
-
-ifeq ($(LIQUID_TWI2), 1)
-  WIRE   = 1
-  VPATH += $(ARDUINO_INSTALL_DIR)/libraries/LiquidTWI2
-endif
-ifeq ($(WIRE), 1)
-  # Old libraries (avr-core 1.6.21 / Arduino < 1.6.8)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/Wire
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/Wire/utility
-  # New libraries (avr-core >= 1.6.21 / Arduino >= 1.6.8)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/Wire/src
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/Wire/src/utility
-endif
-ifeq ($(NEOPIXEL), 1)
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/Adafruit_NeoPixel
-endif
-ifeq ($(U8GLIB), 1)
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/U8glib
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/U8glib/csrc
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/U8glib/cppsrc
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/U8glib/fntsrc
-endif
-ifeq ($(TMC), 1)
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/TMCStepper/src
-VPATH += $(ARDUINO_INSTALL_DIR)/libraries/TMCStepper/src/source
-endif
-
-ifeq ($(HARDWARE_VARIANT), arduino)
-  HARDWARE_SUB_VARIANT ?= mega
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/variants/$(HARDWARE_SUB_VARIANT)
-else ifeq ($(HARDWARE_VARIANT), Sanguino)
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/marlin/avr/variants/sanguino
-else ifeq ($(HARDWARE_VARIANT), archim)
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/system/libsam
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/system/CMSIS/CMSIS/Include/
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/system/CMSIS/Device/ATMEL/
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/cores/arduino
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/cores/arduino/avr
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/cores/arduino/USB
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/libraries/Wire/src
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/libraries/SPI/src
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/libraries/U8glib/src/clib
-  VPATH   += $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/variants/archim
-  LDSCRIPT = $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/variants/archim/linker_scripts/gcc/flash.ld
-  LDLIBS   = $(ARDUINO_INSTALL_DIR)/packages/ultimachine/hardware/sam/1.6.9-b/variants/archim/libsam_sam3x8e_gcc_rel.a
-else
-  HARDWARE_SUB_VARIANT ?= standard
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/$(HARDWARE_VARIANT)/variants/$(HARDWARE_SUB_VARIANT)
-endif
-
-LIB_SRC = wiring.c \
-  wiring_analog.c wiring_digital.c \
-  wiring_shift.c WInterrupts.c hooks.c
-
-ifeq ($(HARDWARE_VARIANT), archim)
-  LIB_ASRC += wiring_pulse_asm.S
-else
-  LIB_SRC += wiring_pulse.c
-endif
-
-ifeq ($(HARDWARE_VARIANT), Teensy)
-  LIB_SRC = wiring.c
-  VPATH += $(ARDUINO_INSTALL_DIR)/hardware/teensy/cores/teensy
-endif
-
-LIB_CXXSRC = WMath.cpp WString.cpp Print.cpp SPI.cpp
-
-ifeq ($(NEOPIXEL), 1)
-  LIB_CXXSRC += Adafruit_NeoPixel.cpp
-endif
-
-ifeq ($(LIQUID_TWI2), 0)
-  LIB_CXXSRC += LiquidCrystal.cpp
-else
-  LIB_SRC += twi.c
-  LIB_CXXSRC += Wire.cpp LiquidTWI2.cpp
-endif
-
-ifeq ($(WIRE), 1)
-  LIB_SRC += twi.c
-  LIB_CXXSRC +	= Wire.cpp
-endif
-
-ifeq ($(TONE), 1)
-  LIB_CXXSRC += Tone.cpp
-endif
-
-ifeq ($(U8GLIB), 1)
-  LIB_CXXSRC += U8glib.cpp
-  LIB_SRC += u8g_ll_api.c u8g_bitmap.c u8g_clip.c u8g_com_null.c u8g_delay.c \
-    u8g_page.c u8g_pb.c u8g_pb16h1.c u8g_rect.c u8g_state.c u8g_font.c \
-    u8g_font_6x13.c u8g_font_04b_03.c u8g_font_5x8.c
-endif
-
-ifeq ($(TMC), 1)
-  LIB_CXXSRC += TMCStepper.cpp COOLCONF.cpp DRV_STATUS.cpp IHOLD_IRUN.cpp \
-    CHOPCONF.cpp GCONF.cpp PWMCONF.cpp DRV_CONF.cpp DRVCONF.cpp DRVCTRL.cpp \
-    DRVSTATUS.cpp ENCMODE.cpp RAMP_STAT.cpp SGCSCONF.cpp SHORT_CONF.cpp \
-    SMARTEN.cpp SW_MODE.cpp SW_SPI.cpp TMC2130Stepper.cpp TMC2208Stepper.cpp \
-    TMC2209Stepper.cpp TMC2660Stepper.cpp TMC5130Stepper.cpp TMC5160Stepper.cpp
-endif
-
-ifeq ($(RELOC_WORKAROUND), 1)
-  LD_PREFIX=-nodefaultlibs
-  LD_SUFFIX=-lm -lgcc -lc -lgcc
-endif
-
-#Check for Arduino 1.0.0 or higher and use the correct source files for that version
-ifeq ($(shell [ $(ARDUINO_VERSION) -ge 100 ] && echo true), true)
-  LIB_CXXSRC += main.cpp
-else
-  LIB_SRC += pins_arduino.c main.c
-endif
+VPATH += $(ARDUINO_INSTALL_DIR)/hardware/arduino/avr/libraries/SPI/src
 
 FORMAT = ihex
 
@@ -338,44 +89,26 @@ DEBUG = stabs
 
 OPT = s
 
-DEFINES ?=
 
+
+TOOL_PREFIX = arm-none-eabi
 # Program settings
-CC = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-gcc
-CXX = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-g++
-OBJCOPY = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-objcopy
-OBJDUMP = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-objdump
-AR  = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-ar
-SIZE = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-size
-NM = $(AVR_TOOLS_PATH)$(TOOL_PREFIX)-nm
-AVRDUDE = avrdude
+CC = $(TOOL_PATH)$(TOOL_PREFIX)-gcc
+CXX = $(TOOL_PATH)$(TOOL_PREFIX)-g++
+OBJCOPY = $(TOOL_PATH)$(TOOL_PREFIX)-objcopy
+OBJDUMP = $(TOOL_PATH)$(TOOL_PREFIX)-objdump
+AR  = $(TOOL_PATH)$(TOOL_PREFIX)-ar
+SIZE = $(TOOL_PATH)$(TOOL_PREFIX)-size
+NM = $(TOOL_PATH)$(TOOL_PREFIX)-nm
+
 REMOVE = rm -f
 MV = mv -f
 
 # Place -D or -U options here
-CDEFS    = -DF_CPU=$(F_CPU)UL ${addprefix -D , $(DEFINES)} -DARDUINO=$(ARDUINO_VERSION)
+CDEFS    = $(CPU_FLAGS) ${addprefix -D , $(DEFINES)}
 CXXDEFS  = $(CDEFS)
 
-ifeq ($(HARDWARE_VARIANT), Teensy)
-  CDEFS      += -DUSB_SERIAL
-  LIB_SRC    += usb.c pins_teensy.c
-  LIB_CXXSRC += usb_api.cpp
 
-else ifeq ($(HARDWARE_VARIANT), archim)
-  CDEFS      += -DARDUINO_SAM_ARCHIM -DARDUINO_ARCH_SAM -D__SAM3X8E__
-  CDEFS      += -DUSB_VID=0x27B1 -DUSB_PID=0x0001 -DUSBCON
-  CDEFS      += '-DUSB_MANUFACTURER="UltiMachine"' '-DUSB_PRODUCT_STRING="Archim"'
-
-  LIB_CXXSRC += variant.cpp IPAddress.cpp Reset.cpp RingBuffer.cpp Stream.cpp \
-    UARTClass.cpp  USARTClass.cpp abi.cpp new.cpp watchdog.cpp CDC.cpp \
-    PluggableUSB.cpp USBCore.cpp
-
-  LIB_SRC    += cortex_handlers.c iar_calls_sam3.c syscalls_sam3.c dtostrf.c itoa.c
-
-  ifeq ($(U8GLIB), 1)
-    LIB_SRC += u8g_com_api.c u8g_pb32h1.c
-  endif
-endif
 
 # Add all the source directories as include directories too
 CINCS = ${addprefix -I ,${VPATH}}
@@ -385,18 +118,16 @@ CXXINCS = ${addprefix -I ,${VPATH}}
 LIBWARN = -w -Wno-packed-bitfield-compat
 
 # Compiler flag to set the C/CPP Standard level.
-CSTANDARD = -std=gnu99
+CSTANDARD = -std=gnu11
 CXXSTANDARD = -std=gnu++11
 CDEBUG = -g$(DEBUG)
 CWARN   = -Wall -Wstrict-prototypes -Wno-packed-bitfield-compat -Wno-pragmas -Wunused-parameter
 CXXWARN = -Wall                     -Wno-packed-bitfield-compat -Wno-pragmas -Wunused-parameter
 CTUNING = -fsigned-char -funsigned-bitfields -fno-exceptions \
           -fshort-enums -ffunction-sections -fdata-sections
-ifneq ($(HARDWARE_MOTHERBOARD),)
-  CTUNING += -DMOTHERBOARD=${HARDWARE_MOTHERBOARD}
-endif
 
-#CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
+
+
 CXXEXTRA = -fno-use-cxa-atexit -fno-threadsafe-statics -fno-rtti
 CFLAGS := $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CEXTRA)   $(CTUNING) $(CSTANDARD)
 CXXFLAGS :=         $(CDEFS) $(CINCS) -O$(OPT) $(CXXEXTRA) $(CTUNING) $(CXXSTANDARD)
