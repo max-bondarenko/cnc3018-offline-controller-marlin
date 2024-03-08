@@ -31,7 +31,7 @@ void MarlinDRO::begin() {
     menuItems.push_back(MenuItem::simpleItem(6, "Goto XY=0", [this](MenuItem &) {
         dev.scheduleCommand("G0 X0Y0", 7);
     }));
-    menuItems.push_back(MenuItem::simpleItem(7, "FULL STOP", [this](MenuItem &) {
+    menuItems.push_back(MenuItem::simpleItem(7, "STOP", [this](MenuItem &) {
         dev.scheduleCommand(M0_STOP_UNCONDITIONAL, 3);
     }));
     menuItems.push_back(MenuItem::simpleItem(8, "CONTINUE", [this](MenuItem &) {
@@ -42,7 +42,7 @@ void MarlinDRO::begin() {
 void MarlinDRO::drawContents() {
     const uint8_t LEN = 20;
     char str[LEN];
-    U8G2 &u8g2 = Display::u8g2;
+    U8G2 &u8g2 = display->getU8G2();
     u8g2.setFont(u8g2_font_7x13B_tr);
     const uint8_t lineWidth = u8g2.getMaxCharWidth();
     const uint8_t lineHeight = u8g2.getMaxCharHeight();
@@ -67,7 +67,7 @@ void MarlinDRO::drawContents() {
             case Mode::AXES : {
                 uint8_t lineStartPadding = 2;
                 u8g2.drawLine(sx + lineStartPadding, lineY, sx + endOfLeft, lineY);
-                drawAxisIcons(endOfLeft + 10, boxY, lineHeight);
+                drawAxisIcons(endOfLeft + 15, boxY, lineHeight);
                 break;
             }
             case Mode::SPINDLE: {
@@ -93,16 +93,16 @@ void MarlinDRO::drawContents() {
             buffer[0] = PRINTER[1]; // B
             snprintfloat(buffer + 1, 8, dev.getBedTemp(), 1, 6);
             buffer[7] = '/';
-            Display::u8g2.drawStr(0, sy, buffer);
+            u8g2.drawStr(0, sy, buffer);
             snprintf(buffer, 5, "%3d", expectedBedTemp);
-            Display::u8g2.drawStr(lineWidth * 8 + 5 , sy, buffer);
+            u8g2.drawStr(lineWidth * 8 + 5 , sy, buffer);
 
             buffer[0] = PRINTER[0]; // T
             snprintfloat(buffer + 1, 8, dev.getTemp(), 1, 6);
             buffer[7] = '/';
-            Display::u8g2.drawStr(0, sy + lineHeight, buffer);
+            u8g2.drawStr(0, sy + lineHeight, buffer);
             snprintf(buffer, 5, "%3d", expectedTemp);
-            Display::u8g2.drawStr(lineWidth * 8 + 5, sy + lineHeight, buffer);
+            u8g2.drawStr(lineWidth * 8 + 5, sy + lineHeight, buffer);
 
             drawAxis(AXIS[3], dev.getE(), 0, sy + lineHeight * 2);
             sx_start_right += 14; //padding for spindle/feed values
@@ -146,7 +146,7 @@ void MarlinDRO::drawContents() {
 }
 
 void MarlinDRO::drawAxisIcons(uint8_t sx, uint8_t sy, const uint8_t lineHeight) const {
-    U8G2 &u8g2 = Display::u8g2;
+    U8G2 &u8g2 = display->getU8G2();
     constexpr uint8_t ICONS_WIDTH = 9;
     // arrow lr 4 pixel less than rest icons
     constexpr uint8_t ICON_TOP_PADDING = 4;
@@ -187,7 +187,7 @@ void MarlinDRO::onButton(int bt, Display::ButtonEvent evt) {
         } else if (evt == Evt::DOWN) {
             buttonWasPressedWithShift = true;
         }
-        setDirty();
+        doDirty();
         return;
     }
 // ===== not BT_CENTER
@@ -197,6 +197,7 @@ void MarlinDRO::onButton(int bt, Display::ButtonEvent evt) {
             break;
         case Mode::SPINDLE:
             onButtonShift(bt, evt);
+            dev.adjustSpindle(dev.getSpindleValues().at(cSpindleVal));
             break;
         case Mode::TEMP:
             onButtonTemp(bt, evt);
@@ -255,14 +256,6 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
             default:;
         }
         dev.tempChange(expectedTemp);
-        setDirty();
+        doDirty();
     }
-}
-
-void MarlinDRO::drawAxis(char axis, float value, int x, int y) {
-    static const int LEN = 8;
-    static char buffer[LEN];
-    buffer[0] = axis;
-    snprintfloat(buffer + 1, LEN - 1, value, 2, 7);
-    Display::u8g2.drawStr(x, y, buffer);
 }

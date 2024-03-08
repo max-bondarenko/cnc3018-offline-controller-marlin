@@ -64,6 +64,8 @@ add_compile_definitions(BOARD_NAME=\"${board_name}\")
 add_compile_definitions(ARDUINO_${board_name}) #ARDUINO_GENERIC_F103CBTX
 add_compile_definitions(VARIANT_H=\"variant_generic.h\")
 
+add_compile_definitions(SERIAL_RX_BUFFER_SIZE=256)
+
 set(core_path ${PLATFORM-PATH}/cores/arduino)
 set(stm_core_path ${core_path}/stm32)
 set(usb_path ${stm_core_path}/usb)
@@ -119,7 +121,7 @@ include_directories(
 )
 
 set(LINKER_SCRIPT "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/ldscript.ld")
-target_compile_options(core PRIVATE -Wdeprecated-declarations)
+target_compile_options(core PRIVATE -Wno-deprecated-declarations)
 target_link_libraries(core)
 
 
@@ -132,6 +134,16 @@ set(CMAKE_ASM_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-g++")
 set(CMAKE_OBJCOPY ${TOOL-PATH}/bin/arm-none-eabi-objcopy)
 set(CMAKE_AR ${TOOL-PATH}/bin/arm-none-eabi-ar)
 
+set(CMAKE_C_FLAGS_DEBUG "-g -Os") # does not fit into flash
+set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+
+set(CMAKE_C_FLAGS_RELEASE -Os)
+set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+
+set(COMMON_FLAGS "-Wall -ffunction-sections -fdata-sections -flto -mcpu=cortex-m3 -mthumb")
+set(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit -fno-rtti -std=gnu++11 ${COMMON_FLAGS}")
+set(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects -nostdlib --param max-inline-insns-single=500 ${COMMON_FLAGS}")
+set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
 
 add_subdirectory(lib)
 
@@ -154,17 +166,13 @@ list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
 add_library(controller ${SRC_LIST})
 set(main_include src sec/ui src/gcode src/devices)
 target_include_directories(controller PUBLIC ${main_include})
-target_compile_definitions(controller PUBLIC LOG_DEBUG)
+
+if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+    target_compile_definitions(controller PUBLIC LOG_DEBUG)
+endif ()
 
 target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src lib/printfloat)
 target_link_libraries(controller PUBLIC U8g2)
-
-set(COMMON_FLAGS "-Os -Wall -ffunction-sections -fdata-sections -flto -mcpu=cortex-m3 -mthumb")
-set(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit -fno-rtti -std=gnu++11 ${COMMON_FLAGS}")
-set(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects -nostdlib --param max-inline-insns-single=500 ${COMMON_FLAGS}")
-set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
-
-set(search_whole_arch)#"-Wl,--whole-archive")
 
 if (EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT "-T ${LINKER_SCRIPT}")
@@ -180,8 +188,9 @@ ${LINKER_SCRIPT} \
 -Wl,--warn-common \
 --specs=nosys.specs")
 
-add_link_options(-Wl,--defsym=LD_MAX_SIZE=131072
-        -Wl,--defsym=LD_MAX_DATA_SIZE=20480
+add_link_options(
+        -Wl,--defsym=LD_MAX_SIZE=128K
+        -Wl,--defsym=LD_MAX_DATA_SIZE=20K
         -Wl,--defsym=LD_FLASH_OFFSET=0x0)
 
 find_library(cortexM3_math
@@ -224,6 +233,6 @@ add_custom_target(${PROJECT_NAME}-upload-ocd
         -c \"transport select hla_swd\"
         -f target/stm32f1x.cfg
         -d0
-        -c \"program  ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf  verify reset\; shutdown\;\"
+        -c \"program ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf verify reset\; shutdown\;\"
         DEPENDS ${PROJECT_NAME}.elf
         )

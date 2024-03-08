@@ -5,14 +5,13 @@
 
 class GrblDevice : public GCodeDevice {
 public:
-    const etl::vector<u_int16_t, sizeof(u_int16_t) * 5> SPINDLE_VALS{0, 1, 10, 100, 1000};
+    const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 10, 100, 1000};
 
     enum class GrblStatus {
         Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
     };
 
-    GrblDevice(WatchedSerial* s, Job* job) :
-            GCodeDevice(s, job) {
+    GrblDevice(WatchedSerial* s, Job* job) : GCodeDevice(s, job) {
         canTimeout = false;
     };
 
@@ -25,7 +24,7 @@ public:
     void begin() override {
         GCodeDevice::begin();
         schedulePriorityCommand("$I"); // TODO actual depends on realisation see inside fn
-        requestStatusUpdate(); //TODO how this all begin works in real GRBL ???
+        requestStatusUpdate();
     }
 
     void reset() override {

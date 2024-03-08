@@ -4,14 +4,14 @@
 #include "GCodeDevice.h"
 #include "gcode/gcode.h"
 #include "etl/deque.h"
-#include <string>
+#include "WString.h"
 
 
 class MarlinDevice : public GCodeDevice {
 public:
     constexpr static uint32_t BUFFER_LEN = 255;
     constexpr static uint32_t SHORT_BUFFER_LEN = 100;
-    const etl::vector<u_int16_t, sizeof(u_int16_t) * 5> SPINDLE_VALS{0, 1, 64, 128, 255};
+    const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 64, 128, 255};
 
     static void sendProbe(Stream& serial);
 
@@ -20,9 +20,6 @@ public:
 
     //// CONSTRUCTORS
     MarlinDevice(WatchedSerial* s, Job* job);
-
-    MarlinDevice() : GCodeDevice() {
-    }
 
     virtual ~MarlinDevice() {}
 
@@ -56,6 +53,10 @@ public:
 
     float getBedTemp() const { return bedTemp; }
 
+    /// marlin does not give current spindle value
+    /// use this to set value from DRO to see current set value.
+    void adjustSpindle(uint32_t val) { spindleVal = val; }
+
 protected:
     void trySendCommand() override;
 
@@ -64,7 +65,8 @@ protected:
 private:
     etl::deque<String, 10> outQueue;
 
-    float hotendTemp = 0.0, bedTemp = 0.0;
+    float hotendTemp = 0.0,
+            bedTemp = 0.0;
     size_t hotendPower = 0;
     size_t bedPower = 0;
     float hotendRequestedTemp = 0.0,

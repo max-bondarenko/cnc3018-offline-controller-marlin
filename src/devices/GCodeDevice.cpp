@@ -1,8 +1,6 @@
 #include "constants.h"
 #include "GCodeDevice.h"
 
-// utils for string was here
-
 bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
     if (lastStatus >= DeviceStatus::ALARM)
         return false;
@@ -12,7 +10,7 @@ bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
         return false;
     if (curUnsentCmdLen != 0)
         return false;
-    LOGF("< '%s' \n",cmd);
+    LOGF("< '%s' \n", cmd);
     memcpy(curUnsentCmd, cmd, len);
     curUnsentCmdLen = len;
     return true;
@@ -33,11 +31,11 @@ bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
 
 void GCodeDevice::step() {
     readLockedStatus();
-    if(lastStatus == DeviceStatus::ALARM){
+    if (lastStatus == DeviceStatus::ALARM) {
         cleanupQueue();
     } else if (
             (!xoffEnabled || !xoff)
-            && !txLocked ) {
+            && !txLocked) {
         // no check for queued commands.
         // do it inside trySend
         trySendCommand();
@@ -47,8 +45,9 @@ void GCodeDevice::step() {
 
     if (nextStatusRequestTime != 0 && int32_t(millis() - nextStatusRequestTime) > 0) {
         requestStatusUpdate();
-        nextStatusRequestTime = millis() + STATUS_REQUEST_INTERVAL;
+        nextStatusRequestTime = millis() + REFRESH_INTL - 9;
     }
+    notify_observers(DeviceStatusEvent{lastStatus,lastResponse});
 }
 
 void GCodeDevice::begin() {
@@ -61,7 +60,7 @@ void GCodeDevice::begin() {
 void GCodeDevice::readLockedStatus() {
     bool t = printerSerial->isLocked(true);
     if (t != txLocked)
-        notify_observers(DeviceStatusEvent{});
+        lastStatus = DeviceStatus::LOCKED;
     txLocked = t;
 }
 
@@ -74,10 +73,9 @@ void GCodeDevice::checkTimeout() {
     if (!isRxTimeoutEnabled()) return;
     if (millis() > serialRxTimeout) {
         LOGLN("GCodeDevice::checkTimeout fired");
-        connected = false;
+        lastStatus = DeviceStatus::DISCONNECTED;
         cleanupQueue();
         disarmRxTimeout();
-        notify_observers(DeviceStatusEvent{});
     }
 }
 
@@ -147,5 +145,4 @@ void GCodeDevice::receiveResponses() {
             respLen = 0;
         }
     }
-
 }

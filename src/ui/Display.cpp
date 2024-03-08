@@ -1,36 +1,34 @@
-#include "Display.h"
 #include <Arduino.h>
 #include "Screen.h"
-
-#include "devices/GrblDevice.h"
+#include "Display.h"
 
 constexpr int VISIBLE_MENUS = 5;
 
-Display* Display::inst = nullptr;
-
 uint16_t Display::buttStates;
 
-Display* Display::getDisplay() { return inst; }
+Display::Display(Job& _job, U8G2& _u8g2) : u8g2(_u8g2), job(_job), dirty{true}, selMenuItem{0}, menuShown{false} {}
 
 void Display::setScreen(Screen* screen) {
+    screen->setDisplay(this);
+
     if (cScreen != nullptr)
         cScreen->onHide();
     cScreen = screen;
-    if (cScreen != nullptr)
-        cScreen->onShow();
+    cScreen->onShow();
     selMenuItem = 0;
     menuShown = false;
-    dirty = true;
+    doDirty();
 }
 
-void Display::setDevice(GCodeDevice* dev_) {
-    dev = dev_;
+void Display::begin() {
+    doDirty();
 }
 
 void Display::step() {
     if (cScreen != nullptr)
         cScreen->step();
-    draw();
+    if (dirty)
+        draw();
 }
 
 void Display::ensureSelMenuVisible() {
@@ -42,10 +40,6 @@ void Display::ensureSelMenuVisible() {
 }
 
 void Display::processInput() {
-    processButtons();
-}
-
-void Display::processButtons() {
     decltype(buttStates) changed = buttStates ^ prevStates;
 
     if (cScreen == nullptr) return;
@@ -55,7 +49,7 @@ void Display::processButtons() {
         if (bitRead(changed, i)) {
             if (i == BT_STEP && down && !cScreen->menuItems.empty()) {
                 menuShown = !menuShown;
-                setDirty();
+                doDirty();
             } else {
                 evt = down ? ButtonEvent::DOWN : ButtonEvent::UP;
                 if (down) menuShownWhenDown = menuShown;
@@ -90,34 +84,31 @@ void Display::processMenuButton(uint8_t bt, ButtonEvent evt) {
         if (bt == BT_UP) {
             selMenuItem = selMenuItem > 0 ? selMenuItem - 1 : menuLen - 1;
             ensureSelMenuVisible();
-            setDirty();
+            doDirty();
         }
         if (bt == BT_DOWN) {
             selMenuItem = (selMenuItem + 1) % menuLen;
             ensureSelMenuVisible();
-            setDirty();
+            doDirty();
         }
         if (bt == BT_CENTER) {
             MenuItem& item = cScreen->menuItems[selMenuItem];
             if (!item.togglable) { item.on = !item.on; }
             item.cmd(item);
             menuShown = false;
-            setDirty();
+            doDirty();
         }
     }
 }
 
 void Display::draw() {
-    if (!dirty)
-        return;
     u8g2.clearBuffer();
-    if (cScreen != nullptr)
+    if (cScreen != nullptr) {
         cScreen->drawContents();
-
-    drawStatusBar();
-    if (menuShown)
-        drawMenu();
-
+        drawStatusBar();
+        if (menuShown)
+            drawMenu();
+    }
     u8g2.sendBuffer();
     dirty = false;
 }
@@ -129,23 +120,25 @@ void Display::drawStatusBar() {
     constexpr int LEN = 26;
     char str[LEN];
 
-    if (dev == nullptr)
-        return;
-
     u8g2.setFont(u8g2_font_nokiafc22_tr);
     u8g2.setDrawColor(1);
     // allow 2 lines in status bar
     constexpr int fH = 8; // 8x8
     int x = 2, y = -1;
 
-    if (!dev->isConnected()) {
-        u8g2.drawGlyph(x, y, 'X');
-    } else if (dev->isLocked()) {
-        u8g2.drawXBM(x, 0, locked_width, locked_height, (const uint8_t*) locked_bits);
-    } else {
-        u8g2.drawXBM(x, 0, connected_width, connected_height, (const uint8_t*) connected_bits);
+    switch (devStatus) {
+        case DeviceStatus::NONE:
+            break;
+        case DeviceStatus::DISCONNECTED :
+            u8g2.drawGlyph(x, y, 'X');
+            break;
+        case DeviceStatus::LOCKED:
+            u8g2.drawXBM(x, 0, locked_width, locked_height, (const uint8_t*) locked_bits);
+            break;
+        default:
+            u8g2.drawXBM(x, 0, connected_width, connected_height, (const uint8_t*) connected_bits);
     }
-    memcpy(str, dev->getStatusStr(), LEN);
+    memcpy(str, devStatusString.c_str(), LEN);
     str[LEN - 1] = 0;
     u8g2.drawStr(LEN, y, str);
     //job status
@@ -166,7 +159,6 @@ void Display::drawStatusBar() {
 }
 
 void Display::drawMenu() {
-    if (cScreen == nullptr) return;
     u8g2.setFont(u8g2_font_nokiafc22_tr);
 
     const size_t len = cScreen->menuItems.size();

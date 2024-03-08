@@ -7,7 +7,7 @@
 #include "etl/message.h"
 #include "etl/array.h"
 
-#include <string>
+#include "WString.h"
 
 const etl::message_router_id_t JOB_BUS_NUMBER = 1;
 

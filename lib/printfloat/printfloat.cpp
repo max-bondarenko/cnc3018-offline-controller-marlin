@@ -2,8 +2,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
-//#include <ctype.h>
+#include "WString.h"
 
 
 static const unsigned int pows[] = {1, 10, 100, 1000, 10000, 100000};

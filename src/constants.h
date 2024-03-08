@@ -1,7 +1,3 @@
-//
-// Created by lima on 12/10/23.
-//
-
 #ifndef CNC_3018_CONSTANTS_H
 #define CNC_3018_CONSTANTS_H
 
@@ -31,11 +27,29 @@ constexpr uint32_t PIN_DET      = PC13;    ///< 0V=no USB on CNC, 1=CNC connecte
 
 constexpr char AXIS[] =     {'X', 'Y', 'Z' , 'E'};
 constexpr char AXIS_WCS[] = {'x', 'y', 'z'};
-constexpr char PRINTER[] =  { 'T', 'B'};
+constexpr char PRINTER[] =  {'T', 'B'};
 
 //================ PROTOCOL ==============
 constexpr char XON =  0x11;
 constexpr char XOFF = 0x13;
+
+constexpr uint32_t buttPins[N_BUTT] = {
+        PIN_BT_ZDOWN,
+        PIN_BT_ZUP,
+
+        PIN_BT_R,
+        PIN_BT_L,
+        PIN_BT_CENTER,
+        PIN_BT_UP,
+        PIN_BT_DOWN,
+
+        PIN_BT_STEP
+};
+
+constexpr size_t PROBE_INTERVAL = 600;
+constexpr size_t REFRESH_INTL = 500;
+constexpr size_t KEEPALIVE_INTERVAL = 5000;    // Marlin defaults to 2 seconds, get a little of margin
+constexpr uint8_t DISPLAY_LINE_HEIGHT = 11;
 
 
 #endif //CNC_3018_CONSTANTS_H
