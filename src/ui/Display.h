@@ -1,18 +1,16 @@
 #pragma once
 
 #include <Arduino.h>
-#include "constants.h"
-
-#include "devices/GCodeDevice.h"
-#include "Job.h"
-
 #include <U8g2lib.h>
-
 #include <etl/vector.h>
 #include <functional>
 
-class Screen;
+#include "constants.h"
+#include "devices/GCodeDevice.h"
+#include "Job.h"
 
+
+class Screen;
 
 struct MenuItem {
     int16_t id;
@@ -20,10 +18,9 @@ struct MenuItem {
     bool togglable;
     bool on;
     uint8_t* font;
-    using ItemFunc = std::function<void(MenuItem&)>;
-    ItemFunc cmd;
+    std::function<void(MenuItem&)> cmd;
 
-    static MenuItem simpleItem(int16_t id, const char* text, ItemFunc func) {
+    static MenuItem simpleItem(int16_t id, const char* text, std::function<void(MenuItem&)> func) {
         return MenuItem{id, text, false, false, nullptr, func};
     }
 };
@@ -33,9 +30,6 @@ class Display : public JobObserver, public DeviceObserver {
 public:
     static constexpr int STATUS_BAR_HEIGHT = 16;
     static constexpr int HOLD_COUNT = 30; // x10 = ms
-
-    static U8G2& u8g2;
-
     enum {
         BT_ZDOWN = 0,  //
         BT_ZUP,        //
@@ -56,25 +50,31 @@ public:
         UP, DOWN, HOLD
     };
 
-    Display(Job& job) : job(job), dirty{true}, selMenuItem{0}, menuShown{false} {
-        assert(inst == nullptr);
-        inst = this;
-    }
+    Display(Job& _job, U8G2& _u8g2);
 
-    ~Display() {}
+    ~Display() final {}
 
-    void setDirty(bool fdirty = true) { dirty = fdirty; }
+    void doDirty() { dirty = true; }
 
     void notification(const DeviceStatusEvent& e) override {
-        setDirty();
+        if (devStatus != e.status) {
+            devStatus = e.status;
+            devStatusString = e.str;
+        }
+        doDirty();
     }
 
     void notification(const JobStatusEvent e) override {
         // TODO use events to update screen
-        setDirty();
+        doDirty();
     }
 
-    void begin() { dirty = true; }
+    U8G2& getU8G2() const {
+        return u8g2;
+    }
+
+    void begin();
+
     ///
     /// call in each main loop step
     ///
@@ -84,28 +84,22 @@ public:
 
     void setScreen(Screen* screen);
 
-    void setDevice(GCodeDevice* dev);
-
-    static Display* getDisplay();
-
     void processInput();
 
 private:
-    static Display* inst;
-    Screen* cScreen;
-    GCodeDevice* dev;
+    U8G2& u8g2;
     Job& job;
-
+    Screen* cScreen;
     bool dirty;
     size_t selMenuItem = 0;
     bool menuShown;
     bool menuShownWhenDown;
+    String devStatusString;
+    size_t devStatus;
 
     decltype(buttStates) prevStates;
 
     int16_t holdCounter[N_BUTTONS];
-
-    void processButtons();
 
     void processMenuButton(uint8_t bt, ButtonEvent evt);
 

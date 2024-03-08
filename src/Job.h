@@ -201,14 +201,14 @@ public:
                 break;
             case StateId::WAIT_RESP:
                 switch (fsm->dev->getLastStatus()) {
-                    case GCodeDevice::DeviceStatus::OK:
+                    case DeviceStatus::OK:
                         fsm->receive(AckMessage{});
                         break;
-                    case GCodeDevice::DeviceStatus::DEV_ERROR:
+                    case DeviceStatus::DEV_ERROR:
                         fsm->receive(CompleteMessage{});
                         break;
-                    case GCodeDevice::DeviceStatus::BUSY:
-                    case GCodeDevice::DeviceStatus::WAIT:
+                    case DeviceStatus::BUSY:
+                    case DeviceStatus::WAIT:
                     default:
                         break;
                 }

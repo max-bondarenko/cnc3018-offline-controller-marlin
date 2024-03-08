@@ -1,28 +1,30 @@
 #pragma once
+
 #include <SD.h>
 #include <functional>
 #include <etl/vector.h>
 
 #include "Screen.h"
+#include "debug.h"
 
 using CallbackFn = std::function<void(bool, const char*)>;
 
-class FileChooser: public Screen {
+class FileChooser : public Screen {
 public:
 
-    void begin() override;    
+    void begin() override;
 
     void onShow() override;
 
-    void setCallback(const CallbackFn &cb) {
+    void setCallback(const CallbackFn& cb) {
         returnCallback = cb;
     }
+
 protected:
 
     void drawContents() override;
 
     void onButton(int bt, Evt evt) override;
-
 
 private:
     CallbackFn returnCallback;
@@ -35,10 +37,9 @@ private:
     etl::vector<String, MAX_FILES> files;
     etl::vector<String, 5> trail;
 
-    void loadDirContents(File newDir, int startingIndex=0) ;
+    void loadDirContents(File newDir, int startingIndex);
 
-    bool isGCode(const String &s);
+    bool isGCode(const String& s);
 
     String currentPath();
-
 };

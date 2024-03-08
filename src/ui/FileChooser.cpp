@@ -1,7 +1,5 @@
 #include "FileChooser.h"
 
-#include "../debug.h"
-
 constexpr size_t FileChooser::MAX_FILES;
 constexpr size_t FileChooser::VISIBLE_FILES;
 
@@ -14,10 +12,10 @@ void FileChooser::onShow() {
         LOGF("SD failed\n");
         return;
     }
-    loadDirContents(SD.open("/"));
+    loadDirContents(SD.open("/"), 0);
 }
 
-bool FileChooser::isGCode(const String &s) {
+bool FileChooser::isGCode(const String& s) {
     int p = s.lastIndexOf('.');
     if (p == -1)
         return true; // files without extension can be printed
@@ -55,43 +53,41 @@ void FileChooser::loadDirContents(File newDir, int startingIndex) {
             } else {
                 if (isGCode(name)) { files.push_back(name); }
             }
-
-            if (i == MAX_FILES) break;
+            if (i == MAX_FILES)
+                break;
         }
         i++;
         file.close();
     }
 
     LOGF("file count %d\n", files.size());
-    setDirty();
+    doDirty();
 }
 
 void FileChooser::drawContents() {
-    U8G2 &u8g2 = Display::u8g2;
+    U8G2& u8g2 = display->getU8G2();
     u8g2.setDrawColor(1);
     u8g2.setFont(u8g2_font_nokiafc22_tr);
 
-    int y0 = Display::STATUS_BAR_HEIGHT / 2,
-            y = Display::STATUS_BAR_HEIGHT,
-            h = 10;
+    int y0 = Display::STATUS_BAR_HEIGHT / 2;
+    int y = Display::STATUS_BAR_HEIGHT;
+    int h = 10;
 
     if (!haveCard) {
         u8g2.drawStr(2, y0, "NO CARD");
         u8g2.drawStr(2, y, "Press OK to refresh");
+        u8g2.drawStr(2, y + h, "Press LEFT to go back");
         return;
     }
-
-    const char *t = cDir.name();
-
+    const char* t = cDir.name();
     u8g2.drawStr(2, y0, t);
-
     const int visibleLines = min(VISIBLE_FILES, files.size() - topLine);
     for (int i = 0; i < visibleLines; i++) {
         if (i + topLine == selLine) {
             u8g2.setDrawColor(1);
             u8g2.drawBox(0, y, u8g2.getWidth(), h);
             u8g2.setDrawColor(0);
-        } else 
+        } else
             u8g2.setDrawColor(1);
 
         u8g2.drawStr(2, y, files[topLine + i].c_str());
@@ -106,7 +102,7 @@ void FileChooser::onButton(int bt, Evt evt) {
     if (!haveCard) {
         if (bt == Display::BT_CENTER) {
             onShow();
-            setDirty();
+            doDirty();
         } else if (bt == Display::BT_L) {
             returnCallback(false, nullptr);
         }
@@ -120,21 +116,19 @@ void FileChooser::onButton(int bt, Evt evt) {
                     topLine -= VISIBLE_FILES - 1;
                     if (topLine < 0)topLine = 0;
                 }
-                setDirty();
+                doDirty();
             }
             break;
         case Display::BT_DOWN:
             if (selLine < files.size() - 1) {
                 selLine++;
                 if (selLine >= topLine + VISIBLE_FILES) topLine += VISIBLE_FILES - 1;
-                setDirty();
+                doDirty();
             }
             break;
         case Display::BT_L: {
             String newPath = cDir.name();
-
             if (trail.empty()) {
-                LOGF("onButtonPressed(BT2): quit\n");
                 if (returnCallback)
                     returnCallback(false, "");
             } else {
@@ -142,10 +136,7 @@ void FileChooser::onButton(int bt, Evt evt) {
                 trail.pop_back();
                 newPath = currentPath();
                 LOGF("onButtonPressed(BT2): moving to %s\n", newPath.c_str());
-                // int p = newPath.lastIndexOf("/");
-                // if(p==-1) newPath="../"; else
-                // if(p==0) newPath="/"; else newPath = newPath.substring(0, p);
-                loadDirContents(SD.open(newPath));
+                loadDirContents(SD.open(newPath), 0);
             }
             break;
         }
@@ -180,7 +171,7 @@ void FileChooser::onButton(int bt, Evt evt) {
 
 String FileChooser::currentPath() {
     String ret;
-    for (const String &p: trail) {
+    for (const String& p: trail) {
         ret += "/" + p;
     }
     LOGF("currentPath = %s\n", ret.c_str());

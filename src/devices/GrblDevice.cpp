@@ -68,8 +68,6 @@ void GrblDevice::trySendCommand() {
 
 void GrblDevice::tryParseResponse(char* resp, size_t len) {
     if (startsWith(resp, "ok")) {
-        connected = true;
-        lastResponse = resp;
         lastStatus = DeviceStatus::OK;
     } else if (startsWith(resp, "<")) {
         parseStatus(resp + 1);
@@ -77,7 +75,6 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
     } else if (startsWith(resp, "error")) {
         LOGF("ERR '%s'\n", resp);
         lastStatus = DeviceStatus::DEV_ERROR;
-        notify_observers(DeviceStatusEvent{});
         lastResponse = resp;
     } else if (startsWith(resp, "ALARM:")) {
         LOGF("ALARM '%s'\n", resp);
@@ -91,10 +88,11 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
         lastResponse = resp + 5;
         // this is the first message after reset
         lastStatus = DeviceStatus::MSG;
-
+    }
+    if (lastStatus <= DeviceStatus::MSG){
+        lastResponse = getStatusStr();
     }
     LOGF("> '%s'\n",  resp);
-    notify_observers(DeviceStatusEvent{});
 }
 
 void mystrcpy(char* dst, const char* start, const char* end) {
@@ -184,8 +182,6 @@ void GrblDevice::parseStatus(char* v) {
         y -= ofsY;
         z -= ofsZ;
     }
-
-    notify_observers(DeviceStatusEvent{});
 }
 
 

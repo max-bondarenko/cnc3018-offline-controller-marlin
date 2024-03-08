@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.h"
 #include "GCodeDevice.h"
 #include "MarlinDevice.h"
 #include "GrblDevice.h"
@@ -7,15 +8,14 @@
 
 #include "debug.h"
 
-const int PROBE_INTERVAL = 600;
-const uint8_t N_SERIAL_BAUDS = 4;
-const uint8_t N_DEVICES = 2;
-const uint8_t N_ATTEMPTS = 3;
-const uint32_t serialBauds[] = {57600, 115200, 9600, 250000};
+constexpr static uint8_t N_DEVICES = 2;
+constexpr static uint8_t N_ATTEMPTS = 3;
+constexpr static uint32_t serialBauds[] = {57600, 115200, 9600, 250000};
+constexpr static uint32_t N_SERIAL_BAUDS = sizeof(serialBauds) / sizeof(serialBauds[0]);
 const char* deviceNames[] = {"grbl\0", "marlin\0"};
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-class GrblDetector {
+class DeviceDetector {
 public:
     static void init() {
         nextProbeTime = 0;
@@ -23,6 +23,7 @@ public:
         cAttempt = 0;
         cSpeed = 0;
         cDev = 0;
+        deviceName = deviceNames[cDev];
         serialBaud = serialBauds[cSpeed];
     }
 
@@ -41,12 +42,11 @@ public:
 
     static uint32_t serialBaud;
     static const char* deviceName;
-
+    static uint8_t cAttempt;
 private:
-
     static uint8_t cSpeed;
     static uint8_t cDev;
-    static uint8_t cAttempt;
+
     static int cResult;
     static uint32_t nextProbeTime;
 
@@ -59,7 +59,7 @@ private:
         }
         printerSerial.end();
         printerSerial.begin(serialBaud);
-        LOGF("Send");
+        LOGLN("Send");
         switch (cDev) {
             case 0:
                 GrblDevice::sendProbe(printerSerial);
@@ -67,7 +67,6 @@ private:
             default :
                 MarlinDevice::sendProbe(printerSerial);
         }
-
         cAttempt++;
         if (cAttempt == N_ATTEMPTS) {
             cAttempt = 0;
@@ -82,7 +81,7 @@ private:
     }
 
     static void collectResponse() {
-        static const size_t MAX_LINE = 200; // M115 is far longer than 100
+        constexpr size_t MAX_LINE = 200; // M115 is far longer than 100
         static char resp[MAX_LINE + 1];
         static size_t respLen;
 
@@ -118,24 +117,23 @@ private:
 
 };
 
-// friend funcs for Detector Screen
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-uint32_t GrblDetector<T, printerSerial, createDevice>::serialBaud;
+uint32_t DeviceDetector<T, printerSerial, createDevice>::serialBaud;
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-const char* GrblDetector<T, printerSerial, createDevice>::deviceName;
+const char* DeviceDetector<T, printerSerial, createDevice>::deviceName;
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-uint8_t GrblDetector<T, printerSerial, createDevice>::cSpeed;
+uint8_t DeviceDetector<T, printerSerial, createDevice>::cSpeed;
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-uint8_t  GrblDetector<T, printerSerial, createDevice>::cAttempt;
+uint8_t  DeviceDetector<T, printerSerial, createDevice>::cAttempt;
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-int  GrblDetector<T, printerSerial, createDevice>::cResult;
+int  DeviceDetector<T, printerSerial, createDevice>::cResult;
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-uint8_t  GrblDetector<T, printerSerial, createDevice>::cDev;
+uint8_t  DeviceDetector<T, printerSerial, createDevice>::cDev;
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
-uint32_t  GrblDetector<T, printerSerial, createDevice>::nextProbeTime;
+uint32_t  DeviceDetector<T, printerSerial, createDevice>::nextProbeTime;

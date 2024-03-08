@@ -8,7 +8,7 @@ void GrblDRO::begin() {
     // menuItems.push_back( MenuItem::simpleItem(3, "Update", [this](MenuItem& m){
     //     enableRefresh(!isRefreshEnabled() );
     //     m.text = this->isRefreshEnabled() ? "Don't update" : "Update";
-    //     setDirty(true);
+    //     doDirty(true);
     // }) );
 
     menuItems.push_back(MenuItem::simpleItem(3, "Home ($H)", [this](MenuItem &) {

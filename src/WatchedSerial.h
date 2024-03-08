@@ -2,16 +2,17 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
+#include "debug.h"
 
 class WatchedSerial : public Stream {
 private:
-    HardwareSerial &upstream;
+    HardwareSerial& upstream;
     int pin;
     uint32_t lastUpdate;
     constexpr static uint32_t CACHE_DURATION = 50;
     bool cachedLocked;
 public:
-    WatchedSerial(HardwareSerial &s, int pin) : upstream(s), pin(pin) {}
+    WatchedSerial(HardwareSerial& s, int pin) : upstream(s), pin(pin) {}
 
     void begin(size_t baud) {
         upstream.begin(baud);
@@ -27,12 +28,12 @@ public:
         return upstream.write(v);
     };
 
-    size_t write(const uint8_t *buffer, size_t size) override {
+    size_t write(const uint8_t* buffer, size_t size) override {
         if (isLocked()) return 0;
         return upstream.write(buffer, size);
     }
 
-    int availableForWrite(void) override {
+    int availableForWrite() override {
         if (isLocked()) { return 0; }
         return upstream.availableForWrite();
     };
@@ -47,7 +48,7 @@ public:
 
     bool isLocked(bool forceRead = false) {
         if (forceRead || int32_t(millis() - lastUpdate) > (int32_t) CACHE_DURATION) {
-            // todo read Detector pin
+            //works. react on usb plug into woodpecker mini-usb slot
             cachedLocked = digitalRead(pin) == HIGH;
             lastUpdate = millis();
         }

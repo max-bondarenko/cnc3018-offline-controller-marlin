@@ -2,57 +2,53 @@
 
 #include <Arduino.h>
 #include <etl/vector.h>
+#include "WString.h"
 #include <etl/observer.h>
 #include "WatchedSerial.h"
-#include "CommandQueue.h"
 
 class Job;
 
 #include "util.h"
-
 #include "debug.h"
 
-#define KEEPALIVE_INTERVAL 5000    // Marlin defaults to 2 seconds, get a little of margin
-#define STATUS_REQUEST_INTERVAL  500
 
 // TODO LIST
 // TODO 1 switch to states from flags for protocol state  90%
-// TODO 2 make observable events meaningful
+// TODO 2 make observable events meaningful 50%
+// TODO 3 check RxTimeout
 
-constexpr uint8_t MAX_DEVICE_OBSERVERS = 3;
-
+///
+/// Device abstraction statuses.
+/// Real Device can have different statuses,
+/// but they can be mapped to this.
+/// Use it for general communication with DRO and Job.
+struct DeviceStatus {
+    enum {
+        NONE,
+        DISCONNECTED,
+        LOCKED,
+        OK,
+        MSG,
+        RESEND,
+        // -------- WAIT states
+        WAIT = 10,
+        BUSY,
+        // -------- Error states
+        ALARM = 100,
+        DEV_ERROR,
+    };
+};
 struct DeviceStatusEvent {
+    size_t status;
+    String str;
 };
 
 using DeviceObserver = etl::observer<const DeviceStatusEvent&>;
 
-class GCodeDevice : public etl::observable<DeviceObserver, MAX_DEVICE_OBSERVERS> {
+class GCodeDevice : public etl::observable<DeviceObserver, 2> {
 public:
-    ///
-    /// Device abstraction statuses.
-    /// Real Device can have different statuses,
-    /// but they can be mapped to this.
-    /// Use it for general communication with DRO and Job.
-    struct DeviceStatus {
-        enum {
-            DISCONNECTED,
-            OK,
-            MSG,
-            RESEND,
-            // -------- WAIT states
-            WAIT = 10,
-            BUSY,
-            // -------- Error states
-            ALARM = 100,
-            DEV_ERROR,
-        };
-    };
 
-
-    GCodeDevice(WatchedSerial* s, Job* job_) :
-            printerSerial(s), job(job_), connected(false) {}
-
-    GCodeDevice() : printerSerial(nullptr), connected(false) {}
+    GCodeDevice(WatchedSerial* s, Job* job_) : printerSerial(s), job(job_) {}
 
     virtual ~GCodeDevice() { clear_observers(); }
 
@@ -100,8 +96,6 @@ public:
 
     uint32_t getFeed() const { return feed; }
 
-    bool isConnected() const { return connected; }
-
     int getLastStatus() const { return lastStatus; }
 
     bool isLocked() { return printerSerial->isLocked(); }
@@ -112,8 +106,7 @@ protected:
     WatchedSerial* printerSerial;
     Job* job;
 
-    uint32_t serialRxTimeout;
-    bool connected; // TODO use status DISCONNECTED
+    uint32_t serialRxTimeout = 0;
     bool canTimeout;
     bool xoff;
     bool xoffEnabled = false;
@@ -121,15 +114,15 @@ protected:
     bool useLineNumber = false;
 
     char curUnsentCmd[MAX_GCODE_LINE + 1], curUnsentPriorityCmd[MAX_GCODE_LINE + 1];
-    size_t curUnsentCmdLen;
-    size_t curUnsentPriorityCmdLen;
+    size_t curUnsentCmdLen = 0;
+    size_t curUnsentPriorityCmdLen = 0;
 
-    const char* lastResponse;
-    size_t lastStatus = DeviceStatus::DISCONNECTED;
+    const char* lastResponse = nullptr;
+    size_t lastStatus = DeviceStatus::NONE;
 
-    float x, y, z;
-    uint32_t feed, spindleVal;
-    uint32_t nextStatusRequestTime;
+    float x = 0.0, y = 0.0, z = 0.0;
+    uint32_t feed = 0, spindleVal = 0;
+    uint32_t nextStatusRequestTime = 0;
 
     void armRxTimeout();
 

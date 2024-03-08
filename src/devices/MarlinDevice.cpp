@@ -114,7 +114,6 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lastStatus = DeviceStatus::DEV_ERROR;
         outQueue.clear();
     } else {
-        connected = true;
         if (startsWith(resp, "ok")) {
             if (len > 2) {
                 parseOk(resp + 2, len - 2);
@@ -149,7 +148,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                 lastStatus = DeviceStatus::OK;
             }
         }
-        notify_observers(DeviceStatusEvent{});
+        notify_observers(DeviceStatusEvent{lastStatus, getStatusStr()});
     }
 }
 

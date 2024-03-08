@@ -15,7 +15,7 @@ constexpr float DRO::JOG_DISTS[];
 #include "Screen.h"
 
 void DRO::drawContents() {
-    U8G2 &u8g2 = Display::u8g2;
+    U8G2 &u8g2 = display->getU8G2();
 
     constexpr char LEN = 20;
     char str[LEN];
@@ -43,7 +43,7 @@ void DRO::drawContents() {
     }
 
     sx += 5;
-    drawAxisCoords(sx, sy, LINE_HEIGHT);
+    drawAxisCoords(sx, sy, DISPLAY_LINE_HEIGHT);
     sx2 += 3;
     u8g2.drawXBM(sx2 + 1, sy, spindle_width, spindle_height, (uint8_t *) spindle_bits);
     u8g2.drawXBM(sx2, sy + lh + 3, feed_width, feed_height, (uint8_t *) feed_bits);
@@ -80,7 +80,7 @@ void DRO::onButton(int bt, Display::ButtonEvent evt) {
             default:
                 break;
         }
-        setDirty();
+        doDirty();
         return;
     }
 
@@ -126,7 +126,7 @@ void DRO::onButtonAxes(int bt, Evt evt) {
         }
         if (axis != -1) {
             dev.jog(axis, d, f);
-            setDirty();
+            doDirty();
         }
     }
 }
@@ -183,5 +183,20 @@ void DRO::onButtonShift(int bt, Evt evt) {
         default:; // skip
 
     }
-    setDirty();
+    doDirty();
+}
+
+ void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) {
+    drawAxis(AXIS[0], dev.getX(), sx, sy);
+    drawAxis(AXIS[1], dev.getY(), sx, sy + lineHeight);
+    drawAxis(AXIS[2], dev.getZ(), sx, sy + lineHeight * 2);
+};
+
+void DRO::drawAxis(char axis, float value, int x, int y) {
+    static const int LEN = 13;
+    static char buffer[LEN];
+
+    buffer[0] = axis;
+    snprintfloat(buffer + 1, LEN - 1, value, 2, 7);
+    display->getU8G2().drawStr(x, y, buffer);
 }
