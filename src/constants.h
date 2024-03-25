@@ -51,5 +51,7 @@ constexpr size_t REFRESH_INTL = 500;
 constexpr size_t KEEPALIVE_INTERVAL = 5000;    // Marlin defaults to 2 seconds, get a little of margin
 constexpr uint8_t DISPLAY_LINE_HEIGHT = 11;
 
+#define SPINDLE_PRESET_FILE "spindle.txt"
+
 
 #endif //CNC_3018_CONSTANTS_H

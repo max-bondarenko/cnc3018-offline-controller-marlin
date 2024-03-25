@@ -48,7 +48,9 @@ using DeviceObserver = etl::observer<const DeviceStatusEvent&>;
 class GCodeDevice : public etl::observable<DeviceObserver, 2> {
 public:
 
-    GCodeDevice(WatchedSerial* s, Job* job_) : printerSerial(s), job(job_) {}
+    GCodeDevice(WatchedSerial* s, Job* job_) : printerSerial(s), job(job_) {
+        values = new etl::vector<u_int16_t, 10>{0};
+    }
 
     virtual ~GCodeDevice() { clear_observers(); }
 
@@ -84,7 +86,7 @@ public:
 
     bool supportLineNumber() { return useLineNumber; }
 
-    virtual const etl::ivector<u_int16_t>& getSpindleValues() const = 0;
+    virtual etl::ivector<u_int16_t>* getSpindleValues() const = 0;
 
     float getX() const { return x; }
 
@@ -105,6 +107,7 @@ protected:
 
     WatchedSerial* printerSerial;
     Job* job;
+    etl::ivector<u_int16_t>* values;
 
     uint32_t serialRxTimeout = 0;
     bool canTimeout;

@@ -54,11 +54,12 @@ An SWD programmer will also be needed.
 
 * [x] Jogging
 * [x] Spindle control (with 1% option for laser "pointer")
+* [x] Spindle preset file read from SD.
 * [x] File chooser UI
 * [x] Job control (pause/cancel)
 * [x] Grbl state tracking (alarm, error)
 * [x] Menu
-* [x] Different menus for each device  
+* [x] Different menus for each device   
 ** [x] Change work offsets (set zero to current position). Only G54 supported.
 ** [x] Homing ($H), unlocking ($X)
 ** [x] Grbl reset (Ctrl+X)
@@ -156,6 +157,13 @@ Original backup firmware from my controller can be found link:docs/original.hex[
                                             │                  │
                                             └──────resume──────┘
 
+
+
+## Spindle preset.
+
+See spindle.txt example. Device read only first line, skip everything above.  
+Line length limited to 99 chars, 9 2-byte integer values delimited with comas. First "0" is not needed, it always presents.
+Please use with caution, You will use what You write in file.    
 
 
 ## Links

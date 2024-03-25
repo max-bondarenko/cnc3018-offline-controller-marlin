@@ -197,7 +197,7 @@ void MarlinDRO::onButton(int bt, Display::ButtonEvent evt) {
             break;
         case Mode::SPINDLE:
             onButtonShift(bt, evt);
-            dev.adjustSpindle(dev.getSpindleValues().at(cSpindleVal));
+            dev.adjustSpindle(dev.getSpindleValues()->at(cSpindleVal));
             break;
         case Mode::TEMP:
             onButtonTemp(bt, evt);

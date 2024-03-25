@@ -101,6 +101,7 @@ void MarlinDevice::reset() {
 void MarlinDevice::toggleRelative() {
     relative = !relative;
 }
+
 // TODO optimize all this silly ifs
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     LOGF("> [%s],%d\n", resp, len);
@@ -243,6 +244,6 @@ void MarlinDevice::parseError(const char* input) {
     }
 }
 
-const etl::ivector<u_int16_t>& MarlinDevice::getSpindleValues() const {
-    return MarlinDevice::SPINDLE_VALS;
+etl::ivector<u_int16_t>* MarlinDevice::getSpindleValues() const {
+    return (values->size() > 1) ? values : (etl::ivector<u_int16_t>*) &(MarlinDevice::SPINDLE_VALS);
 }

@@ -23,7 +23,7 @@ public:
 
     virtual ~MarlinDevice() {}
 
-    const etl::ivector<u_int16_t>& getSpindleValues() const override;
+    etl::ivector<u_int16_t>* getSpindleValues() const override;
 
     bool jog(uint8_t axis, float dist, int feed) override;
 

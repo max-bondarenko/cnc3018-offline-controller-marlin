@@ -223,6 +223,6 @@ const char* GrblDevice::getStatusStr() const {
     }
 }
 
-const etl::ivector<u_int16_t>& GrblDevice::getSpindleValues() const {
-    return GrblDevice::SPINDLE_VALS;
+etl::ivector<u_int16_t>* GrblDevice::getSpindleValues() const {
+    return (values->size() > 1) ? values : (etl::ivector<u_int16_t>*) &(GrblDevice::SPINDLE_VALS);
 }

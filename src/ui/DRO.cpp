@@ -135,7 +135,7 @@ void DRO::onButtonShift(int bt, Evt evt) {
     if (!(evt == Evt::DOWN || evt == Evt::HOLD))
         return;
 
-    size_t n_spindle_val = dev.getSpindleValues().size() - 1;
+    size_t n_spindle_val = dev.getSpindleValues()->size() - 1;
 
     switch (bt) {
         case Display::BT_R:
@@ -158,7 +158,7 @@ void DRO::onButtonShift(int bt, Evt evt) {
                 if (evt == Evt::HOLD) cSpindleVal = 0;
                 else if (cSpindleVal > 0) cSpindleVal--;
             }
-            uint16_t speed = dev.getSpindleValues().at(cSpindleVal);
+            uint16_t speed = dev.getSpindleValues()->at(cSpindleVal);
             if (speed != 0) {
                 char t[15];
                 snprintf(t, 15, "M3 S%d", speed);

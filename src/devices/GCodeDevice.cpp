@@ -1,3 +1,4 @@
+#include "SD.h"
 #include "constants.h"
 #include "GCodeDevice.h"
 
@@ -47,10 +48,34 @@ void GCodeDevice::step() {
         requestStatusUpdate();
         nextStatusRequestTime = millis() + REFRESH_INTL - 9;
     }
-    notify_observers(DeviceStatusEvent{lastStatus,lastResponse});
+    notify_observers(DeviceStatusEvent{lastStatus, lastResponse});
 }
 
 void GCodeDevice::begin() {
+    boolean haveCard = SD.begin(PIN_CD);
+    if (haveCard) {
+        char buff[100];
+        size_t position = 0;
+        File file = SD.open(SPINDLE_PRESET_FILE);
+        while (file.available() > 0) {
+            int ch = file.read();
+            buff[position] = ch;
+            ++position;
+            if ('\n' == ch || '\r' == ch || position > 99)
+                break;
+
+        }
+        buff[position] = 0;
+        char* token = strtok(buff, ",");
+        position = 0;
+        while (token != nullptr && position < 9) {
+            values->push_back((uint16_t) atol(token));
+            ++position;
+            token = strtok(nullptr, ",");
+        }
+        file.close();
+    }
+
     while (printerSerial->available() > 0) {
         printerSerial->read();
     }
@@ -116,7 +141,7 @@ void GCodeDevice::enableStatusUpdates(bool v) {
 }
 
 void GCodeDevice::receiveResponses() {
-    static const size_t MAX_LINE = 200; // M115 is far longer than 100
+    constexpr size_t MAX_LINE = 200; // M115 is far longer than 100
     static char resp[MAX_LINE + 1];
     static size_t respLen;
 
