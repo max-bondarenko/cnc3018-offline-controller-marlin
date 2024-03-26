@@ -4,6 +4,8 @@
 #define GCODE__
 
 #define G28_START_HOMING                 "G28"
+#define G53_USE_MACHINE_COORD            "G53"
+#define G54_USE_COORD_SYSTEM_1           "G54"
 #define G90_SET_ABS_COORDINATES          "G90"
 #define G91_SET_RELATIVE_COORDINATES     "G91"
 #define M0_STOP_UNCONDITIONAL            "M0"

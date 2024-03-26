@@ -9,14 +9,11 @@
 
 class MarlinDevice : public GCodeDevice {
 public:
-    constexpr static uint32_t BUFFER_LEN = 255;
-    constexpr static uint32_t SHORT_BUFFER_LEN = 100;
     const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 64, 128, 255};
 
     static void sendProbe(Stream& serial);
 
-    static bool checkProbeResponse(String s);
-
+    static bool checkProbeResponse(const String& input);
 
     //// CONSTRUCTORS
     MarlinDevice(WatchedSerial* s, Job* job);
@@ -25,7 +22,7 @@ public:
 
     etl::ivector<u_int16_t>* getSpindleValues() const override;
 
-    bool jog(uint8_t axis, float dist, int feed) override;
+    bool jog(uint8_t axis, int32_t dist, uint16_t feed) override;
 
     bool canJog() override;
 
@@ -47,11 +44,15 @@ public:
 
     bool isRelative() const { return relative; }
 
-    float getE() const { return e; }
+    int32_t getE() const { return e; }
 
-    float getTemp() const { return hotendTemp; }
+    uint32_t getTemp() const { return hotendTemp; } // todo check SIGN
 
-    float getBedTemp() const { return bedTemp; }
+    uint32_t getHotendPower() const { return hotendPower; }
+
+    uint32_t getBedTemp() const { return bedTemp; }
+
+    uint32_t getBedPower() const { return bedPower; }
 
     /// marlin does not give current spindle value
     /// use this to set value from DRO to see current set value.
@@ -65,19 +66,21 @@ protected:
 private:
     etl::deque<String, 10> outQueue;
 
-    float hotendTemp = 0.0,
-            bedTemp = 0.0;
-    size_t hotendPower = 0;
-    size_t bedPower = 0;
-    float hotendRequestedTemp = 0.0,
-            bedRequestedTemp = 0.0,
-            e = 0.0;
+    int32_t e = 0;
+    uint32_t hotendTemp = 0,
+    /// set indirectly by Gcode command
+    hotendRequestedTemp = 0,
+            hotendPower = 0,
+            bedTemp = 0,
+    /// set indirectly by Gcode command
+    bedRequestedTemp = 0,
+            bedPower = 0;
 
     bool relative = false;
 
-    int resendLine = -1;
+    int32_t resendLine = -1;
 
     void parseError(const char* input);
 
-    void parseOk(const char* v, size_t len);
+    void parseOk(const char* input, size_t len);
 };

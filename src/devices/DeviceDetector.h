@@ -12,7 +12,7 @@ constexpr static uint8_t N_DEVICES = 2;
 constexpr static uint8_t N_ATTEMPTS = 3;
 constexpr static uint32_t serialBauds[] = {57600, 115200, 9600, 250000};
 constexpr static uint32_t N_SERIAL_BAUDS = sizeof(serialBauds) / sizeof(serialBauds[0]);
-const char* deviceNames[] = {"grbl\0", "marlin\0"};
+const char* deviceNames[] = {"grbl", "marlin"};
 
 template <class T, T& printerSerial, void (* createDevice)(int, T*)>
 class DeviceDetector {
@@ -98,11 +98,12 @@ private:
             if (ch == '\n') {
                 resp[respLen] = 0;
                 LOGF("> [%s]\n", resp);
+                String _resp(resp);
                 bool ret = false;
                 if (cDev == 0) {
-                    ret = GrblDevice::checkProbeResponse(resp);
+                    ret = GrblDevice::checkProbeResponse(_resp);
                 } else if (cDev == 1) {
-                    ret = MarlinDevice::checkProbeResponse(resp);
+                    ret = MarlinDevice::checkProbeResponse(_resp);
                 }
 
                 if (ret) {

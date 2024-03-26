@@ -2,7 +2,7 @@
 #include "Screen.h"
 #include "Display.h"
 
-constexpr int VISIBLE_MENUS = 5;
+constexpr uint8_t VISIBLE_MENUS = 5;
 
 uint16_t Display::buttStates;
 
@@ -163,7 +163,7 @@ void Display::drawMenu() {
 
     const size_t len = cScreen->menuItems.size();
 
-    size_t onscreenLen = len - cScreen->firstDisplayedMenuItem;
+    uint8_t onscreenLen = len - cScreen->firstDisplayedMenuItem;
     if (onscreenLen > VISIBLE_MENUS)
         onscreenLen = VISIBLE_MENUS;
     const int w = 80, x = 20, lh = 8, h = onscreenLen * lh;

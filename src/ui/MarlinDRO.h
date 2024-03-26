@@ -7,7 +7,9 @@ class MarlinDRO : public DRO {
 public:
     constexpr static uint8_t MAX_TEMP = 250;
 
-    MarlinDRO(MarlinDevice& d) : DRO(d), dev(d) {}
+    MarlinDRO(MarlinDevice& d) : DRO(d), dev(d) {
+        defaultAxisPrecision = 2;
+    }
 
     ~MarlinDRO() {}
 

@@ -17,13 +17,13 @@ public:
 
     virtual ~GrblDevice() {}
 
-    bool jog(uint8_t axis, float dist, int feed) override;
+    bool jog(uint8_t axis, int32_t dist, uint16_t feed) override;
 
     bool canJog() override;
 
     void begin() override {
         GCodeDevice::begin();
-        schedulePriorityCommand("$I"); // TODO actual depends on realisation see inside fn
+        schedulePriorityCommand("$I");
         requestStatusUpdate();
     }
 
@@ -56,17 +56,17 @@ public:
     etl::ivector<u_int16_t>* getSpindleValues() const override;
 
     /// WPos = MPos - WCO
-    float getXOfs() const { return ofsX; }
+    int32_t getXOfs() const { return ofsX_mil; }
 
-    float getYOfs() const { return ofsY; }
+    int32_t getYOfs() const { return ofsY_mil; }
 
-    float getZOfs() const { return ofsZ; }
+    int32_t getZOfs() const { return ofsZ_mil; }
 
     const char* getStatusStr() const override;
 
     static void sendProbe(Stream& serial);
 
-    static bool checkProbeResponse(String s);
+    static bool checkProbeResponse(const String& input);
 
 protected:
     void trySendCommand() override;
@@ -77,9 +77,11 @@ private:
     GrblStatus status;
 
     //WPos = MPos - WCO
-    float ofsX, ofsY, ofsZ;
+    int32_t ofsX_mil = 0,
+            ofsY_mil = 0,
+            ofsZ_mil = 0;
 
-    void parseStatus(char* v);
+    void parseStatus(char* input);
 
     void setStatus(const char* s);
 

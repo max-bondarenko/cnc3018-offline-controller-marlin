@@ -28,7 +28,8 @@ struct MenuItem {
 
 class Display : public JobObserver, public DeviceObserver {
 public:
-    static constexpr int STATUS_BAR_HEIGHT = 16;
+    static constexpr uint8_t STATUS_BAR_HEIGHT = 16;
+    static constexpr uint8_t LINE_HEIGHT = 11;
     static constexpr int HOLD_COUNT = 30; // x10 = ms
     enum {
         BT_ZDOWN = 0,  //
@@ -91,7 +92,7 @@ private:
     Job& job;
     Screen* cScreen;
     bool dirty;
-    size_t selMenuItem = 0;
+    uint8_t selMenuItem = 0;
     bool menuShown;
     bool menuShownWhenDown;
     String devStatusString;

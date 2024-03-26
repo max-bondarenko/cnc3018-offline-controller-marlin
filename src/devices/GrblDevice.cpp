@@ -1,6 +1,5 @@
-#include "printfloat.h"
+#include "util.h"
 #include "constants.h"
-
 #include "GrblDevice.h"
 #include "Job.h"
 
@@ -8,25 +7,25 @@ void GrblDevice::sendProbe(Stream& serial) {
     serial.print("\n$I\n");
 }
 
-bool GrblDevice::checkProbeResponse(const String v) {
-    if (v.indexOf("[VER:") != -1) {
+bool GrblDevice::checkProbeResponse(const String& input) {
+    if (input.indexOf("[VER:") != -1) {
         return true;
     }
     return false;
 }
 
-bool GrblDevice::jog(uint8_t axis, float dist, int feed) {
+bool GrblDevice::jog(uint8_t axis, int32_t dist, uint16_t feed) {
     constexpr size_t LN = 25;
     char msg[LN];
     // "$J=G91 G20 X0.5" will move +0.5 inches (12.7mm) to X=22.7mm (WPos).
     // Note that G91 and G20 are only applied to this jog command
     int l = snprintf(msg, LN, "$J=G91 F%d %c", feed, AXIS[axis]);
-    snprintfloat(msg + l, LN - l, dist, 3);
+    snprintfloat(msg + l, LN - l, dist, 3, 3);
     return scheduleCommand(msg, strlen(msg));
 }
 
 bool GrblDevice::canJog() {
-    return status == GrblStatus::Idle || status == GrblStatus::Jog;
+    return lastStatus == DeviceStatus::OK && (status == GrblStatus::Idle || status == GrblStatus::Jog);
 }
 
 bool GrblDevice::isCmdRealtime(const char* data, size_t len) {
@@ -89,98 +88,121 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
         // this is the first message after reset
         lastStatus = DeviceStatus::MSG;
     }
-    if (lastStatus <= DeviceStatus::MSG){
+    if (lastStatus <= DeviceStatus::MSG) {
         lastResponse = getStatusStr();
     }
-    LOGF("> '%s'\n",  resp);
+    LOGF("> '%s'\n", resp);
 }
 
-void mystrcpy(char* dst, const char* start, const char* end) {
-    while (start != end) {
-        *(dst++) = *(start++);
-    }
-    *dst = 0;
-}
 
-void GrblDevice::parseStatus(char* v) {
+void GrblDevice::parseStatus(char* input) {
+    //        + work position
+    //        v                             v- work coords offset
+    //<Idle|WPos:9.800,0.000,0.000|FS:0,0|WCO:0.000,0.000,0.000>
     //<Idle|MPos:9.800,0.000,0.000|FS:0,0|WCO:0.000,0.000,0.000>
-    //                                        override values in percent of programmed values for
-    //                                    v-- feed, rapids, and spindle speed
-    //<Idle|MPos:9.800,0.000,0.000|FS:0,0|Ov:100,100,100>
-    char buf[10];
-    bool mpos;
-    char cpy[100];
-    strncpy(cpy, v, 100);
-    v = cpy;
-
-    // idle/jogging
-    char* fromGrbl = strtok(v, "|");
-    if (fromGrbl == nullptr) return;
+    //        ^ machine position            + buffer state ,ignored
+    //                                      |             override values in percent of programmed values for
+    //                                      v          v-- feed, rapids, and spindle speed. ignored
+    //<Idle|MPos:9.800,0.000,0.000|FS:0,0|Bf:15,128|Ov:100,100,100>
+    bool mpos = false;
+    char cpy[BUFFER_LEN];
+    strncpy(cpy, input, BUFFER_LEN);
+    // status
+    char* fromGrbl = strtok(cpy, "|");
+    if (fromGrbl == nullptr)
+        return;
     setStatus(fromGrbl);
 
-    // MPos:0.000,0.000,0.000
+    // MPos:0.000,0.000,0.000 or WPos:0.000,0.000,0.000
     fromGrbl = strtok(nullptr, "|");
-    if (fromGrbl == nullptr) return;
-    // ===========++++
-    char* st, * fi;
-    st = fromGrbl + 5;
-    fi = strchr(st, ',');
-    if (fi == nullptr)
-        return;
-    mystrcpy(buf, st, fi);
-    x = _atod(buf);
-    //==============
-    st = fi + 1;
-    fi = strchr(st, ',');
-    if (fi == nullptr)
-        return;
-    mystrcpy(buf, st, fi);
-    y = _atod(buf);
-    //==============
-    st = fi + 1;
-    z = _atod(st);
-
     mpos = startsWith(fromGrbl, "MPos");
-    // LOGF("Parsed Pos: %f %f %f\n", x, y, z);
+    {
+        unsigned fromGrblLen = strlen(fromGrbl) + 1;
+        char* pos = strtok(fromGrbl + 5, ",");
+        for (int i = 0; i < 3 && pos != nullptr; ++i) {
+            uint16_t len = strlen(pos) + 1;
+            switch (i) {
+                case 0:
+                    x_mil = parseFloatInMils(pos);
+                    break;
+                case 1:
+                    y_mil = parseFloatInMils(pos);
+                    break;
+                case 2:
+                    z_mil = parseFloatInMils(pos);
+                default:
+                    continue;
+            }
+            pos = strtok(pos + len, ",");
+        }
+        fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
+    }
     //    +--  feed
-    //    v   v-- spindle v-- feed
-    // FS:500,8000     or F:500
-    fromGrbl = strtok(nullptr, "|");
+    //    v   v-- spindle or
+    //                  v-- feed
+    // FS:500,8000  or F:500
     while (fromGrbl != nullptr) {
         if (startsWith(fromGrbl, "FS:") || startsWith(fromGrbl, "F:")) {
             if (fromGrbl[1] == 'S') {
-                st = fromGrbl + 3;
-                fi = strchr(st, ',');
-                if (fi == nullptr)return;
-                mystrcpy(buf, st, fi);
-                feed = atoi(buf);
-                st = fi + 1;
-                spindleVal = atoi(st);
+                unsigned fromGrblLen = strlen(fromGrbl) + 1;
+                char* pos = strtok(fromGrbl + 3, ",");
+                for (int i = 0; i < 2 && pos != nullptr; ++i) {
+                    uint16_t len = strlen(pos) + 1;
+                    switch (i) {
+                        case 0:
+                            feed = strtol(pos, nullptr, STRTOLL_BASE);
+                            break;
+                        case 1:
+                            spindleVal = strtol(pos, nullptr, STRTOLL_BASE);
+                        default:
+                            continue;
+                    }
+                    pos = strtok(pos + len, ",");
+                }
+                fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
+                continue;
             } else {
-                feed = atoi(fromGrbl + 2);
+                feed = strtol(fromGrbl + 2, nullptr, STRTOLL_BASE);
             }
         } else if (startsWith(fromGrbl, "WCO:")) {
-            st = fromGrbl + 4;
-            fi = strchr(st, ',');
-            if (fi == nullptr)return;
-            mystrcpy(buf, st, fi);
-            ofsX = _atod(buf);
-            st = fi + 1;
-            fi = strchr(st, ',');
-            if (fi == nullptr)return;
-            mystrcpy(buf, st, fi);
-            ofsY = _atod(buf);
-            st = fi + 1;
-            ofsZ = _atod(st);
-           // LOGF("Parsed WCO: %f %f %f\n", ofsX, ofsY, ofsZ);
+            unsigned fromGrblLen = strlen(fromGrbl) + 1;
+            char* pos = strtok(fromGrbl + 4, ",");
+            for (int i = 0; i < 3 && pos != nullptr; ++i) {
+                uint16_t len = strlen(pos) + 1;
+                switch (i) {
+                    case 0:
+                        ofsX_mil = parseFloatInMils(pos);
+                        break;
+                    case 1:
+                        ofsY_mil = parseFloatInMils(pos);
+                        break;
+                    case 2:
+                        ofsZ_mil = parseFloatInMils(pos);
+                    default:
+                        continue;
+                }
+                pos = strtok(pos + len, ",");
+            }
+            fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
+            continue;
         }
         fromGrbl = strtok(nullptr, "|");
     }
+/*
+N.B. From Grbl wiki:
 
+Machine position and work position are related by this simple equation per axis: WPos = MPos - WCO
+
+GUI Developers: Simply track and retain the last __WCO vector__ and use the above
+ equation to compute the other position vector for your position readouts. If Grbl's
+ status reports show either WPos or MPos, just follow the equations below. It's as easy as that!
+    If WPos: is given, use MPos = WPos + WCO.
+    If MPos: is given, use WPos = MPos - WCO.
+ */
     if (!mpos) {
-        x -= ofsX;
-        y -= ofsY;
-        z -= ofsZ;
+        x_mil -= ofsX_mil;
+        y_mil -= ofsY_mil;
+        z_mil -= ofsZ_mil;
     }
 }
 
@@ -224,5 +246,5 @@ const char* GrblDevice::getStatusStr() const {
 }
 
 etl::ivector<u_int16_t>* GrblDevice::getSpindleValues() const {
-    return (values->size() > 1) ? values : (etl::ivector<u_int16_t>*) &(GrblDevice::SPINDLE_VALS);
+    return (spindleValues->size() > 1) ? spindleValues : (etl::ivector<u_int16_t>*) &(GrblDevice::SPINDLE_VALS);
 }

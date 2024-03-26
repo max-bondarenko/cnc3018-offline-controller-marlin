@@ -29,7 +29,7 @@ public:
     etl::fsm_state_id_t on_event(const SetFileMessage& event) {
         get_fsm_context().closeFile();
         get_fsm_context().setFile(event.fileName);
-        get_fsm_context().dev->scheduleCommand(RESET_LINE_NUMBER);
+        get_fsm_context().dev->scheduleCommand(RESET_LINE_NUMBER, 8);
         return StateId::READY;
     }
 
