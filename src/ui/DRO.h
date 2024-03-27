@@ -1,6 +1,6 @@
 #pragma once
 
-#include <printfloat.h>
+#include "utils.h"
 #include "constants.h"
 #include "Screen.h"
 #include "FileChooser.h"
@@ -14,8 +14,7 @@ extern Job job;
 class DRO : public Screen {
 public:
 
-    DRO(GCodeDevice& d) : dev(d), nextRefresh{1}, cDist{3}, cFeed{3}, cSpindleVal{0}, cMode{Mode::AXES} {
-    }
+    explicit DRO(GCodeDevice& d) : dev(d), cMode{Mode::AXES}, nextRefresh{1}, cDist{3}, cFeed{3}, cSpindleVal{0} {}
 
     virtual ~DRO() {}
 
@@ -52,19 +51,23 @@ protected:
         // 0    1      2
         AXES, SPINDLE, TEMP, N_VALS
     };
-    GCodeDevice& dev;
-
-    uint32_t nextRefresh;
     constexpr static float JOG_DISTS[] = {0.1, 0.5, 1, 5, 10, 50};
     constexpr static size_t N_JOG_DISTS = sizeof(JOG_DISTS) / sizeof(JOG_DISTS[0]);
-    uint32_t cDist;
-    constexpr static int JOG_FEEDS[] = {50, 100, 500, 1000, 2000};
+    constexpr static uint16_t JOG_FEEDS[] = {50, 100, 500, 1000, 2000};
     constexpr static size_t N_JOG_FEEDS = sizeof(JOG_FEEDS) / sizeof(JOG_FEEDS[0]);
-    uint32_t cFeed;
-    uint32_t cSpindleVal = 0;
 
+    GCodeDevice& dev;
     Mode cMode;
+
+    uint32_t nextRefresh;
+
+    uint32_t cDist,
+            cFeed,
+            cSpindleVal = 0;
+
     bool buttonWasPressedWithShift;
+
+    uint8_t defaultAxisPrecision ;
 
     void drawAxis(char axis, float value, int x, int y);
 

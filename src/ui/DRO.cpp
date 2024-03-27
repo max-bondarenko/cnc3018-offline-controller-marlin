@@ -1,9 +1,7 @@
 #include <vector>
 #include "DRO.h"
 #include "devices/GCodeDevice.h"
-
-constexpr int DRO::JOG_FEEDS[];
-constexpr float DRO::JOG_DISTS[];
+#include "util.h"
 
 #include "../assets/arrows_lr.XBM"
 #include "../assets/arrows_ud.XBM"
@@ -14,54 +12,54 @@ constexpr float DRO::JOG_DISTS[];
 #include "../assets/spindle.XBM"
 #include "Screen.h"
 
+constexpr uint16_t DRO::JOG_FEEDS[];
+constexpr float DRO::JOG_DISTS[];
+
 void DRO::drawContents() {
-    U8G2 &u8g2 = display->getU8G2();
+    U8G2& u8g2 = display->getU8G2();
+    u8g2.setFont(u8g2_font_7x13B_tr);
+    u8g2.setDrawColor(1);
 
     constexpr char LEN = 20;
     char str[LEN];
     int sx = 2;
-    int sy = Display::STATUS_BAR_HEIGHT + 3, sx2 = 72;
-    constexpr int lh = 11;
-    u8g2.setFont(u8g2_font_7x13B_tr);
+    int sy = Display::STATUS_BAR_HEIGHT + 3, sx2 = 73;
+    constexpr uint8_t lh = Display::LINE_HEIGHT;
 
     if (dev.canJog()) {
         /// =============== draw frame =============
-        u8g2.setDrawColor(1);
         if (cMode == Mode::AXES) {
-            u8g2.drawFrame(sx - 2, sy - 3, 70, lh * 3 + 6);
+            u8g2.drawFrame(sx - 2, sy - 3, sx2, lh * 3 + 6);
         } else if (cMode == Mode::SPINDLE) {
             int t = 43;
-            u8g2.drawFrame(sx2 - 2, sy - 3, 54, lh * 3 + 6);
+            u8g2.drawFrame(sx2, sy - 3, 52, lh * 3 + 6);
             u8g2.drawBox(sx2 + t, sy - 2, 9, lh * 3 + 4);
             u8g2.setBitmapMode(1);
             u8g2.setDrawColor(2);
             t += 1;
-            u8g2.drawXBM(sx2 + t, sy, arrows_zud_width, arrows_zud_height, (uint8_t *) arrows_zud_bits);
-            u8g2.drawXBM(sx2 + t, sy + lh + 1, arrows_ud_width, arrows_ud_height, (uint8_t *) arrows_ud_bits);
-            u8g2.drawXBM(sx2 + t, sy + lh * 2 + 3, arrows_lr_width, arrows_lr_height, (uint8_t *) arrows_lr_bits);
+            u8g2.drawXBM(sx2 + t, sy, arrows_zud_width, arrows_zud_height, (uint8_t*) arrows_zud_bits);
+            u8g2.drawXBM(sx2 + t, sy + lh + 1, arrows_ud_width, arrows_ud_height, (uint8_t*) arrows_ud_bits);
+            u8g2.drawXBM(sx2 + t, sy + lh * 2 + 3, arrows_lr_width, arrows_lr_height, (uint8_t*) arrows_lr_bits);
+            u8g2.setDrawColor(1);
         }
     }
 
-    sx += 5;
-    drawAxisCoords(sx, sy, DISPLAY_LINE_HEIGHT);
+    sx += 1;
+    drawAxisCoords(sx, sy, lh);
     sx2 += 3;
-    u8g2.drawXBM(sx2 + 1, sy, spindle_width, spindle_height, (uint8_t *) spindle_bits);
-    u8g2.drawXBM(sx2, sy + lh + 3, feed_width, feed_height, (uint8_t *) feed_bits);
-    u8g2.drawXBM(sx2, sy + lh * 2 + 3, dist_width, dist_height, (uint8_t *) dist_bits);
+    u8g2.drawXBM(sx2 + 1, sy, spindle_width, spindle_height, (uint8_t*) spindle_bits);
+    u8g2.drawXBM(sx2, sy + lh + 3, feed_width, feed_height, (uint8_t*) feed_bits);
+    u8g2.drawXBM(sx2, sy + lh * 2 + 3, dist_width, dist_height, (uint8_t*) dist_bits);
     sx2 += 10;
     snprintf(str, LEN, "%ld", dev.getSpindleVal());
     u8g2.drawStr(sx2, sy, str);
-    snprintf(str, LEN, "%d", JOG_FEEDS[cFeed]);
+    snprintf(str, LEN, "%u", JOG_FEEDS[cFeed]);
     u8g2.drawStr(sx2, sy + lh, str);
 
-    const float &jd = JOG_DISTS[cDist];
-    if (jd < 1)
-        snprintf(str, LEN, "0.%01u", unsigned(jd * 10));
-    else
-        snprintf(str, LEN, "%d", (int) jd);
+    float jd = JOG_DISTS[cDist];
+    snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
     u8g2.drawStr(sx2, sy + lh * 2, str);
-
-};
+}
 
 void DRO::onButton(int bt, Display::ButtonEvent evt) {
     LOGF("onButton(%d,%d)\n", bt, (int) evt);
@@ -97,8 +95,8 @@ void DRO::onButton(int bt, Display::ButtonEvent evt) {
 void DRO::onButtonAxes(int bt, Evt evt) {
     if (evt == Evt::DOWN || evt == Evt::HOLD) {
         int axis = -1;
-        float d = JOG_DISTS[cDist];
-        int f = JOG_FEEDS[cFeed];
+        float d = DRO::JOG_DISTS[cDist];
+        uint16_t f = DRO::JOG_FEEDS[cFeed];
         switch (bt) {
             case Display::BT_L:
                 axis = 0;
@@ -161,10 +159,10 @@ void DRO::onButtonShift(int bt, Evt evt) {
             uint16_t speed = dev.getSpindleValues()->at(cSpindleVal);
             if (speed != 0) {
                 char t[15];
-                snprintf(t, 15, "M3 S%d", speed);
-                dev.scheduleCommand(t);
+                int l = snprintf(t, 15, "M3 S%d", speed);
+                dev.scheduleCommand(t, l);
             } else {
-                dev.scheduleCommand("M5");
+                dev.scheduleCommand("M5", 2);
             }
             break;
         }
@@ -186,17 +184,15 @@ void DRO::onButtonShift(int bt, Evt evt) {
     doDirty();
 }
 
- void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) {
+void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) {
     drawAxis(AXIS[0], dev.getX(), sx, sy);
     drawAxis(AXIS[1], dev.getY(), sx, sy + lineHeight);
     drawAxis(AXIS[2], dev.getZ(), sx, sy + lineHeight * 2);
-};
+}
 
 void DRO::drawAxis(char axis, float value, int x, int y) {
     static const int LEN = 13;
     static char buffer[LEN];
-
-    buffer[0] = axis;
-    snprintfloat(buffer + 1, LEN - 1, value, 2, 7);
+    snprintf(buffer, LEN, "%c% *.*f", axis, 5 + defaultAxisPrecision, defaultAxisPrecision, value);
     display->getU8G2().drawStr(x, y, buffer);
 }

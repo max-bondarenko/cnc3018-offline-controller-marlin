@@ -17,13 +17,13 @@ public:
 
     virtual ~GrblDevice() {}
 
-    bool jog(uint8_t axis, float dist, int feed) override;
+    bool jog(uint8_t axis, float dist, uint16_t feed) override;
 
     bool canJog() override;
 
     void begin() override {
         GCodeDevice::begin();
-        schedulePriorityCommand("$I"); // TODO actual depends on realisation see inside fn
+        schedulePriorityCommand("$I");
         requestStatusUpdate();
     }
 
@@ -66,7 +66,7 @@ public:
 
     static void sendProbe(Stream& serial);
 
-    static bool checkProbeResponse(String s);
+    static bool checkProbeResponse(const String& input);
 
 protected:
     void trySendCommand() override;
@@ -77,9 +77,11 @@ private:
     GrblStatus status;
 
     //WPos = MPos - WCO
-    float ofsX, ofsY, ofsZ;
+    float ofsX = 0.0,
+            ofsY = 0.0,
+            ofsZ = 0.0;
 
-    void parseStatus(char* v);
+    void parseStatus(char* input);
 
     void setStatus(const char* s);
 

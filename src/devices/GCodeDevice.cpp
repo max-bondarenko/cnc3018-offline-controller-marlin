@@ -1,6 +1,8 @@
 #include "SD.h"
 #include "constants.h"
+#include "util.h"
 #include "GCodeDevice.h"
+#include "WString.h"
 
 bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
     if (lastStatus >= DeviceStatus::ALARM)
@@ -52,41 +54,39 @@ void GCodeDevice::step() {
 }
 
 void GCodeDevice::begin() {
-    boolean haveCard = SD.begin(PIN_CD);
-    if (haveCard) {
-        char buff[100];
-        size_t position = 0;
+    while (printerSerial->available() > 0) {
+        printerSerial->read();
+    }
+    readLockedStatus();
+
+    if (SD.begin(PIN_CD)) {
+        char buff[SHORT_BUFFER_LEN];
+        uint8_t position = 0;
         File file = SD.open(SPINDLE_PRESET_FILE);
         while (file.available() > 0) {
             int ch = file.read();
             buff[position] = ch;
             ++position;
-            if ('\n' == ch || '\r' == ch || position > 99)
+            if ('\n' == ch || '\r' == ch || position > SHORT_BUFFER_LEN - 1)
                 break;
 
         }
         buff[position] = 0;
         char* token = strtok(buff, ",");
         position = 0;
-        while (token != nullptr && position < 9) {
-            values->push_back((uint16_t) atol(token));
+        while (token != nullptr && position < 10) {
+            spindleValues->push_back((uint16_t) strtol(token, nullptr, STRTOLL_BASE));
             ++position;
             token = strtok(nullptr, ",");
         }
         file.close();
     }
-
-    while (printerSerial->available() > 0) {
-        printerSerial->read();
-    }
-    readLockedStatus();
 }
 
 void GCodeDevice::readLockedStatus() {
-    bool t = printerSerial->isLocked(true);
-    if (t != txLocked)
+    txLocked = printerSerial->isLocked(true);
+    if (txLocked)
         lastStatus = DeviceStatus::LOCKED;
-    txLocked = t;
 }
 
 void GCodeDevice::cleanupQueue() {

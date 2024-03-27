@@ -145,8 +145,6 @@ set(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
 set(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects -nostdlib --param max-inline-insns-single=500 ${COMMON_FLAGS}")
 set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
 
-add_subdirectory(lib)
-
 ard_lib(SD SD_path "")
 target_compile_options(SD PRIVATE -Wno-deprecated -Wno-deprecated-declarations)
 ard_lib(SPI SPI_path ${PLATFORM-PATH})
@@ -167,11 +165,11 @@ add_library(controller ${SRC_LIST})
 set(main_include src sec/ui src/gcode src/devices)
 target_include_directories(controller PUBLIC ${main_include})
 
-if (CMAKE_BUILD_TYPE EQUAL "DEBUG")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(controller PUBLIC LOG_DEBUG)
 endif ()
 
-target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src lib/printfloat)
+target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)
 target_link_libraries(controller PUBLIC U8g2)
 
 if (EXISTS ${LINKER_SCRIPT})
@@ -207,7 +205,6 @@ target_link_libraries(${PROJECT_NAME}.elf ${cortexM3_math})
 target_link_libraries(${PROJECT_NAME}.elf "$<LINK_LIBRARY:WHOLE_ARCHIVE,core>")
 target_link_libraries(${PROJECT_NAME}.elf
         controller
-        printfloat
         SD
         Wire)
 

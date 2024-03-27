@@ -5,7 +5,9 @@
 
 class GrblDRO : public DRO {
 public:
-    GrblDRO(GrblDevice &d) : DRO(d), dev(d) {}
+    GrblDRO(GrblDevice &d) : DRO(d), dev(d), useWCS(false){
+        defaultAxisPrecision = 3;
+    }
 
     ~GrblDRO() {}
 

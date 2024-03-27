@@ -39,5 +39,5 @@ protected:
 
     virtual void onHide() {};
 private:
-    size_t firstDisplayedMenuItem;
+    uint8_t firstDisplayedMenuItem;
 };

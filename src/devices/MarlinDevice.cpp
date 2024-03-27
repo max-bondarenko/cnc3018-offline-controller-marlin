@@ -3,7 +3,7 @@
 #include "MarlinDevice.h"
 
 #include "Job.h"
-#include "printfloat.h"
+#include "utils.h"
 #include "util.h"
 #include "debug.h"
 
@@ -19,15 +19,13 @@ void MarlinDevice::sendProbe(Stream& serial) {
 //   The other positions are the positions from the stepper function.
 //   This helps for debugging a previous stepper function bug.
 // todo for position
-bool MarlinDevice::checkProbeResponse(const String v) {
-    // TODO  check: is v copied each invocation.
-    if (v.indexOf("Marlin") != -1) {
+bool MarlinDevice::checkProbeResponse(const String& input) {
+    if (input.indexOf("Marlin") != -1) {
         LOGLN(">> Detected Marlin device <<");
         return true;
     }
     return false;
 }
-
 
 MarlinDevice::MarlinDevice(WatchedSerial* s, Job* job) : GCodeDevice(s, job) {
     canTimeout = false;
@@ -35,14 +33,12 @@ MarlinDevice::MarlinDevice(WatchedSerial* s, Job* job) : GCodeDevice(s, job) {
     lastResponse = nullptr;
 }
 
-bool MarlinDevice::jog(uint8_t axis, float dist, int feed) {
+bool MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
     constexpr size_t LN = 25;
     char msg[LN];
-    // adding G91_SET_RELATIVE_COORDINATES to command
-    // does not work. 
-    int l = snprintf(msg, LN, "G0 F%d %c", feed, AXIS[axis]);
-    snprintfloat(msg + l, LN - l, dist, 3);
-    return scheduleCommand(msg, strlen(msg));
+    // adding G91_SET_RELATIVE_COORDINATES to command does not work.
+    int l = snprintf(msg, LN, "G0 F%d %c %.3f", feed, AXIS[axis], dist);
+    return scheduleCommand(msg, l);
 }
 
 void MarlinDevice::trySendCommand() {
@@ -63,7 +59,7 @@ void MarlinDevice::trySendCommand() {
     }
 }
 
-bool MarlinDevice::scheduleCommand(const char* cmd, size_t len = 0) {
+bool MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
     if (resendLine > 0) {
         return false;
     }
@@ -74,7 +70,7 @@ bool MarlinDevice::scheduleCommand(const char* cmd, size_t len = 0) {
     return false;
 }
 
-bool MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len = 0) {
+bool MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len) {
     if (txLocked)
         return false;
     return scheduleCommand(cmd, len);
@@ -88,7 +84,7 @@ void MarlinDevice::begin() {
     scheduleCommand(msg, l);
     l = snprintf(msg, LN, "%s S%d", M155_AUTO_REPORT_TEMP, 1);
     scheduleCommand(msg, l);
-    scheduleCommand(RESET_LINE_NUMBER);
+    scheduleCommand(RESET_LINE_NUMBER, 8);
 }
 
 void MarlinDevice::requestStatusUpdate() {
@@ -183,37 +179,37 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
 
     bool nextTemp = false,
             nextBedTemp = false;
-//    char *v = cpy;
     char* fromMachine = strtok(cpy, " ");
-#define ATOF _atod
+
     while (fromMachine != nullptr) {
         switch (fromMachine[0]) {
             case 'T':
-                hotendTemp = ATOF((fromMachine + 2));
+                hotendTemp = strtof(fromMachine + 2, nullptr);
                 nextTemp = true;
                 break;
             case 'B':
                 if (fromMachine[1] == '@') {
-                    bedPower = atoi((fromMachine + 3));
+                    bedPower = strtol(fromMachine + 3, nullptr, STRTOLL_BASE);
                 } else {
-                    bedTemp = ATOF((fromMachine + 2));
+
+                    bedTemp = strtol(fromMachine + 2, nullptr, STRTOLL_BASE);
                     nextBedTemp = true;
                 }
                 break;
             case 'X':
-                x = ATOF((fromMachine + 2));
+                x = strtof(fromMachine + 2, nullptr);
                 break;
             case 'Y':
-                y = ATOF((fromMachine + 2));
+                y = strtof(fromMachine + 2, nullptr);
                 break;
             case 'Z':
-                z = ATOF((fromMachine + 2));
+                z = strtof(fromMachine + 2, nullptr);
                 break;
             case 'E':
-                e = ATOF((fromMachine + 2));
+                e = strtof(fromMachine + 2, nullptr);
                 break;
             case '@':
-                hotendPower = atoi(fromMachine + 2);
+                hotendPower = strtol(fromMachine + 2, nullptr, STRTOLL_BASE);
                 break;
             case 'C': // next is coords
                 if (fromMachine[1] == 'o') {
@@ -221,9 +217,9 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
                 }
             case '/':
                 if (nextTemp) {
-                    hotendRequestedTemp = ATOF((fromMachine + 1));
+                    hotendRequestedTemp = strtol(fromMachine + 1, nullptr, STRTOLL_BASE);
                 } else if (nextBedTemp) {
-                    bedRequestedTemp = ATOF((fromMachine + 1));
+                    bedRequestedTemp = strtol(fromMachine + 1, nullptr, STRTOLL_BASE);
                 }
                 nextTemp = false;
                 nextBedTemp = false;
@@ -240,10 +236,10 @@ void MarlinDevice::parseError(const char* input) {
     char cpy[SHORT_BUFFER_LEN];
     strncpy(cpy, input, SHORT_BUFFER_LEN);
     if (strstr(cpy, "Last Line") != nullptr) {
-//        int lastResponse = atoi((cpy + 10));
+//        int lastResponse = atoi((cpy + 10)); TODO
     }
 }
 
 etl::ivector<u_int16_t>* MarlinDevice::getSpindleValues() const {
-    return (values->size() > 1) ? values : (etl::ivector<u_int16_t>*) &(MarlinDevice::SPINDLE_VALS);
+    return (spindleValues->size() > 1) ? spindleValues : (etl::ivector<u_int16_t>*) &(MarlinDevice::SPINDLE_VALS);
 }
