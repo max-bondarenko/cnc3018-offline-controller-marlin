@@ -15,7 +15,7 @@ class Job;
 // TODO LIST
 // TODO 1 switch to states from flags for protocol state  90%
 // TODO 2 make observable events meaningful 50%
-// TODO 3 check RxTimeout
+// TODO 3 check RxTimeout , make it work as heartbeat
 
 ///
 /// Device abstraction statuses.
@@ -69,7 +69,7 @@ public:
     /// \param cmd
     /// \param len
     /// \return false if fail to schedule.
-    virtual bool schedulePriorityCommand(const char* cmd, size_t len = 0);
+    virtual bool schedulePriorityCommand(const char* cmd, size_t len);
 
     virtual bool jog(uint8_t axis, float dist, uint16_t feed) = 0;
 
@@ -79,15 +79,13 @@ public:
 
     virtual const char* getStatusStr() const = 0;
 
-    void enableStatusUpdates(bool v = true);
-
     virtual void step();
 
     virtual void receiveResponses();
 
     virtual bool canJog() { return true; }
 
-    bool supportLineNumber() { return useLineNumber; }
+    bool supportLineNumber() const { return useLineNumber; }
 
     virtual etl::ivector<u_int16_t>* getSpindleValues() const = 0;
 
@@ -99,7 +97,7 @@ public:
 
     uint32_t getSpindleVal() const { return spindleVal; }
 
-    uint32_t getFeed() const { return feed; }
+    float getFeed() const { return feed; }
 
     size_t getLastStatus() const { return lastStatus; }
 
@@ -129,16 +127,13 @@ protected:
             feed = 0.0;
 
     uint32_t spindleVal = 0,
-            serialRxTimeout = 0,
-            nextStatusRequestTime = 0;
+            serialRxTimeout = 0;
 
     void armRxTimeout();
 
     void disarmRxTimeout();
 
-    void updateRxTimeout(bool waitingMore);
-
-    bool isRxTimeoutEnabled();
+    bool isRxTimeoutEnabled() const;
 
     void checkTimeout();
 

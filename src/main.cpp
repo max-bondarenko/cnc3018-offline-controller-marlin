@@ -50,6 +50,7 @@ void createDevice(int i, WatchedSerial* s) {
             dev = device;
         }
     }
+    job.setDevice(dev);
     display.setScreen(dro);
     dev->begin();
     dev->add_observer(display);

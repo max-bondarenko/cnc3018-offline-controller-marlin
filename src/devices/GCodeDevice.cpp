@@ -17,7 +17,7 @@ bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
     memcpy(curUnsentCmd, cmd, len);
     curUnsentCmdLen = len;
     return true;
-};
+}
 
 bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
     if (len == 0)
@@ -33,6 +33,7 @@ bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
 }
 
 void GCodeDevice::step() {
+    checkTimeout();
     readLockedStatus();
     if (lastStatus == DeviceStatus::ALARM) {
         cleanupQueue();
@@ -44,12 +45,6 @@ void GCodeDevice::step() {
         trySendCommand();
     }
     receiveResponses();
-    checkTimeout();
-
-    if (nextStatusRequestTime != 0 && int32_t(millis() - nextStatusRequestTime) > 0) {
-        requestStatusUpdate();
-        nextStatusRequestTime = millis() + REFRESH_INTL - 9;
-    }
     notify_observers(DeviceStatusEvent{lastStatus, lastResponse});
 }
 
@@ -97,48 +92,30 @@ void GCodeDevice::cleanupQueue() {
 void GCodeDevice::checkTimeout() {
     if (!isRxTimeoutEnabled()) return;
     if (millis() > serialRxTimeout) {
-        LOGLN("GCodeDevice::checkTimeout fired");
+        LOGLN("checkTimeout fired");
         lastStatus = DeviceStatus::DISCONNECTED;
         cleanupQueue();
-        disarmRxTimeout();
+        armRxTimeout();
     }
 }
 
 void GCodeDevice::armRxTimeout() {
-    if (!canTimeout) return;
-
-    LOGLN(isRxTimeoutEnabled()
-          ?
-          "GCodeDevice::resetRxTimeout enable"
-          : "GCodeDevice::resetRxTimeout disable");
+    if (!canTimeout)
+        return;
+    LOGLN(isRxTimeoutEnabled() ? "resetRxTout enable" : "resetRxTout disable");
     serialRxTimeout = millis() + KEEPALIVE_INTERVAL;
-};
+}
 
 void GCodeDevice::disarmRxTimeout() {
     if (!canTimeout)
         return;
     serialRxTimeout = 0;
-};
-
-void GCodeDevice::updateRxTimeout(bool waitingMore) {
-    if (isRxTimeoutEnabled()) {
-        if (!waitingMore)
-            disarmRxTimeout();
-        else
-            armRxTimeout();
-    }
 }
 
-bool GCodeDevice::isRxTimeoutEnabled() {
+bool GCodeDevice::isRxTimeoutEnabled() const {
     return canTimeout && serialRxTimeout != 0;
 }
 
-void GCodeDevice::enableStatusUpdates(bool v) {
-    if (v)
-        nextStatusRequestTime = millis();
-    else
-        nextStatusRequestTime = 0;
-}
 
 void GCodeDevice::receiveResponses() {
     constexpr size_t MAX_LINE = 200; // M115 is far longer than 100

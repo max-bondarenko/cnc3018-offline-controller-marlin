@@ -50,12 +50,12 @@ bool GrblDevice::isCmdRealtime(const char* data, size_t len) {
 }
 
 void GrblDevice::trySendCommand() {
-    LOGLN("Try send");
     size_t& len = curUnsentPriorityCmdLen != 0 ? curUnsentPriorityCmdLen : curUnsentCmdLen;
     if (len == 0)
         return;
     char* cmd = curUnsentPriorityCmdLen != 0 ? &curUnsentPriorityCmd[0] : &curUnsentCmd[0];
     cmd[len] = 0;
+    LOGLN("Try send");
     if (printerSerial->availableForWrite()) {
         LOGLN("> send");
         printerSerial->write((const uint8_t*) cmd, len);
@@ -88,7 +88,7 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
         lastStatus = DeviceStatus::MSG;
     }
     if (lastStatus <= DeviceStatus::MSG) {
-        lastResponse = getStatusStr();
+        lastResponse = getStatusStr(); // TODO
     }
     LOGF("> '%s'\n", resp);
 }

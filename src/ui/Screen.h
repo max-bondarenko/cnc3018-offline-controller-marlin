@@ -25,15 +25,14 @@ public:
 
 protected:
     friend class Display;
+    using Evt = Display::ButtonEvent;
 
     Display* display;
-
-    using Evt = Display::ButtonEvent;
     etl::vector<MenuItem, 10> menuItems;
 
     virtual void drawContents() = 0;
 
-    virtual void onButton(int bt, Display::ButtonEvent arg) {};
+    virtual void onButton(int bt, Evt arg) {};
 
     virtual void onShow() {};
 

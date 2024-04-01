@@ -11,11 +11,12 @@ public:
         Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
     };
 
-    GrblDevice(WatchedSerial* s, Job* job) : GCodeDevice(s, job) {
-        canTimeout = false;
+    GrblDevice(WatchedSerial* s, Job* _job) : GCodeDevice(s, _job) {
+        canTimeout = true;
+        serialRxTimeout = 1;
     };
 
-    virtual ~GrblDevice() {}
+    ~GrblDevice() override = default;
 
     bool jog(uint8_t axis, float dist, uint16_t feed) override;
 
@@ -23,7 +24,7 @@ public:
 
     void begin() override {
         GCodeDevice::begin();
-        schedulePriorityCommand("$I");
+        schedulePriorityCommand("$I", 2);
         requestStatusUpdate();
     }
 
@@ -40,7 +41,7 @@ public:
         schedulePriorityCommand("?", 1);
     }
 
-    bool schedulePriorityCommand(const char* cmd, size_t len = 0) override {
+    bool schedulePriorityCommand(const char* cmd, size_t len) override {
         if (txLocked) return false;
         if (len == 0) {
             len = strlen(cmd);
@@ -74,7 +75,7 @@ protected:
     void tryParseResponse(char* cmd, size_t len) override;
 
 private:
-    GrblStatus status;
+    GrblStatus status = GrblStatus::Idle;
 
     //WPos = MPos - WCO
     float ofsX = 0.0,

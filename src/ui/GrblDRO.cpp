@@ -4,7 +4,7 @@
 void GrblDRO::begin() {
     DRO::begin();
     menuItems.push_back(MenuItem::simpleItem(2, "Unlock ($X)", [this](MenuItem&) {
-        dev.schedulePriorityCommand("$X");
+        dev.schedulePriorityCommand("$X" ,3);
     }));
     menuItems.push_back(MenuItem::simpleItem(3, "Reset (Ctrl-X)", [this](MenuItem&) {
         dev.reset();
@@ -15,7 +15,7 @@ void GrblDRO::begin() {
         doDirty();
     }));
     menuItems.push_back(MenuItem::simpleItem(5, "Home ($H)", [this](MenuItem&) {
-        dev.schedulePriorityCommand("$H");
+        dev.schedulePriorityCommand("$H",3);
     }));
     menuItems.push_back(MenuItem::simpleItem(5, "Set XYZ to 0", [this](MenuItem&) {
         // <G10 L2 P.. X.. Y.. Z..> L2 tells the G10 we’re setting standard work offsets

@@ -1,5 +1,5 @@
 #include "JobFsm.h"
-#include "WString.h"
+#include <string>
 
 bool JobFsm::readCommandsToBuffer() {
     if (filePos >= fileSize){

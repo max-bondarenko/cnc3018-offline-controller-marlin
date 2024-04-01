@@ -7,7 +7,7 @@
 #include "etl/message.h"
 #include "etl/array.h"
 
-#include "WString.h"
+#include <string>
 
 const etl::message_router_id_t JOB_BUS_NUMBER = 1;
 
@@ -50,7 +50,7 @@ struct ResumeMessage : public etl::message<EventId::RESUME> {
 };
 struct SendMessage : public etl::message<EventId::SEND> {
     std::string& cmd;
-    SendMessage(std::string& s): cmd(s) {};
+    explicit SendMessage(std::string& s): cmd(s) {};
 };
 struct AckMessage : public etl::message<EventId::ACK> {
 };

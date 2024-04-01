@@ -58,10 +58,8 @@ public:
     void doDirty() { dirty = true; }
 
     void notification(const DeviceStatusEvent& e) override {
-        if (devStatus != e.status) {
-            devStatus = e.status;
-            devStatusString = e.str;
-        }
+        devStatus = e.status;
+        devStatusString = e.str;
         doDirty();
     }
 
