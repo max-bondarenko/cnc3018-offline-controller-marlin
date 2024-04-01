@@ -63,7 +63,7 @@ void Display::processInput() {
             holdCounter[i] = 0;
         } else if (down) {
             holdCounter[i]++;
-            if (holdCounter[i] == HOLD_COUNT) {
+            if (holdCounter[i] >= HOLD_COUNT) {
                 evt = ButtonEvent::HOLD;
                 if (menuShown) {
                     processMenuButton(i, evt);
@@ -140,7 +140,10 @@ void Display::drawStatusBar() {
     }
     memcpy(str, devStatusString.c_str(), LEN);
     str[LEN - 1] = 0;
-    u8g2.drawStr(LEN, y, str);
+    u8g2.drawStr(10, y, str);
+    memcpy(str, devLastResponse.c_str(), LEN);
+    str[LEN - 1] = 0;
+    u8g2.drawStr(2, y + fH, str);
     //job status
     if (job.isValid()) {
         uint8_t p = job.getCompletion();

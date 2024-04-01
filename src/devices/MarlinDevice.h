@@ -7,6 +7,8 @@
 #include "WString.h"
 
 
+static const char* const OK_str = "ok";
+
 class MarlinDevice : public GCodeDevice {
 public:
     const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 64, 128, 255};
@@ -36,8 +38,6 @@ public:
 
     bool scheduleCommand(const char* cmd, size_t len) override;
 
-    const char* getStatusStr() const override;
-
     void toggleRelative();
 
     bool tempChange(uint8_t temp);
@@ -46,7 +46,7 @@ public:
 
     float getE() const { return e; }
 
-    float getTemp() const { return hotendTemp; } // todo check SIGN
+    float getTemp() const { return hotendTemp; }
 
     uint32_t getHotendPower() const { return hotendPower; }
 

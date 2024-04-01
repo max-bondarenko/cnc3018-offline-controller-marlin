@@ -87,9 +87,7 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
         // this is the first message after reset
         lastStatus = DeviceStatus::MSG;
     }
-    if (lastStatus <= DeviceStatus::MSG) {
-        lastResponse = getStatusStr(); // TODO
-    }
+    lastStatusStr = getStatusStr();
     LOGF("> '%s'\n", resp);
 }
 
@@ -136,8 +134,8 @@ void GrblDevice::parseStatus(char* input) {
         fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
     }
     //    +--  feed
-    //    v   v-- spindle or
-    //                  v-- feed
+    //    |    +-- spindle or
+    //    v    v         v-- feed
     // FS:500,8000  or F:500
     while (fromGrbl != nullptr) {
         if (startsWith(fromGrbl, "FS:") || startsWith(fromGrbl, "F:")) {
@@ -215,7 +213,6 @@ void GrblDevice::setStatus(const char* pch) {
     else if (strcmp(pch, "Check") == 0) status = GrblStatus::Check;
     else if (strcmp(pch, "Home") == 0) status = GrblStatus::Home;
     else if (strcmp(pch, "Sleep") == 0) status = GrblStatus::Sleep;
-    LOGF("Parsed GrblStatus: %d\n", status);
 }
 
 const char* GrblDevice::getStatusStr() const {

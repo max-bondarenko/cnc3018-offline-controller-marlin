@@ -25,12 +25,15 @@ struct MenuItem {
     }
 };
 
-
+/// Display abstraction
+/// N.B. Display drives device updates (call request status)
+/// Device drivers only tries to get and parse response. It is because marlin can
+/// work in auto status mode M154/M155.
 class Display : public JobObserver, public DeviceObserver {
 public:
     static constexpr uint8_t STATUS_BAR_HEIGHT = 16;
     static constexpr uint8_t LINE_HEIGHT = 11;
-    static constexpr int HOLD_COUNT = 30; // x10 = ms
+    static constexpr int HOLD_COUNT = 11; // x19 = ms
     enum {
         BT_ZDOWN = 0,  //
         BT_ZUP,        //
@@ -59,12 +62,12 @@ public:
 
     void notification(const DeviceStatusEvent& e) override {
         devStatus = e.status;
-        devStatusString = e.str;
+        devStatusString = e.statusStr;
+        devLastResponse = e.lastResponse;
         doDirty();
     }
 
     void notification(const JobStatusEvent e) override {
-        // TODO use events to update screen
         doDirty();
     }
 
@@ -94,6 +97,7 @@ private:
     bool menuShown;
     bool menuShownWhenDown;
     String devStatusString;
+    String devLastResponse;
     size_t devStatus;
 
     decltype(buttStates) prevStates;

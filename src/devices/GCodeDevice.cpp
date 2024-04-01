@@ -13,7 +13,7 @@ bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
         return false;
     if (curUnsentCmdLen != 0)
         return false;
-    LOGF("< '%s' \n", cmd);
+    LOGF("< '%s'\n", cmd);
     memcpy(curUnsentCmd, cmd, len);
     curUnsentCmdLen = len;
     return true;
@@ -26,26 +26,24 @@ bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
         return false;
     if (curUnsentPriorityCmdLen != 0)
         return false;
-
+    LOGF("<p '%s'\n", cmd);
     memcpy(curUnsentPriorityCmd, cmd, len);
     curUnsentPriorityCmdLen = len;
     return true;
 }
 
 void GCodeDevice::step() {
-    checkTimeout();
     readLockedStatus();
     if (lastStatus == DeviceStatus::ALARM) {
         cleanupQueue();
-    } else if (
-            (!xoffEnabled || !xoff)
-            && !txLocked) {
-        // no check for queued commands.
-        // do it inside trySend
+    } else if ((!xoffEnabled || !xoff)
+               && lastStatus != DeviceStatus::LOCKED) {
         trySendCommand();
     }
+    // how locked and disconnected should work together ??
     receiveResponses();
-    notify_observers(DeviceStatusEvent{lastStatus, lastResponse});
+    checkTimeout();
+    notify_observers(DeviceStatusEvent{lastStatus, lastStatusStr, lastResponse});
 }
 
 void GCodeDevice::begin() {
@@ -79,8 +77,7 @@ void GCodeDevice::begin() {
 }
 
 void GCodeDevice::readLockedStatus() {
-    txLocked = printerSerial->isLocked(true);
-    if (txLocked)
+    if (printerSerial->isLocked(true))
         lastStatus = DeviceStatus::LOCKED;
 }
 
@@ -90,20 +87,19 @@ void GCodeDevice::cleanupQueue() {
 }
 
 void GCodeDevice::checkTimeout() {
-    if (!isRxTimeoutEnabled()) return;
+    if (!isRxTimeoutEnabled())
+        return;
+    if (lastStatus == DeviceStatus::LOCKED)
+        extendRxTimeout();
     if (millis() > serialRxTimeout) {
-        LOGLN("checkTimeout fired");
         lastStatus = DeviceStatus::DISCONNECTED;
         cleanupQueue();
-        armRxTimeout();
     }
 }
 
-void GCodeDevice::armRxTimeout() {
-    if (!canTimeout)
-        return;
-    LOGLN(isRxTimeoutEnabled() ? "resetRxTout enable" : "resetRxTout disable");
-    serialRxTimeout = millis() + KEEPALIVE_INTERVAL;
+void GCodeDevice::extendRxTimeout() {
+    if (isRxTimeoutEnabled())
+        serialRxTimeout = millis() + KEEPALIVE_INTERVAL;
 }
 
 void GCodeDevice::disarmRxTimeout() {
@@ -115,7 +111,6 @@ void GCodeDevice::disarmRxTimeout() {
 bool GCodeDevice::isRxTimeoutEnabled() const {
     return canTimeout && serialRxTimeout != 0;
 }
-
 
 void GCodeDevice::receiveResponses() {
     constexpr size_t MAX_LINE = 200; // M115 is far longer than 100
@@ -145,6 +140,7 @@ void GCodeDevice::receiveResponses() {
             resp[respLen] = 0;
             tryParseResponse(resp, respLen);
             respLen = 0;
+            extendRxTimeout();
         }
     }
 }

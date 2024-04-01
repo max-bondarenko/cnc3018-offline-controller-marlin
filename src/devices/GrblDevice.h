@@ -42,7 +42,8 @@ public:
     }
 
     bool schedulePriorityCommand(const char* cmd, size_t len) override {
-        if (txLocked) return false;
+        if (lastStatus == DeviceStatus::LOCKED)
+            return false;
         if (len == 0) {
             len = strlen(cmd);
         }
@@ -63,7 +64,7 @@ public:
 
     float getZOfs() const { return ofsZ; }
 
-    const char* getStatusStr() const override;
+    const char* getStatusStr() const;
 
     static void sendProbe(Stream& serial);
 

@@ -34,6 +34,14 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 project(cnc_3018 C CXX ASM)
+STRING(TOLOWER ${CMAKE_BUILD_TYPE} CMAKE_BUILD_TYPE)
+
+set(OPT_FLAG "-Os")
+if (CMAKE_BUILD_TYPE STREQUAL "debug")
+    set(DEBUG_OPT_FLAG "-ggdb")
+else ()
+    set(DEBUG_OPT_FLAG "-Os")
+endif ()
 
 function(ard_lib lib_name lib_path_name lib_path)
     if (lib_path)
@@ -44,6 +52,7 @@ function(ard_lib lib_name lib_path_name lib_path)
     file(GLOB_RECURSE _src ${${lib_name}_path}/*.c ${${lib_name}_path}/*.cpp)
     add_library(${lib_name} ${_src})
     target_include_directories(${lib_name} PUBLIC ${${lib_name}_path})
+    target_compile_options(${lib_name} PRIVATE ${OPT_FLAG})
 
     set(${lib_path_name} ${${lib_name}_path} PARENT_SCOPE)
 endfunction()
@@ -121,7 +130,7 @@ include_directories(
 )
 
 set(LINKER_SCRIPT "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/ldscript.ld")
-target_compile_options(core PRIVATE -Wno-deprecated-declarations)
+target_compile_options(core PRIVATE ${OPT_FLAG} -Wno-deprecated-declarations)
 target_link_libraries(core)
 
 
@@ -134,11 +143,9 @@ set(CMAKE_ASM_COMPILER "${TOOL-PATH}/bin/arm-none-eabi-g++")
 set(CMAKE_OBJCOPY ${TOOL-PATH}/bin/arm-none-eabi-objcopy)
 set(CMAKE_AR ${TOOL-PATH}/bin/arm-none-eabi-ar)
 
-set(CMAKE_C_FLAGS_DEBUG "-g -Os") # does not fit into flash
-set(CMAKE_CXX_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+set(CMAKE_C_FLAGS_DEBUG "")
+set(CMAKE_CXX_FLAGS_DEBUG "")
 
-set(CMAKE_C_FLAGS_RELEASE -Os)
-set(CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
 
 set(COMMON_FLAGS "-Wall -ffunction-sections -fdata-sections -flto -mcpu=cortex-m3 -mthumb")
 set(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit -fno-rtti -std=gnu++11 ${COMMON_FLAGS}")
@@ -155,7 +162,8 @@ set(u8g2_path ${ETL_PATH}/../U8g2)
 file(GLOB_RECURSE U8g2_src ${u8g2_path}/src/*.c ${u8g2_path}/src/*.cpp)
 add_library(U8g2 ${U8g2_src})
 target_compile_definitions(U8g2 PUBLIC U8G2_16BIT)
-target_compile_options(U8g2 PRIVATE -Wno-deprecated -Wno-deprecated-declarations)
+
+target_compile_options(U8g2 PRIVATE ${OPT_FLAG} -Wno-deprecated -Wno-deprecated-declarations)
 target_include_directories(U8g2 PRIVATE ${u8g2_path}/src)
 target_link_libraries(U8g2 PUBLIC SPI Wire)
 
@@ -164,8 +172,9 @@ list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
 add_library(controller ${SRC_LIST})
 set(main_include src sec/ui src/gcode src/devices)
 target_include_directories(controller PUBLIC ${main_include})
+target_compile_options(controller PRIVATE ${DEBUG_OPT_FLAG})
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+if (CMAKE_BUILD_TYPE STREQUAL "debug")
     target_compile_definitions(controller PUBLIC LOG_DEBUG)
 endif ()
 
@@ -176,7 +185,7 @@ if (EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT "-T ${LINKER_SCRIPT}")
 endif ()
 
-set(CMAKE_EXE_LINKER_FLAGS "${search_whole_arch} \
+set(CMAKE_EXE_LINKER_FLAGS "-g ${search_whole_arch} \
 ${LINKER_SCRIPT} \
 -Wl,--as-needed \
 -Wl,--gc-sections,--relax \
@@ -201,6 +210,8 @@ set(HEX_FILE ${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_NAME}.bin)
 
 add_executable(${PROJECT_NAME}.elf src/main.cpp)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE ${DEBUG_OPT_FLAG})
+
 target_link_libraries(${PROJECT_NAME}.elf ${cortexM3_math})
 target_link_libraries(${PROJECT_NAME}.elf "$<LINK_LIBRARY:WHOLE_ARCHIVE,core>")
 target_link_libraries(${PROJECT_NAME}.elf

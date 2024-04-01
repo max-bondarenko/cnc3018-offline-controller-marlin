@@ -2,8 +2,8 @@
 
 #include <Arduino.h>
 #include <etl/vector.h>
-#include "WString.h"
 #include <etl/observer.h>
+#include "WString.h"
 #include "WatchedSerial.h"
 
 class Job;
@@ -12,10 +12,9 @@ class Job;
 #include "debug.h"
 
 
-// TODO LIST
-// TODO 1 switch to states from flags for protocol state  90%
-// TODO 2 make observable events meaningful 50%
-// TODO 3 check RxTimeout , make it work as heartbeat
+// todo done 1 switch to states from flags for protocol state
+// TODO done 2 make observable events meaningful
+// TODO done 3 check RxTimeout , make it work as heartbeat
 
 ///
 /// Device abstraction statuses.
@@ -40,7 +39,8 @@ struct DeviceStatus {
 };
 struct DeviceStatusEvent {
     size_t status;
-    String str;
+    String statusStr;
+    String lastResponse;
 };
 
 using DeviceObserver = etl::observer<const DeviceStatusEvent&>;
@@ -77,8 +77,6 @@ public:
 
     virtual void requestStatusUpdate() = 0;
 
-    virtual const char* getStatusStr() const = 0;
-
     virtual void step();
 
     virtual void receiveResponses();
@@ -109,7 +107,6 @@ protected:
     bool canTimeout,
             xoff,
             xoffEnabled = false,
-            txLocked = false,
             useLineNumber = false;
 
     char curUnsentCmd[MAX_GCODE_LINE + 1], curUnsentPriorityCmd[MAX_GCODE_LINE + 1];
@@ -117,8 +114,10 @@ protected:
     size_t curUnsentCmdLen = 0,
             curUnsentPriorityCmdLen = 0;
 
-    const char* lastResponse = nullptr;
     size_t lastStatus = DeviceStatus::NONE;
+
+    const char* lastResponse = nullptr;
+    const char* lastStatusStr = nullptr;
 
 
     float x = 0.0,
@@ -129,13 +128,7 @@ protected:
     uint32_t spindleVal = 0,
             serialRxTimeout = 0;
 
-    void armRxTimeout();
-
-    void disarmRxTimeout();
-
     bool isRxTimeoutEnabled() const;
-
-    void checkTimeout();
 
     void cleanupQueue();
 
@@ -144,4 +137,12 @@ protected:
     virtual void tryParseResponse(char* cmd, size_t len) = 0;
 
     void readLockedStatus();
+
+private:
+
+    void extendRxTimeout();
+
+    void disarmRxTimeout();
+
+    void checkTimeout();
 };

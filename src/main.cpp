@@ -96,7 +96,7 @@ void loop() {
             bitWrite(display.buttStates, i, (digitalRead(buttPins[i]) == 0 ? 1 : 0));
         }
         display.processInput();
-        nextRead = millis() + 20;
+        nextRead = millis() + 19;
     }
     //END poll buttons
 

@@ -1,4 +1,5 @@
 #include <vector>
+#include <Arduino.h>
 #include "constants.h"
 #include "MarlinDevice.h"
 
@@ -30,7 +31,6 @@ bool MarlinDevice::checkProbeResponse(const String& input) {
 MarlinDevice::MarlinDevice(WatchedSerial* s, Job* job) : GCodeDevice(s, job) {
     canTimeout = false;
     useLineNumber = true;
-    lastResponse = nullptr;
 }
 
 bool MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
@@ -71,8 +71,6 @@ bool MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
 }
 
 bool MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len) {
-    if (txLocked)
-        return false;
     return scheduleCommand(cmd, len);
 }
 
@@ -100,43 +98,57 @@ void MarlinDevice::toggleRelative() {
 
 // TODO optimize all this silly ifs
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
+    char* lr = const_cast<char*>( OK_str); //ugly
+
     LOGF("> [%s],%d\n", resp, len);
     if (startsWith(resp, "Error") || startsWith(resp, "!!")) {
         if (startsWith(resp, "Error")) {
-            lastResponse = resp + 5;
+            lr = resp;
+            lr[5] = 0;
+            lastResponse = resp + 6;
             parseError(lastResponse); // TODO
         } else {
-            lastResponse = resp + 2;
+            lr = resp;
+            lr[2] = 0;
+            lastResponse = resp + 3;
         }
         lastStatus = DeviceStatus::DEV_ERROR;
         outQueue.clear();
     } else {
-        if (startsWith(resp, "ok")) {
+        if (startsWith(resp, OK_str)) {
             if (len > 2) {
                 parseOk(resp + 2, len - 2);
+                lastResponse = resp + 2;
             }
             if (resendLine > 0) { // was resend before
                 resendLine = -1;
             }
-            lastResponse = resp;
             lastStatus = DeviceStatus::OK;
         } else {
             if (strstr(resp, "busy:") != nullptr) {
-                lastResponse = resp + 5; // marlin do space after :
+                lr = resp;
+                lr[5] = 0;
+                lastResponse = resp + 6; // marlin do space after :
                 lastStatus = DeviceStatus::BUSY;
                 LOGLN("SET busy");
             }
             if (startsWith(resp, "echo:")) {
                 // echo: busy must be before this
-                lastResponse = resp + 5;
-            } else if (startsWith(resp, "Resend: ")) {
-                // MAY hae "Resend:Error
-                lastResponse = resp + 7;
-                resendLine = atoi(resp);
+                lr = resp;
+                lr[5] = 0;
+                lastResponse = resp + 6;
+            } else if (startsWith(resp, "Resend:")) {
+                lr = resp;
+                lr[7] = 0;
+                // MAY have "Resend:Error
+                lastResponse = resp + 8;
+                resendLine = strtol(resp, nullptr, STRTOLL_BASE);
                 lastStatus = DeviceStatus::RESEND;
                 // no pop. resend
             } else {
                 if (startsWith(resp, "DEBUG:")) {
+                    lr = resp;
+                    lr[6] = 0;
                     lastResponse = resp;
                 } else {
                     // M154 Snn or  M155 Snn
@@ -145,7 +157,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                 lastStatus = DeviceStatus::OK;
             }
         }
-        notify_observers(DeviceStatusEvent{lastStatus, getStatusStr()});
+        lastStatusStr = lr;
     }
 }
 
@@ -154,10 +166,6 @@ bool MarlinDevice::tempChange(uint8_t temp) {
     char msg[LN];
     int l = snprintf(msg, LN, "%s S%d", M104_SET_EXTRUDER_TEMP, temp);
     return scheduleCommand(msg, l);
-}
-
-const char* MarlinDevice::getStatusStr() const {
-    return ""/*lastResponse*/; //todo
 }
 
 ///  marlin dont jog, just do G0
