@@ -3,6 +3,7 @@
 #include "JobFsm.h"
 #include "gcode/gcode.h"
 #include "debug.h"
+#include "devices/MarlinDevice.h"
 // TODO list
 // TODO 1 add prev state
 // TODO 2 add resend
@@ -42,15 +43,29 @@ public:
     }
 };
 
-class ErrorState : public FinishState {
-    etl::fsm_state_id_t on_enter_state() override {
-        return StateId::ERROR;
+class ErrorState : public etl::fsm_state<JobFsm, ErrorState, StateId::ERROR, SetFileMessage> {
+public:
+    etl::fsm_state_id_t on_enter_state() {
+        get_fsm_context().endTime = millis();
+        return STATE_ID;
+    }
+
+    etl::fsm_state_id_t on_event(const SetFileMessage& event) {
+        get_fsm_context().closeFile();
+        get_fsm_context().setFile(event.fileName);
+        get_fsm_context().dev->scheduleCommand(RESET_LINE_NUMBER, 8);
+        return StateId::READY;
+    }
+
+    etl::fsm_state_id_t on_event_unknown(const etl::imessage& msg) {
+        LOGF("error state: %d", msg.get_message_id());
+        return STATE_ID;
     }
 };
 
-class ReadyState
-        : public etl::fsm_state<JobFsm, ReadyState, StateId::READY,
-                StartMessage, SendMessage, PauseMessage, CompleteMessage, ResendMessage> {
+
+class ReadyState : public etl::fsm_state<JobFsm, ReadyState, StateId::READY,
+        StartMessage, SendMessage, PauseMessage, CompleteMessage> {
 public:
 
     etl::fsm_state_id_t on_event(const StartMessage& event) {
@@ -67,11 +82,6 @@ public:
     etl::fsm_state_id_t on_event(const PauseMessage& event) {
         get_fsm_context().endTime = millis() - get_fsm_context().startTime;
         return StateId::PAUSED;
-    }
-
-    etl::fsm_state_id_t on_event(const ResendMessage& event) {
-        // todo
-        return StateId::READY;
     }
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
@@ -115,7 +125,7 @@ public:
     }
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
-        return StateId::FINISH;
+        return event.byError ? StateId::ERROR : StateId::FINISH;
     }
 
     etl::fsm_state_id_t on_event_unknown(const etl::imessage& msg) {
@@ -162,7 +172,7 @@ public:
     }
 
     void stop() {
-        fsm->receive(CompleteMessage{});
+        fsm->receive(CompleteMessage{false});
     }
 
     void setPaused(bool v) {
@@ -173,7 +183,7 @@ public:
     }
 
     bool inline isRunning() {
-        unsigned char i = fsm->get_state_id();
+        etl::fsm_state_id_t i = fsm->get_state_id();
         return i == StateId::READY || i == StateId::WAIT_RESP;
     }
 
@@ -182,7 +192,7 @@ public:
     }
 
     bool inline isError() {
-        return StateId::ERROR == fsm->get_state_id() ;
+        return StateId::ERROR == fsm->get_state_id();
     }
 
     uint8_t getCompletion() {
@@ -198,7 +208,7 @@ public:
                 if (fsm->readCommandsToBuffer()) {
                     fsm->receive(SendMessage{fsm->buffer.at(fsm->curLineNum % JobFsm::MAX_BUF)});
                 } else {
-                    fsm->receive(CompleteMessage{});
+                    fsm->receive(CompleteMessage{false});
                 }
                 notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
                 break;
@@ -208,8 +218,19 @@ public:
                         fsm->receive(AckMessage{});
                         break;
                     case DeviceStatus::DEV_ERROR:
-                        fsm->receive(CompleteMessage{});
+                        fsm->receive(CompleteMessage{true});
                         break;
+                    case DeviceStatus::RESEND: {
+                        int32_t line = fsm->dev->getResendLine();
+                        size_t dif = fsm->curLineNum - line;
+                        if (dif < JobFsm::MAX_BUF) {
+                            fsm->receive(AckMessage{});
+                            fsm->receive(SendMessage{fsm->buffer.at(line % JobFsm::MAX_BUF)});
+                        } else {
+                            fsm->receive(CompleteMessage{true});
+                        }
+                        break;
+                    }
                     case DeviceStatus::BUSY:
                     case DeviceStatus::WAIT:
                     default:

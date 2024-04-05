@@ -40,7 +40,8 @@ struct SetFileMessage : public etl::message<EventId::FILE> {
     const char* fileName;
 };
 struct CompleteMessage : public etl::message<EventId::COMPLETE> {
-    bool byError = false;
+    bool byError;
+    explicit CompleteMessage(bool byErr): byError(byErr){};
 };
 struct StartMessage : public etl::message<EventId::START> {
 };
@@ -53,9 +54,6 @@ struct SendMessage : public etl::message<EventId::SEND> {
     explicit SendMessage(std::string& s): cmd(s) {};
 };
 struct AckMessage : public etl::message<EventId::ACK> {
-};
-struct ResendMessage : public etl::message<EventId::RESEND> {
-    uint32_t numer;
 };
 
 #include <Arduino.h>

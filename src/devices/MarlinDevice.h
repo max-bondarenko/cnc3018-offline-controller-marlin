@@ -78,8 +78,6 @@ private:
 
     bool relative = false;
 
-    int32_t resendLine = -1;
-
     void parseError(const char* input);
 
     void parseOk(const char* input, size_t len);

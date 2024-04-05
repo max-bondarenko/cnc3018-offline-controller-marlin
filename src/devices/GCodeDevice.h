@@ -99,6 +99,8 @@ public:
 
     size_t getLastStatus() const { return lastStatus; }
 
+    int32_t getResendLine() const { return resendLine; }
+
 protected:
     WatchedSerial* printerSerial;
     Job* job;
@@ -127,6 +129,8 @@ protected:
 
     uint32_t spindleVal = 0,
             serialRxTimeout = 0;
+
+    int32_t resendLine = -1;
 
     bool isRxTimeoutEnabled() const;
 

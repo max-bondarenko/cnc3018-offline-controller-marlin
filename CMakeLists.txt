@@ -152,7 +152,18 @@ set(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit
 set(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects -nostdlib --param max-inline-insns-single=500 ${COMMON_FLAGS}")
 set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
 
-ard_lib(SD SD_path "")
+if (NOT EXISTS ARDUINO_SDK_PATH)
+    set(SD_LIB_path ${CMAKE_CURRENT_SOURCE_DIR}/.pio/libdeps/controller/SD/src)
+
+    file(GLOB_RECURSE _src ${SD_LIB_path}/*.c ${SD_LIB_path}/*.cpp)
+    add_library(SD ${_src})
+    target_include_directories(SD PUBLIC ${SD_LIB_path})
+    target_compile_options(SD PRIVATE ${OPT_FLAG})
+else ()
+    ard_lib(SD SD_path ${SD_LIB_path})
+endif ()
+
+
 target_compile_options(SD PRIVATE -Wno-deprecated -Wno-deprecated-declarations)
 ard_lib(SPI SPI_path ${PLATFORM-PATH})
 ard_lib(Wire Wire_path ${PLATFORM-PATH})
@@ -226,15 +237,20 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMENT "Building ${HEX_FILE} \nBuilding ${BIN_FILE}"
         VERBATIM)
 
-set(OCD_PATH ${PLATFORM-PATH}/../tool-openocd)
 add_custom_target(${PROJECT_NAME}-size
         COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -A -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf
         COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -B -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf
         DEPENDS ${PROJECT_NAME}.elf
         )
 
+find_program(OCD_PROG NAMES openocd)
+if (NOT EXISTS ${OCD_PROG})
+    set(OCD_PROG ${PLATFORM-PATH}/../tool-openocd/bin/openocd)
+endif ()
+
+
 add_custom_target(${PROJECT_NAME}-upload-ocd
-        COMMAND ${OCD_PATH}/bin/openocd
+        COMMAND ${OCD_PROG}
         -s ${OCD_PATH}/scripts
         -c \"set FLASH_SIZE 0x20000\"
         -f interface/stlink.cfg

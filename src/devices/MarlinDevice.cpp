@@ -4,7 +4,6 @@
 #include "MarlinDevice.h"
 
 #include "Job.h"
-#include "utils.h"
 #include "util.h"
 #include "debug.h"
 
@@ -60,9 +59,6 @@ void MarlinDevice::trySendCommand() {
 }
 
 bool MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
-    if (resendLine > 0) {
-        return false;
-    }
     if (!outQueue.full()) {
         outQueue.push_back(String(cmd));
         return true;
@@ -98,9 +94,9 @@ void MarlinDevice::toggleRelative() {
 
 // TODO optimize all this silly ifs
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
-    char* lr = const_cast<char*>( OK_str); //ugly
-
-    LOGF("> [%s],%d\n", resp, len);
+    char* lr = const_cast<char* >(OK_str); //ugly
+    lastResponse = nullptr;
+    LOGF("> [%s]\n", resp);
     if (startsWith(resp, "Error") || startsWith(resp, "!!")) {
         if (startsWith(resp, "Error")) {
             lr = resp;
@@ -118,7 +114,9 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         if (startsWith(resp, OK_str)) {
             if (len > 2) {
                 parseOk(resp + 2, len - 2);
+#ifdef LOG_DEBUG
                 lastResponse = resp + 2;
+#endif
             }
             if (resendLine > 0) { // was resend before
                 resendLine = -1;
@@ -130,7 +128,6 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                 lr[5] = 0;
                 lastResponse = resp + 6; // marlin do space after :
                 lastStatus = DeviceStatus::BUSY;
-                LOGLN("SET busy");
             }
             if (startsWith(resp, "echo:")) {
                 // echo: busy must be before this
@@ -139,17 +136,19 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                 lastResponse = resp + 6;
             } else if (startsWith(resp, "Resend:")) {
                 lr = resp;
-                lr[7] = 0;
+                lr[6] = 0;
                 // MAY have "Resend:Error
-                lastResponse = resp + 8;
-                resendLine = strtol(resp, nullptr, STRTOLL_BASE);
+#ifdef LOG_DEBUG
+                lastResponse = resp + 7;
+#endif
+                resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
                 lastStatus = DeviceStatus::RESEND;
                 // no pop. resend
             } else {
                 if (startsWith(resp, "DEBUG:")) {
                     lr = resp;
-                    lr[6] = 0;
-                    lastResponse = resp;
+                    lr[5] = 0;
+                    lastResponse = resp + 5;
                 } else {
                     // M154 Snn or  M155 Snn
                     parseOk(resp, len);
@@ -157,8 +156,8 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                 lastStatus = DeviceStatus::OK;
             }
         }
-        lastStatusStr = lr;
     }
+    lastStatusStr = lr;
 }
 
 bool MarlinDevice::tempChange(uint8_t temp) {
