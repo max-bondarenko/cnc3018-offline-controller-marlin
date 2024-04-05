@@ -9,6 +9,7 @@ x: float = 0.0
 y: float = 0.0
 z: float = 10.01
 e: float = 0.01
+P: int = 1
 
 stack = deque()
 resp = deque()
@@ -42,10 +43,17 @@ def line_number(str):
 
 
 def marlin_repeater(str):
+    global x
+    global P
     if str.startswith("G0"):
-        global x
         x = x + 0.01
-        resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f}\r\n".format(x, y, z, e))
+        resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B:{4} @:{4}\r\n".format(x, y, z, e, P))
+    elif str.startswith("M104"):
+        P = P << 1
+        if P > 256:
+            P = 1
+        resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B@:{4}\r\n".format(x, y, z, e, P))
+    # comment this branch to check power
     elif str.startswith("M110N0"):
         resp.append("ok\r\n")
         global N

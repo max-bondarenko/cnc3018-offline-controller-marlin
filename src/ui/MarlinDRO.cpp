@@ -88,12 +88,16 @@ void MarlinDRO::drawContents() {
             u8g2.drawStr(axisPadding, sy, buffer);
             buffer[0] = PRINTER[0] /*T*/;
             /// === draw Extrude & temps panel ==
+            /// BED
             u8g2.drawStr(axisPadding, sy + lineHeight, buffer);
             snprintf(buffer, 12, "%5.1f/%3d", dev.getBedTemp(), expectedBedTemp);
             u8g2.drawStr(lineWidth * 2 - 3, sy, buffer);
+            drawPower(sy + lineHeight - 2, lineHeight, dev.getBedPower());
+            /// Extruder Temp
             snprintf(buffer, 12, "%5.1f/%3d", dev.getTemp(), expectedTemp);
             u8g2.drawStr(lineWidth * 2 - 3, sy + lineHeight, buffer);
-            // == extruder
+            drawPower(sy + lineHeight * 2 - 2, lineHeight, dev.getHotendPower());
+            /// == extruder Axis
             drawAxis(AXIS[3], dev.getE(), axisPadding, sy + lineHeight * 2);
             sx_start_right += 11; //padding for spindle/feed values
         }
@@ -234,4 +238,20 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
         dev.tempChange(expectedTemp);
         doDirty();
     }
+}
+
+
+void MarlinDRO::drawPower(uint16_t sy, uint8_t lineHeight, uint16_t val) {
+    U8G2& u8g2 = display->getU8G2();
+    val = val >= 127 ? lineHeight - 2 :
+          val >= 64 ? lineHeight / 2 :
+          val > 0 ? 2 : 0;
+    int8_t wide = val > 6 ? 3 :
+                  val > 4 ? 2 : 1;
+    int16_t lx = 70 + 3;
+    // (2)( lx - wide,sy - val)   --  (lx + wide,sy - val)  (0)
+    //                 \                      /
+    //                       \            /
+    //                        (lx, sy )  (1)
+    u8g2.drawTriangle(lx + wide, sy - val, lx, sy, lx - wide, sy - val);
 }

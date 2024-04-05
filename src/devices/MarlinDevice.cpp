@@ -198,9 +198,8 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
                 if (fromMachine[1] == '@') {
                     bedPower = strtol(fromMachine + 3, nullptr, STRTOLL_BASE);
                 } else {
-
                     bedTemp = strtol(fromMachine + 2, nullptr, STRTOLL_BASE);
-                    nextBedTemp = true;
+                    nextBedTemp = true; // TODO check may be bug !!!
                 }
                 break;
             case 'X':
