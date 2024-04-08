@@ -13,6 +13,8 @@ endif::[]
 This is fork of link:http://github.com/positron96/cnc3018-offline-controller[positron96/cnc3018-offline-controller].
 Little reworked and added support for link:https://marlinfw.org/[Marlin 3D printer software].
 
+image:https://i.ytimg.com/vi/BEVB5CpvtIs/maxresdefault.jpg?sqp=-oaymwEmCIAKENAF8quKqQMa8AEB-AH-CYAC0AWKAgwIABABGFQgXChlMA8=&amp;rs=AOn4CLDVmuZu05i0Y1WJ90vXWedPD5UxFQ[link=https://www.youtube.com/embed/BEVB5CpvtIs]
+
 This popular chineese (most probably) controller is frequently sold with 3018-type CNC machines.
 The machines themselves run GRBL on ATmega328 MCUs, while the controller uses STM32F103 MCU.
 The stock firmware is somewhat lacking in features (no DROs, no spindle speed, for example).
