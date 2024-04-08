@@ -10,24 +10,21 @@ endif::[]
 
 # Open-source firmware for an STM32-based "cnc3018 offline controller"
 
-
-
-**Video demonstration:**
-
-image:https://img.youtube.com/vi/B5J12AMOc3k/mqdefault.jpg[link=https://www.youtube.com/watch?v=B5J12AMOc3k]
+This is fork of link:http://github.com/positron96/cnc3018-offline-controller[positron96/cnc3018-offline-controller].
+Little reworked and added support for link:https://marlinfw.org/[Marlin 3D printer software].
 
 This popular chineese (most probably) controller is frequently sold with 3018-type CNC machines.
 The machines themselves run GRBL on ATmega328 MCUs, while the controller uses STM32F103 MCU.
 The stock firmware is somewhat lacking in features (no DROs, no spindle speed, for example).
 
 The goal of this project is to make an alternative firmware to control a CNC machine.
-The information provided can be also useful for those who want to turn this controller into something else 
-(a small gaming console, a controller for other equipment). 
+The information provided can be also useful for those who want to turn this controller into something else
+(a small gaming console, a controller for other equipment).
 
 The firmware is written for Arduino framework and PlatformIO build system.
 May be used with VSCode or CLion + CMake.
 
-[IMPORTANT] 
+[IMPORTANT]
 ====
 This firmware is for a controller with an OLED display and a full-sized SD card.
 There are other, probably newer controllers with a colored TFT display and micro-SD cards.
@@ -54,13 +51,13 @@ An SWD programmer will also be needed.
 
 * [x] Jogging
 * [x] Spindle control (with 1% option for laser "pointer")
-* [x] Spindle preset file read from SD.
+* [x] Spindle preset file read from SD
 * [x] File chooser UI
 * [x] Job control (pause/cancel)
 * [x] Grbl state tracking (alarm, error)
 * [x] Menu
-* [x] Different menus for each device   
-** [x] Change work offsets (set zero to current position). Only G54 supported.
+* [x] Different menus for each device
+** [x] Change work offsets (set zero to current position). Only G54 supported
 ** [x] Homing ($H), unlocking ($X)
 ** [x] Grbl reset (Ctrl+X)
 * [x] Display coordinates in WCS (done, but not intuitively for now)
@@ -68,36 +65,32 @@ An SWD programmer will also be needed.
 * [x] Detection of GRBL USB connection via dedicated pin (works to some extent)
 * [ ] Improve continuous jogging
 * [x] Marlin support
-** [ ] Marlin detect futures/status polling
+** [ ] detect futures/status polling
+** [x] resend broken command support
 ** [x] STOP/Continue by M0/M108
 ** [x] set Bed and Extruder temperature
+** [x] show Bed and Extruder heater power level
 ** [x] Extruder jog
 ** [x] Spindle/Laser set value display
-
+* [x] Removed extra parsing/printing lib. Now everything work with strtol/printf
 
 ## Schematic and hardware
 
 image::controller.png[display,300]
 image::board-photo.jpg[display,1000]
 
-The schematic reversing is complete to the necessary degree. 
+The schematic reversing is complete to the necessary degree.
 Everything that's needed to interface with MCU (pins, interfaces) is discovered.
 
 The board features:
 
-* STM32F103C8T6 MCU. 
-  64K Flash, 20K RAM. As usual, 128k is usable. 
-* 128x64 OLED display with SSD1306 IC. 
-  2-color, 16 rows are yellow, the rest is cyan.
-  Connected via 4-wire software SPI.
+* STM32F103C8T6 MCU. 64K Flash, 20K RAM. As usual, 128k is usable.
+* 128x64 OLED display with SSD1306 IC. 2-color, 16 rows are yellow, the rest is cyan. Connected via 4-wire software SPI.
 * Mini USB (no external crystal, so not datasheet-compliant).
-* Full size SD card socket. 
-  Connected to MCU via SPI interface.
-* 8-pin IDC connector for CNC machine. 
-  Has 5V, GND, UART and USB detection pin 
-  (when the CNC is connected to PC via its own USB-UART, the controller detects that and does not send data over UART).
-* 8 buttons. 
-  Buttons short MCU pin to ground, internal pullup required.
+* Full size SD card socket. Connected to MCU via SPI interface.
+* 8-pin IDC connector for CNC machine. Has 5V, GND, UART and USB detection pin (when the CNC is connected to PC via
+its own USB-UART, the controller detects that and does not send data over UART).
+* 8 buttons. Buttons short MCU pin to ground, internal pullup required.
 * An unpopulated SWD socket
 
 image::MCU_SD_UART.svg[display,1000]
@@ -106,37 +99,46 @@ image::Display_USB_SWD.svg[display,1000]
 You can clone the EasyEDA project of the schematic here:
 https://oshwlab.com/positron96/cnc-offline-controller-stm32
 
-
 ## Build & Install
 
 ### Build
 
-Use PlatformIO. 
+#### Use PlatformIO.
+
 It will install everything required to build the firmware.
 
-You can also download the precompiled binaries (elf and hex) on https://github.com/positron96/cnc3018-offline-controller/releases/latest[Releases page].
+#### Use CMake.
 
-Or CMake.
 Now it relies on platformio artifacts by default. But easily could be changed to whatever source.
-
 
 ### Install
 
-The easiest way to flash the firmware is to solder 4 wires to SWD pads. 
-They are located at the top right corner of the PCB underside. 
-The order is (from the corner) GND, SWDCLK, SWDIO, +5V (see schematic above).
+The easiest way to flash the firmware is to solder 4 wires to SWD pads. They are located at the top right corner of the
+PCB underside. The order is (from the corner) GND, SWDCLK, SWDIO, +5V (see schematic above).
 
-The PlatformIO project is configured to use stlink. 
-OpenOCD will be configured with no flash size autodetection to allow more than 64k firmware on 64k MCU.
-Other SWD programmers like J-Link or Blackmagic Probe will work as well, though extra configuration should be made to allow >64k firmware to be flashed. 
-I have no idea how to tell these programmers to do so. If you do, please let me know.
+The PlatformIO project is configured to use stlink. OpenOCD will be configured with no flash size autodetection to
+allow more than 64k firmware on 64k MCU. Other SWD programmers like J-Link or Blackmagic Probe will work as well,
+though extra configuration should be made to allow >64k firmware to be flashed. I have no idea how to tell these
+programmers to do so. If you do, please let me know.
 
-Due to non-standard configuration used for >64k firmware, if you need to debug the firmware, you first need to upload it via upload command. 
-This way, the programmer packages are downloaded and installed.
+Due to non-standard configuration used for >64k firmware, if you need to debug the firmware, you first need to upload
+it via upload command. This way, the programmer packages are downloaded and installed.
 
 Original backup firmware from my controller can be found link:docs/original.hex[here].
 
+### Marlin support
+
+* Device connected with Marlin by UART. By default, Marlin has only Serial1 enabled. Build Marlin with SERIAL_PORT_2
+support. (this was checked for UART2 on atmega2560 pin 16,17)
+* for stop/continue Marlin should be built with M108 support (EMERGENCY_PARSER + HOST_KEEPALIVE_FEATURE enabled)
+* Controller uses auto position & auto temperature report by default. Marlin should be build with M154/M155
+support(EXTENDED_CAPABILITIES_REPORT + AUTO_REPORT_TEMPERATURES enabled)
+
+In any case refer to link:https://marlinfw.org/docs/configuration/configuration.html[Marlin configuration guide]
+
 ### Job states
+
+Job control works as explicit FSM with flowing state diagram.
 
     ┌──────────┐
     │          │
@@ -157,16 +159,14 @@ Original backup firmware from my controller can be found link:docs/original.hex[
                                             │                  │
                                             └──────resume──────┘
 
-
-
 ## Spindle preset.
 
-See spindle.txt example. Device read only first line, skip everything above.  
-Line length limited to 99 chars, 9 2-byte integer values delimited with comas. First "0" is not needed, it always presents.
-Please use with caution, You will use what You write in file.    
-
+See link:spindle.txt[example]. Device read only first line, skip everything above. Line length limited to 99 chars,
+9 2-byte integer values delimited with comas. First "0" is not needed, it always presents. Please use with caution,
+You will use what You write in file.
 
 ## Links
-* SSD1306 datasheet (old): https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf
-* On SSD1306 connection: https://vivonomicon.com/2018/04/20/diy-oled-display-boards-ssd1306-and-ssd1331/
-* 3018 CNC board (Woodpecker v3.3) schematic: http://s3.amazonaws.com/s3.image.smart/download/101-60-280/Schematic_CAMTOOL%20CNC-V3.3.pdf
+
+* link:https://cdn-shop.adafruit.com/datasheets/SSD1306.pdf[SSD1306 datasheet (old)]
+* link:https://vivonomicon.com/2018/04/20/diy-oled-display-boards-ssd1306-and-ssd1331/[On SSD1306 connection]
+* 3018 CNC board (Woodpecker v3.3) schematic: link:http://s3.amazonaws.com/s3.image.smart/download/101-60-280/Schematic_CAMTOOL%20CNC-V3.3.pdf[Schematic_CAMTOOL%20CNC-V3.3.pdf]

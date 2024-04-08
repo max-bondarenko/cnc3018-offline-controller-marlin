@@ -9,6 +9,7 @@ void GrblDevice::sendProbe(Stream& serial) {
 
 bool GrblDevice::checkProbeResponse(const String& input) {
     if (input.indexOf("[VER:") != -1) {
+        LOGLN(">> Detected Grbl device <<");
         return true;
     }
     return false;
