@@ -18,29 +18,9 @@ public:
 
     virtual ~DRO() {}
 
-    void begin() override {
-        menuItems.push_back(MenuItem::simpleItem(0, "Open", [this](MenuItem&) {
-            if (job.isRunning()) return;
-            display->setScreen(&fileChooser); // this will reset the card
-        }));
-        menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [this](MenuItem& m) {
-            if (job.isRunning()) {
-                job.setPaused(true);
-                m.text = "Resume job";
-            } else {
-                job.setPaused(false);
-                m.text = "Pause job";
-            }
-            doDirty();
-        }));
-    };
+    void begin() override;
 
-    void step() override {
-        if (nextRefresh != 0 && millis() > nextRefresh) {
-            nextRefresh = millis() + REFRESH_INTL + 9;
-            dev.requestStatusUpdate();
-        }
-    }
+    void step() override;
 
     void enableRefresh(bool r = true) { nextRefresh = r ? millis() : 0; }
 

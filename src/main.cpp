@@ -34,25 +34,25 @@ FileChooser fileChooser;
 GCodeDevice* dev;
 DRO* dro;
 
-void createDevice(int i, WatchedSerial* s) {
+void createDevice(int i, WatchedSerial& s) {
     if (dev != nullptr) return;
     delay(300);
     switch (i) {
         case 0: {
-            GrblDevice* device = new GrblDevice(s, &job);
+            GrblDevice* device = new GrblDevice(s, job);
             dro = new GrblDRO(*device);
             dev = device;
         }
             break;
         default: {
-            MarlinDevice* device = new MarlinDevice(s, &job);
+            MarlinDevice* device = new MarlinDevice(s, job);
             dro = new MarlinDRO(*device);
             dev = device;
         }
     }
     job.setDevice(dev);
     display.setScreen(dro);
-    dev->begin();
+    dev->begin(nullptr);
     dev->add_observer(display);
     dro->begin();
     dro->enableRefresh();
@@ -108,7 +108,7 @@ void loop() {
         Detector::loop();
     }
 
-#ifdef LOG_DEBUG
+#ifdef USB_TO_SERIAL
     //send all data from pc to device
     if (SerialUSB.available()) {
         while (SerialUSB.available()) {

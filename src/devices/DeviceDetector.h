@@ -14,7 +14,7 @@ constexpr static uint32_t serialBauds[] = {57600, 115200, 9600, 250000};
 constexpr static uint32_t N_SERIAL_BAUDS = sizeof(serialBauds) / sizeof(serialBauds[0]);
 const char* deviceNames[] = {"grbl", "marlin"};
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 class DeviceDetector {
 public:
     static void init() {
@@ -59,7 +59,7 @@ private:
         }
         printerSerial.end();
         printerSerial.begin(serialBaud);
-        LOGLN("Send");
+        DETECTOR_LOGLN("Det >");
         switch (cDev) {
             case 0:
                 GrblDevice::sendProbe(printerSerial);
@@ -95,9 +95,9 @@ private:
                     if (respLen < MAX_LINE)
                         resp[respLen++] = ch;
             }
-            if (ch == '\n') {
+            if (ch == '\n' || ch == '\r') {
                 resp[respLen] = 0;
-                LOGF("> [%s]\n", resp);
+                DETECTOR_LOGF("> [%s]\n", resp);
                 String _resp(resp);
                 bool ret = false;
                 if (cDev == 0) {
@@ -107,7 +107,7 @@ private:
                 }
 
                 if (ret) {
-                    createDevice(cDev, &printerSerial);
+                    createDevice(cDev, printerSerial);
                     cResult = 1;
                     return;
                 }
@@ -118,23 +118,23 @@ private:
 
 };
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 uint32_t DeviceDetector<T, printerSerial, createDevice>::serialBaud;
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 const char* DeviceDetector<T, printerSerial, createDevice>::deviceName;
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 uint8_t DeviceDetector<T, printerSerial, createDevice>::cSpeed;
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 uint8_t  DeviceDetector<T, printerSerial, createDevice>::cAttempt;
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 int  DeviceDetector<T, printerSerial, createDevice>::cResult;
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 uint8_t  DeviceDetector<T, printerSerial, createDevice>::cDev;
 
-template <class T, T& printerSerial, void (* createDevice)(int, T*)>
+template<class T, T& printerSerial, void (* createDevice)(int, T&)>
 uint32_t  DeviceDetector<T, printerSerial, createDevice>::nextProbeTime;

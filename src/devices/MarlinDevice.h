@@ -12,6 +12,12 @@
 
 static const char* const OK_str = "ok";
 
+struct Compat {
+    char auto_temp: 1;
+    char auto_position: 1;
+    char emergency_parser: 1;
+};
+
 class MarlinDevice : public GCodeDevice {
 public:
     const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 64, 128, 255};
@@ -21,7 +27,7 @@ public:
     static bool checkProbeResponse(const String& input);
 
     //// CONSTRUCTORS
-    MarlinDevice(WatchedSerial* s, Job* job);
+    MarlinDevice(WatchedSerial& _printerSerial, Job& _job);
 
     virtual ~MarlinDevice() {}
 
@@ -31,7 +37,7 @@ public:
 
     bool canJog() override;
 
-    void begin() override;
+    void begin(SetupFN* const onBegin) override;
 
     void reset() override;
 
@@ -61,6 +67,10 @@ public:
     /// use this to set value from DRO to see current set value.
     void adjustSpindle(uint32_t val) { spindleVal = val; }
 
+    const Compat& getCompatibilities() const{
+        return compatibility;
+    }
+
 protected:
     void trySendCommand() override;
 
@@ -80,6 +90,7 @@ private:
             bedPower = 0;
 
     bool relative = false;
+    Compat compatibility;
 
     void parseError(const char* input);
 

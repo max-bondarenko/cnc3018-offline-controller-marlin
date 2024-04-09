@@ -45,7 +45,7 @@ def line_number(str):
 def marlin_repeater(str):
     global x
     global P
-    if str.startswith("G0"):
+    if str.startswith("G0") or str.startswith("M114"):
         x = x + 0.01
         resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B:{4} @:{4}\r\n".format(x, y, z, e, P))
     elif str.startswith("M104"):
@@ -54,12 +54,12 @@ def marlin_repeater(str):
             P = 1
         resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B@:{4}\r\n".format(x, y, z, e, P))
     # comment this branch to check power
-    elif str.startswith("M110N0"):
-        resp.append("ok\r\n")
-        global N
-        N = 0
-        stack.append(line_number)
-        return
+    # elif str.startswith("M110N0"):
+    #     resp.append("ok\r\n")
+    #     global N
+    #     N = 0
+    #     stack.append(line_number)
+    #     return
     else:
         resp.append("ok\r\n")
 
@@ -68,7 +68,10 @@ def marlin_repeater(str):
 
 def check_mode(str):
     if str.startswith("M115"):
-        resp.append("Marlin\r\n")
+        resp.append("FIRMWARE_NAME:Marlin\r\n"
+                    "Cap:AUTOREPORT_POS:0\r\n"
+                    "Cap:AUTOREPORT_POS:0\r\n"
+                    "Cap:EMERGENCY_PARSER:1\r\n")
         stack.append(marlin_repeater)
     else:
         stack.append(check_mode)
@@ -121,7 +124,7 @@ def main():
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.CSTOPB
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IGNCR
             #  ==================================================
-            attr[tty.OFLAG] = 0
+            attr[tty.OFLAG] = 0x30
             attr[tty.OFLAG] = attr[tty.OFLAG] | termios.CS8
             attr[tty.OFLAG] = attr[tty.OFLAG] & ~termios.CSTOPB
 
@@ -131,6 +134,9 @@ def main():
             attr[tty.ISPEED] = termios.B9600
             attr[tty.OSPEED] = termios.B9600
             termios.tcsetattr(fd, termios.TCSADRAIN, attr)
+            print("========")
+            print(
+                '{0:b}\n{1:b}\n{2:b}\n{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG], attr[tty.LFLAG]))
             a = ""
 
             stack.append(check_mode)

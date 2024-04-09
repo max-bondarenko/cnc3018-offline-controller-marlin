@@ -57,10 +57,10 @@ void GrblDevice::trySendCommand() {
     char* cmd = curUnsentPriorityCmdLen != 0 ? &curUnsentPriorityCmd[0] : &curUnsentCmd[0];
     cmd[len] = 0;
     LOGLN("Try send");
-    if (printerSerial->availableForWrite()) {
+    if (printerSerial.availableForWrite()) {
         LOGLN("> send");
-        printerSerial->write((const uint8_t*) cmd, len);
-        printerSerial->write('\n');
+        printerSerial.write((const uint8_t*) cmd, len);
+        printerSerial.write('\n');
         len = 0;
     }
 }

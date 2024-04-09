@@ -190,7 +190,12 @@ target_include_directories(controller PUBLIC ${main_include})
 target_compile_options(controller PRIVATE ${DEBUG_OPT_FLAG})
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
-    target_compile_definitions(controller PUBLIC LOG_DEBUG)
+    target_compile_definitions(controller PUBLIC
+                         LOG_DEBUG
+            #            LOG_DETECTOR
+            #            USB_TO_SERIAL
+            )
+
 endif ()
 
 target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)

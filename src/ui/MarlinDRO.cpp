@@ -14,28 +14,28 @@
 
 void MarlinDRO::begin() {
     DRO::begin();
-    menuItems.push_back(MenuItem::simpleItem(2, "Home", [this](MenuItem&) {
-        dev.scheduleCommand(G28_START_HOMING, 3);
-    }));
-    menuItems.push_back(MenuItem::simpleItem(3, "Set XY to 0", [this](MenuItem&) {
-        dev.scheduleCommand("G92 X0Y0", 8);
-    }));
-    menuItems.push_back(MenuItem::simpleItem(4, "Set Z to 0", [this](MenuItem&) {
-        dev.scheduleCommand("G92 Z0", 6);
-    }));
-    menuItems.push_back(MenuItem::simpleItem(5, "to Relative", [this](MenuItem& m) {
+    uint8_t indx = 2U;
+    menuItems.push_back(MenuItem::simpleItem(indx++, "to Relative", [this](MenuItem& m) {
         dev.scheduleCommand(dev.isRelative() ? G90_SET_ABS_COORDINATES : G91_SET_RELATIVE_COORDINATES, 3);
         dev.toggleRelative();
         m.text = dev.isRelative() ? "to Abs" : "to Relative";
     }));
-    menuItems.push_back(MenuItem::simpleItem(6, "Goto XY=0", [this](MenuItem&) {
-        dev.scheduleCommand("G0 X0Y0", 7);
+    if (dev.getCompatibilities().emergency_parser > 0) {
+        menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&) {
+            dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
+        }));
+        menuItems.push_back(MenuItem::simpleItem(indx++, "Continue", [this](MenuItem&) {
+            dev.scheduleCommand(M108_CONTINUE, 4);
+        }));
+    }
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&) {
+        dev.scheduleCommand(G28_START_HOMING, 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(7, "STOP", [this](MenuItem&) {
-        dev.scheduleCommand(M0_STOP_UNCONDITIONAL, 3);
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Set XY to 0", [this](MenuItem&) {
+        dev.scheduleCommand("G92 X0Y0", 8);
     }));
-    menuItems.push_back(MenuItem::simpleItem(8, "CONTINUE", [this](MenuItem&) {
-        dev.scheduleCommand(M108_CONTINUE, 4);
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Set Z to 0", [this](MenuItem&) {
+        dev.scheduleCommand("G92 Z0", 6);
     }));
 }
 
@@ -52,7 +52,7 @@ void MarlinDRO::drawContents() {
     constexpr uint8_t ICON_TOP_PADDING = 4;
 
     uint8_t sx = startLeftPanel,
-            sx_start_right = startRightPanel;
+        sx_start_right = startRightPanel;
     uint8_t sy = Display::STATUS_BAR_HEIGHT; // bar Height 0 - 15.
 
     if (dev.canJog() && !job.isRunning()) {

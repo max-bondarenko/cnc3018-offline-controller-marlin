@@ -1,5 +1,6 @@
 #include <vector>
 #include <Arduino.h>
+#include <functional>
 #include "constants.h"
 #include "MarlinDevice.h"
 
@@ -60,9 +61,12 @@ bool MarlinDevice::checkProbeResponse(const String& input) {
     return false;
 }
 
-MarlinDevice::MarlinDevice(WatchedSerial* s, Job* job) : GCodeDevice(s, job) {
+MarlinDevice::MarlinDevice(WatchedSerial& _printerSerial, Job& _job) : GCodeDevice(_printerSerial, _job) {
     canTimeout = false;
     useLineNumber = true;
+    compatibility.auto_temp = 0;
+    compatibility.auto_position = 0;
+    compatibility.emergency_parser = 0;
 }
 
 bool MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
@@ -77,13 +81,13 @@ void MarlinDevice::trySendCommand() {
     if (lastStatus == DeviceStatus::WAIT) {
         return;
     }
-    if (printerSerial->availableForWrite() && !outQueue.empty()) {
+    if (printerSerial.availableForWrite() && !outQueue.empty()) {
         String& front = outQueue.front();
         const char* cmd = front.c_str();
         auto size = (size_t) front.length();
         LOGF("[%s]\n", cmd);
-        printerSerial->write((const unsigned char*) cmd, size);
-        printerSerial->write('\n');
+        printerSerial.write((const unsigned char*) cmd, size);
+        printerSerial.write('\n');
         //delete
         outQueue.pop_front();
         lastResponse = nullptr;
@@ -103,18 +107,53 @@ bool MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len) {
     return scheduleCommand(cmd, len);
 }
 
-void MarlinDevice::begin() {
-    GCodeDevice::begin();
-    constexpr size_t LN = 11;
+void MarlinDevice::begin(SetupFN* const onBegin) {
+    SetupFN fn = [this](WatchedSerial& s) {
+        char buffer[101]; // assume not longer then 100B
+        buffer[100] = 0;
+        while (s.readBytesUntil('\n', buffer, 100) != 0) {
+            if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
+                String _s(buffer + 4);
+                // OPTIMIZATION
+                if (_s.indexOf("AUTOREPORT_") != -1) {
+                    if (_s.indexOf("TEMP", 11) != -1 && _s.indexOf(":1", 11) != -1) {
+                        this->compatibility.auto_temp = 1;
+                    } else if (_s.indexOf("POS", 11) != -1 && _s.indexOf(":1", 11) != -1) {
+                        this->compatibility.auto_position = 1;
+                    }
+                } else if (_s.indexOf("EMERGENCY_PARSER") != -1 && _s.indexOf(":1", 16) != -1) {
+                    this->compatibility.emergency_parser = 1;
+                }
+            } else
+                break;
+        }
+    };
+    GCodeDevice::begin(&fn);
+    constexpr size_t LN = 8;
     char msg[LN];
-    int l = snprintf(msg, LN, "%s S%d", M154_AUTO_REPORT_POSITION, 1);
-    scheduleCommand(msg, l);
-    l = snprintf(msg, LN, "%s S%d", M155_AUTO_REPORT_TEMP, 1);
-    scheduleCommand(msg, l);
+    // OPTIMIZATION
+    msg[4] = ' ';
+    msg[5] = 'S';
+    msg[6] = '1';
+    msg[7] = 0;
+    if (compatibility.auto_position > 0) {
+        memcpy(msg, M154_AUTO_REPORT_POSITION, 4);
+        scheduleCommand(msg, 9);
+    }
+    if (compatibility.auto_temp > 0) {
+        memcpy(msg, M155_AUTO_REPORT_TEMP, 4);
+        scheduleCommand(msg, 9);
+    }
     scheduleCommand(RESET_LINE_NUMBER, 8);
 }
 
 void MarlinDevice::requestStatusUpdate() {
+    if (compatibility.auto_position == 0) {
+        scheduleCommand(M114_GET_CURRENT_POS, 5);
+    }
+    if (compatibility.auto_temp == 0) {
+        scheduleCommand(M105_GET_EXTRUDER_1_TEMP, 8);
+    }
 }
 
 void MarlinDevice::reset() {
@@ -218,7 +257,7 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
     cpy[MIN(len, BUFFER_LEN)] = 0;
 
     bool nextTemp = false,
-            nextBedTemp = false;
+        nextBedTemp = false;
     char* fromMachine = strtok(cpy, " ");
 
     while (fromMachine != nullptr) {

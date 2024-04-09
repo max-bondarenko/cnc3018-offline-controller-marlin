@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
+#include <functional>
 #include <etl/vector.h>
 #include <etl/observer.h>
 #include "WString.h"
@@ -46,19 +47,21 @@ struct DeviceStatusEvent {
 
 using DeviceObserver = etl::observer<const DeviceStatusEvent&>;
 
+typedef std::function<void(WatchedSerial&)> SetupFN;
+
 class GCodeDevice : public etl::observable<DeviceObserver, 2> {
 public:
     constexpr static uint8_t MAX_GCODE_LINE = 96;
     constexpr static uint8_t BUFFER_LEN = 255;
     constexpr static uint8_t SHORT_BUFFER_LEN = 100;
 
-    GCodeDevice(WatchedSerial* s, Job* job_) : printerSerial(s), job(job_) {
+    GCodeDevice(WatchedSerial& _printerSerial, Job& _job) : printerSerial(_printerSerial), job(_job) {
         spindleValues = new etl::vector<u_int16_t, 10>{0};
     }
 
     virtual ~GCodeDevice() { clear_observers(); }
 
-    virtual void begin();
+    virtual void begin(SetupFN* const onBegin);
 
     virtual bool scheduleCommand(const char* cmd, size_t len);
 
@@ -103,8 +106,8 @@ public:
     int32_t getResendLine() const { return resendLine; }
 
 protected:
-    WatchedSerial* printerSerial;
-    Job* job;
+    WatchedSerial& printerSerial;
+    Job& job;
     etl::ivector<u_int16_t>* spindleValues;
 
     bool canTimeout,

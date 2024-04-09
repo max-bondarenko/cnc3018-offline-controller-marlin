@@ -46,9 +46,13 @@ void GCodeDevice::step() {
     notify_observers(DeviceStatusEvent{lastStatus, lastStatusStr, lastResponse});
 }
 
-void GCodeDevice::begin() {
-    while (printerSerial->available() > 0) {
-        printerSerial->read();
+void GCodeDevice::begin(SetupFN* const onBegin) {
+    if (onBegin != nullptr) {
+        (*onBegin)(printerSerial);
+    }
+    // in case onBegin did not consume all data in stream
+    while (printerSerial.available() > 0) {
+        printerSerial.read();
     }
     readLockedStatus();
 
@@ -77,7 +81,7 @@ void GCodeDevice::begin() {
 }
 
 void GCodeDevice::readLockedStatus() {
-    if (printerSerial->isLocked(true))
+    if (printerSerial.isLocked(true))
         lastStatus = DeviceStatus::LOCKED;
 }
 
@@ -117,8 +121,8 @@ void GCodeDevice::receiveResponses() {
     static char resp[MAX_LINE + 1];
     static size_t respLen;
 
-    while (printerSerial->available()) {
-        char ch = (char) printerSerial->read();
+    while (printerSerial.available()) {
+        char ch = (char) printerSerial.read();
         switch (ch) {
             case '\n':
             case '\r':

@@ -11,7 +11,7 @@ public:
         Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
     };
 
-    GrblDevice(WatchedSerial* s, Job* _job) : GCodeDevice(s, _job) {
+    GrblDevice(WatchedSerial& _printerSerial, Job& _job) : GCodeDevice(_printerSerial, _job) {
         canTimeout = true;
         serialRxTimeout = 1;
     };
@@ -22,8 +22,8 @@ public:
 
     bool canJog() override;
 
-    void begin() override {
-        GCodeDevice::begin();
+    void begin(SetupFN* const onBegin) override {
+        GCodeDevice::begin(nullptr);
         schedulePriorityCommand("$I", 2);
         requestStatusUpdate();
     }
@@ -48,7 +48,7 @@ public:
             len = strlen(cmd);
         }
         if (isCmdRealtime(cmd, len)) {
-            printerSerial->write((const uint8_t*) cmd, len);
+            printerSerial.write((const uint8_t*) cmd, len);
             return true;
         } else {
             return GCodeDevice::schedulePriorityCommand(cmd, len);

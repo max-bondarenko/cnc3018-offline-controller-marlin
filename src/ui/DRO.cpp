@@ -15,6 +15,30 @@
 constexpr uint16_t DRO::JOG_FEEDS[];
 constexpr float DRO::JOG_DISTS[];
 
+void DRO::step() {
+    if (nextRefresh != 0 && millis() > nextRefresh) {
+        nextRefresh = millis() + REFRESH_INTL + 9;
+        dev.requestStatusUpdate();
+    }
+}
+
+void DRO::begin() {
+    menuItems.push_back(MenuItem::simpleItem(0, "Open", [this](MenuItem&) {
+        if (job.isRunning()) return;
+        display->setScreen(&fileChooser); // this will reset the card
+    }));
+    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [this](MenuItem& m) {
+        if (job.isRunning()) {
+            job.setPaused(true);
+            m.text = "Resume job";
+        } else {
+            job.setPaused(false);
+            m.text = "Pause job";
+        }
+        doDirty();
+    }));
+}
+
 void DRO::drawContents() {
     U8G2& u8g2 = display->getU8G2();
     u8g2.setFont(u8g2_font_7x13B_tr);
