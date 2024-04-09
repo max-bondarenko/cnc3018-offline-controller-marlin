@@ -3,6 +3,10 @@
 #include "DRO.h"
 #include "devices/MarlinDevice.h"
 
+
+// TODO list
+// todo 1 extruder state (extrusion allowed temp)
+
 class MarlinDRO : public DRO {
 public:
     constexpr static uint8_t MAX_TEMP = 250;

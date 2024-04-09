@@ -3,6 +3,9 @@
 #include "DRO.h"
 #include "devices/GrblDevice.h"
 
+// todo list
+// todo 1 add override feed/spindle for running job
+
 class GrblDRO : public DRO {
 public:
     GrblDRO(GrblDevice &d) : DRO(d), dev(d), useWCS(false){

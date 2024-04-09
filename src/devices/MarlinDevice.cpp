@@ -14,11 +14,44 @@ void MarlinDevice::sendProbe(Stream& serial) {
     serial.print("\n");
 }
 
-// FIRMWARE_NAME:Marlin
-//   In Marlin first 3 numbers is the position for the planner.
-//   The other positions are the positions from the stepper function.
-//   This helps for debugging a previous stepper function bug.
-// todo for position
+/// FIRMWARE_NAME:Marlin
+///   In Marlin first 3 numbers is the position for the planner.
+///   The other positions are the positions from the stepper function.
+///   This helps for debugging a previous stepper function bug.
+/// Compatibility example
+/* Cap:VOLUMETRIC:1
+Cap:AUTOREPORT_POS:1
+Cap:AUTOREPORT_TEMP:1
+Cap:PROGRESS:0
+Cap:PRINT_JOB:1
+Cap:AUTOLEVEL:0
+Cap:RUNOUT:0
+Cap:Z_PROBE:0
+Cap:LEVELING_DATA:0
+Cap:BUILD_PERCENT:0
+Cap:SOFTWARE_POWER:0
+Cap:TOGGLE_LIGHTS:0
+Cap:CASE_LIGHT_BRIGHTNESS:0
+Cap:EMERGENCY_PARSER:0
+Cap:HOST_ACTION_COMMANDS:0
+Cap:PROMPT_SUPPORT:0
+Cap:SDCARD:0
+Cap:REPEAT:0
+Cap:SD_WRITE:0
+Cap:AUTOREPORT_SD_STATUS:0
+Cap:LONG_FILENAME:0
+Cap:LFN_WRITE:0
+Cap:CUSTOM_FIRMWARE_UPLOAD:0
+Cap:EXTENDED_M20:0
+Cap:THERMAL_PROTECTION:0
+Cap:MOTION_MODES:0
+Cap:ARCS:1
+Cap:BABYSTEPPING:0
+Cap:CHAMBER_TEMPERATURE:0
+Cap:COOLER_TEMPERATURE:0
+Cap:MEATPACK:0
+Cap:CONFIG_EXPORT:0
+ */
 bool MarlinDevice::checkProbeResponse(const String& input) {
     if (input.indexOf("Marlin") != -1) {
         LOGLN(">> Detected Marlin device <<");

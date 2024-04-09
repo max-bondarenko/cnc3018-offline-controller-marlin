@@ -6,6 +6,9 @@
 #include "etl/deque.h"
 #include "WString.h"
 
+// TODO list
+// TODO 1 marlin features check
+// TODO 2 status poling according maarlin state
 
 static const char* const OK_str = "ok";
 

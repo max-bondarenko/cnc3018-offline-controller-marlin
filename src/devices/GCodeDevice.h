@@ -15,6 +15,7 @@ class Job;
 // todo done 1 switch to states from flags for protocol state
 // TODO done 2 make observable events meaningful
 // TODO done 3 check RxTimeout , make it work as heartbeat
+// todo  4  add full presets(spindle, dist , feed) from file, <device>_setup.txt + setup.txt
 
 ///
 /// Device abstraction statuses.
