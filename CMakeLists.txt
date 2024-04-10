@@ -184,22 +184,31 @@ target_link_libraries(U8g2 PUBLIC SPI Wire)
 
 file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
 list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
+list(FILTER SRC_LIST EXCLUDE REGEX "src/devices/*")
 add_library(controller ${SRC_LIST})
 set(main_include src sec/ui src/gcode src/devices)
 target_include_directories(controller PUBLIC ${main_include})
-target_compile_options(controller PRIVATE ${DEBUG_OPT_FLAG})
+target_compile_options(controller PRIVATE ${OPT_FLAG})
+
+add_library(drivers
+        src/devices/GCodeDevice.cpp
+        src/devices/GrblDevice.cpp
+        src/devices/MarlinDevice.cpp
+        )
+target_include_directories(drivers PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include )
+target_compile_options(drivers PRIVATE ${DEBUG_OPT_FLAG})
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     target_compile_definitions(controller PUBLIC
-                         LOG_DEBUG
-            #            LOG_DETECTOR
-            #            USB_TO_SERIAL
+#            LOG_DEBUG
+#            LOG_DETECTOR
+#            USB_TO_SERIAL
             )
 
 endif ()
 
 target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)
-target_link_libraries(controller PUBLIC U8g2)
+target_link_libraries(controller PUBLIC U8g2 drivers)
 
 if (EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT "-T ${LINKER_SCRIPT}")
@@ -225,7 +234,7 @@ find_library(cortexM3_math
         PATHS ${CMSIS-PATH}/DSP/Lib/GCC
         REQUIRED)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map ")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--cref -Wl,-Map=${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.map ")
 set(HEX_FILE ${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_NAME}.bin)
 

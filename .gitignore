@@ -2,7 +2,7 @@
 .vscode/
 
 cmake-*/
-firmware.map
+*.map
 
 .idea/
 venv/
