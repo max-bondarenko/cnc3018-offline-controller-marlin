@@ -1,6 +1,5 @@
-#include <U8g2lib.h>
 #include <Arduino.h>
-
+#include "U8g2lib.h"
 #include "debug.h"
 #include "constants.h"
 #include "WatchedSerial.h"
@@ -34,22 +33,19 @@ FileChooser fileChooser;
 GCodeDevice* dev;
 DRO* dro;
 
-void createDevice(int i, WatchedSerial& s) {
+void createDevice(const char* const devName, WatchedSerial& s) {
     if (dev != nullptr) return;
     delay(300);
-    switch (i) {
-        case 0: {
-            GrblDevice* device = new GrblDevice(s, job);
-            dro = new GrblDRO(*device);
-            dev = device;
-        }
-            break;
-        default: {
-            MarlinDevice* device = new MarlinDevice(s, job);
-            dro = new MarlinDRO(*device);
-            dev = device;
-        }
+    if (devName == DEVICE_NAMES[DeviceName::GRBL]) {
+        auto device = new GrblDevice(s, job);
+        dro = new GrblDRO(*device);
+        dev = device;
+    } else {
+        auto device = new MarlinDevice(s, job);
+        dro = new MarlinDRO(*device);
+        dev = device;
     }
+    dev->name = devName;
     job.setDevice(dev);
     display.setScreen(dro);
     dev->begin(nullptr);

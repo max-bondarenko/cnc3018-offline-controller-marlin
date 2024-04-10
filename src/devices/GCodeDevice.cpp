@@ -2,6 +2,7 @@
 #include "constants.h"
 #include "util.h"
 #include "GCodeDevice.h"
+#include "ini.h"
 #include "WString.h"
 
 bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
@@ -46,6 +47,25 @@ void GCodeDevice::step() {
     notify_observers(DeviceStatusEvent{lastStatus, lastStatusStr, lastResponse});
 }
 
+int GCodeDevice::handler(void* store, const char* section, const char* name, const char* value) {
+    GCodeDevice* device = static_cast<GCodeDevice*>(store);
+    if (strcmp(section, device->name) == 0) {
+        if (strcmp(name, "s") == 0) {
+            String s(value);
+            unsigned int len = s.length();
+            int st = 0,
+                end;
+            while ((end = s.indexOf(',', st)) != -1 && end < len) {
+                auto val = (uint16_t) strtoul((const char*) value + st, (char**) value + end, STRTOLL_BASE);
+                device->config.spindle.push_back(val);
+                st = end;
+            }
+            return 0;  /* unknown section/name, error */
+        }
+        return 1;
+    }
+}
+
 void GCodeDevice::begin(SetupFN* const onBegin) {
     if (onBegin != nullptr) {
         (*onBegin)(printerSerial);
@@ -55,27 +75,14 @@ void GCodeDevice::begin(SetupFN* const onBegin) {
         printerSerial.read();
     }
     readLockedStatus();
-
     if (SD.begin(PIN_CD)) {
-        char buff[SHORT_BUFFER_LEN];
-        uint8_t position = 0;
-        File file = SD.open(SPINDLE_PRESET_FILE);
-        while (file.available() > 0) {
-            int ch = file.read();
-            buff[position] = ch;
-            ++position;
-            if ('\n' == ch || '\r' == ch || position > SHORT_BUFFER_LEN - 1)
-                break;
-
-        }
-        buff[position] = 0;
-        char* token = strtok(buff, ",");
-        position = 0;
-        while (token != nullptr && position < 10) {
-            spindleValues->push_back((uint16_t) strtol(token, nullptr, STRTOLL_BASE));
-            ++position;
-            token = strtok(nullptr, ",");
-        }
+        File file = SD.open(PRESET_FILE);
+        auto f = [](char* str, int num, void* stream_) -> char* {
+            auto stream = *(File*) stream_; //always present
+            String string = stream.readStringUntil('\n');
+            return const_cast<char*>(string.c_str());
+        };
+        ini_parse_stream(f, &file, (ini_handler) (handler), this); //ignore output
         file.close();
     }
 }

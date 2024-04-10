@@ -14,6 +14,27 @@ elseif (WIN32)
             )
 endif ()
 
+set(LIB_DOWNLOAD_PATH ${CMAKE_CURRENT_SOURCE_DIR}/.lib)
+set(LIB_ini lib_ini)
+set(LIB_ini_github_version-URL https://raw.githubusercontent.com/benhoyt/inih/r58)
+
+if (NOT EXISTS ${LIB_DOWNLOAD_PATH})
+    file(MAKE_DIRECTORY ${LIB_DOWNLOAD_PATH})
+endif ()
+
+if (NOT EXISTS ${LIB_DOWNLOAD_PATH}/${LIB_ini})
+    file(MAKE_DIRECTORY ${LIB_DOWNLOAD_PATH}/${LIB_ini})
+    file(DOWNLOAD ${LIB_ini_github_version-URL}/ini.c ${LIB_DOWNLOAD_PATH}/${LIB_ini}/ini.c)
+    file(DOWNLOAD ${LIB_ini_github_version-URL}/ini.h ${LIB_DOWNLOAD_PATH}/${LIB_ini}/ini.h)
+    set(LIB_ini_PATH ${LIB_DOWNLOAD_PATH}/${LIB_ini})
+else ()
+    if (EXISTS ${LIB_DOWNLOAD_PATH}/${LIB_ini}/ini.c)
+        set(LIB_ini_PATH ${LIB_DOWNLOAD_PATH}/${LIB_ini} CACHE PATH "")
+    else ()
+        set(LIB_ini_PATH NOT-FOUND CACHE PATH "")
+    endif ()
+endif ()
+
 find_path(ARDUINO_SDK_PATH
         NAMES lib/version.txt
         PATH_SUFFIXES share/arduino
@@ -110,6 +131,15 @@ add_compile_definitions(HAL_UART_MODULE_ENABLED)
 add_compile_definitions(HAL_PCD_MODULE_ENABLED)
 add_compile_definitions(USE_FULL_LL_DRIVER)
 
+if (CMAKE_BUILD_TYPE STREQUAL "debug")
+    add_compile_definitions(
+            #            LOG_DEBUG
+            #            LOG_DETECTOR
+            #            USB_TO_SERIAL
+    )
+
+endif ()
+
 
 add_library(core ${ARDUINO_SRC})
 include_directories(
@@ -167,39 +197,67 @@ else ()
     ard_lib(SD SD_path ${SD_LIB_path})
 endif ()
 
+# ================================ Lib INI =======================
+if (LIB_ini_PATH)
+    add_library(ini ${LIB_ini_PATH}/ini.c)
+    target_compile_definitions(ini PRIVATE INI_ALLOW_BOM=0
+            INI_ALLOW_INLINE_COMMENTS=0
+            INI_USE_STACK=1
+            INI_ALLOW_REALLOC=0)
+    target_compile_options(ini PRIVATE ${OPT_FLAG})
+endif ()
 
+# ================================ Lib SD =======================
 target_compile_options(SD PRIVATE -Wno-deprecated -Wno-deprecated-declarations)
 ard_lib(SPI SPI_path ${PLATFORM-PATH})
 ard_lib(Wire Wire_path ${PLATFORM-PATH})
-target_include_directories(SD PUBLIC ${SPI_path})
 
+target_link_libraries(SD PUBLIC SPI)
+
+# ================================ Lib U8g2 =======================
 set(u8g2_path ${ETL_PATH}/../U8g2)
 file(GLOB_RECURSE U8g2_src ${u8g2_path}/src/*.c ${u8g2_path}/src/*.cpp)
+file(GLOB_RECURSE U8g2_headers ${u8g2_path}/src/*.h)
 add_library(U8g2 ${U8g2_src})
-target_compile_definitions(U8g2 PUBLIC U8G2_16BIT)
-
+#target_precompile_headers(U8g2 PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:${U8g2_headers}>")
 target_compile_options(U8g2 PRIVATE ${OPT_FLAG} -Wno-deprecated -Wno-deprecated-declarations)
-target_include_directories(U8g2 PRIVATE ${u8g2_path}/src)
+target_compile_definitions(U8g2 PUBLIC U8G2_16BIT)
+#target_include_directories(U8g2 PRIVATE ${u8g2_path}/src)
 target_link_libraries(U8g2 PUBLIC SPI Wire)
 
+
+set(main_include src sec/ui src/gcode src/devices ${ETL_PATH}/include)
+# ============================== UI lib ========================================
+file(GLOB SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/ui/*.cpp)
+add_library(UI_lib ${SRC_LIST})
+#target_precompile_headers(UI_lib REUSE_FROM U8g2)
+target_include_directories(UI_lib PUBLIC ${main_include} ${u8g2_path}/src)
+target_compile_options(UI_lib PRIVATE ${OPT_FLAG})
+target_link_libraries(UI_lib PUBLIC U8g2 SD)
+
+# ============================== Driver lib ========================================
+file(GLOB SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/devices/*.cpp)
+add_library(DRIVER_lib ${SRC_LIST})
+target_link_libraries(DRIVER_lib PUBLIC ini)
+target_include_directories(DRIVER_lib PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${LIB_ini_PATH})
+target_compile_options(DRIVER_lib PRIVATE ${DEBUG_OPT_FLAG})
+
+# ============================== ELF ========================================
 file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
 list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
+
 add_library(controller ${SRC_LIST})
-set(main_include src sec/ui src/gcode src/devices)
-target_include_directories(controller PUBLIC ${main_include})
-target_compile_options(controller PRIVATE ${DEBUG_OPT_FLAG})
+target_include_directories(controller PUBLIC src sec/ui src/gcode src/devices)
+target_compile_options(controller PRIVATE ${OPT_FLAG})
+target_link_libraries(controller PUBLIC SD DRIVER_lib UI_lib)
 
-if (CMAKE_BUILD_TYPE STREQUAL "debug")
-    target_compile_definitions(controller PUBLIC
-                         LOG_DEBUG
-            #            LOG_DETECTOR
-            #            USB_TO_SERIAL
-            )
 
-endif ()
+add_executable(${PROJECT_NAME}.elf src/main.cpp)
+target_include_directories(${PROJECT_NAME}.elf PUBLIC src sec/ui src/gcode src/devices ${u8g2_path}/src)
+#target_precompile_headers(${PROJECT_NAME}.elf REUSE_FROM U8g2)
+target_compile_options(${PROJECT_NAME}.elf PRIVATE ${OPT_FLAG})
+target_link_libraries(${PROJECT_NAME}.elf controller)
 
-target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)
-target_link_libraries(controller PUBLIC U8g2)
 
 if (EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT "-T ${LINKER_SCRIPT}")
@@ -207,6 +265,7 @@ endif ()
 
 set(CMAKE_EXE_LINKER_FLAGS "-g ${search_whole_arch} \
 ${LINKER_SCRIPT} \
+-Wl,--verbose \
 -Wl,--as-needed \
 -Wl,--gc-sections,--relax \
 -Wl,--check-sections \
@@ -225,19 +284,12 @@ find_library(cortexM3_math
         PATHS ${CMSIS-PATH}/DSP/Lib/GCC
         REQUIRED)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${PROJECT_BINARY_DIR}/${PROJECT_NAME}.map ")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-Map=${CMAKE_CURRENT_SOURCE_DIR}/${PROJECT_NAME}.map")
 set(HEX_FILE ${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_NAME}.bin)
 
-add_executable(${PROJECT_NAME}.elf src/main.cpp)
-target_compile_options(${PROJECT_NAME}.elf PRIVATE ${DEBUG_OPT_FLAG})
-
 target_link_libraries(${PROJECT_NAME}.elf ${cortexM3_math})
 target_link_libraries(${PROJECT_NAME}.elf "$<LINK_LIBRARY:WHOLE_ARCHIVE,core>")
-target_link_libraries(${PROJECT_NAME}.elf
-        controller
-        SD
-        Wire)
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> -R .eeprom ${HEX_FILE}

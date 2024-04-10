@@ -319,5 +319,5 @@ void MarlinDevice::parseError(const char* input) {
 }
 
 etl::ivector<u_int16_t>* MarlinDevice::getSpindleValues() const {
-    return (spindleValues->size() > 1) ? spindleValues : (etl::ivector<u_int16_t>*) &(MarlinDevice::SPINDLE_VALS);
+    return nullptr;// todo
 }

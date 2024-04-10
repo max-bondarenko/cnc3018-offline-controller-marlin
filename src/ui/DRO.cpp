@@ -12,9 +12,6 @@
 #include "../assets/spindle.XBM"
 #include "Screen.h"
 
-constexpr uint16_t DRO::JOG_FEEDS[];
-constexpr float DRO::JOG_DISTS[];
-
 void DRO::step() {
     if (nextRefresh != 0 && millis() > nextRefresh) {
         nextRefresh = millis() + REFRESH_INTL + 9;
@@ -77,10 +74,11 @@ void DRO::drawContents() {
     sx2 += 10;
     snprintf(str, LEN, "%ld", dev.getSpindleVal());
     u8g2.drawStr(sx2, sy, str);
-    snprintf(str, LEN, "%u", JOG_FEEDS[cFeed]);
+//    snprintf(str, LEN, "%u", JOG_FEEDS[cFeed]);
+    snprintf(str, LEN, "%u", 10);
     u8g2.drawStr(sx2, sy + lh, str);
 
-    float jd = JOG_DISTS[cDist];
+    float jd = 0.1 ;// todo JOG_DISTS[cDist];
     snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
     u8g2.drawStr(sx2, sy + lh * 2, str);
 }
@@ -119,8 +117,8 @@ void DRO::onButton(int bt, Display::ButtonEvent evt) {
 void DRO::onButtonAxes(int bt, Evt evt) {
     if (evt == Evt::DOWN || evt == Evt::HOLD) {
         int axis = -1;
-        float d = DRO::JOG_DISTS[cDist];
-        uint16_t f = DRO::JOG_FEEDS[cFeed];
+        float d = 01.1; //todo DRO::JOG_DISTS[cDist];
+        uint16_t f = 10 ;// todo  DRO::JOG_FEEDS[cFeed];
         switch (bt) {
             case Display::BT_L:
                 axis = 0;
@@ -161,8 +159,8 @@ void DRO::onButtonShift(int bt, Evt evt) {
 
     switch (bt) {
         case Display::BT_R:
-            if (evt == Evt::HOLD) cDist = N_JOG_DISTS - 1;
-            else if (cDist < N_JOG_DISTS - 1) cDist++;
+            if (evt == Evt::HOLD) cDist =  0 ; //todo  N_JOG_DISTS - 1;
+            else if (cDist < 0) cDist++;
             break;
         case Display::BT_L:
             if (evt == Evt::HOLD) cDist = 0;
@@ -198,8 +196,8 @@ void DRO::onButtonShift(int bt, Evt evt) {
             break;
         case Display::BT_UP:
             if (evt == Evt::HOLD)
-                cFeed = N_JOG_FEEDS - 1;
-            else if (cFeed < N_JOG_FEEDS - 1)
+                cFeed =  0 ;  // N_JOG_FEEDS - 1; //todo
+            else if (cFeed < 1)
                 cFeed++;
             break;
         default:; // skip

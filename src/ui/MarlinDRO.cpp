@@ -117,11 +117,11 @@ void MarlinDRO::drawContents() {
 
     /// distance  ======
     sx_start_right += 10;
-    const float& jd = JOG_DISTS[cDist];
+    const float& jd = 100.9; // todo
     snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
     u8g2.drawStr(sx_start_right, sy, str);
     /// Feed ======
-    snprintf(str, LEN, "%d", JOG_FEEDS[cFeed]);
+    snprintf(str, LEN, "%d", 10 ); // TODO
     u8g2.drawStr(sx_start_right, sy + lineHeight, str);
     if (cMode != Mode::TEMP) {
         /// spindle ======
@@ -189,8 +189,8 @@ void MarlinDRO::onButton(int bt, Display::ButtonEvent evt) {
 void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
     if (evt == Evt::DOWN || evt == Evt::HOLD) {
         uint8_t axis = 0xFF;
-        float dist = JOG_DISTS[cDist];
-        uint16_t feed = JOG_FEEDS[cFeed];
+        float dist = 10.1; // todo JOG_DISTS[cDist];
+        uint16_t feed = 10 ;// todo JOG_FEEDS[cFeed];
         switch (bt) {
             // === AXIS
             case Display::BT_ZUP:

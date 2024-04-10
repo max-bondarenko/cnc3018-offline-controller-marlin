@@ -1,8 +1,9 @@
 .pio/
 .vscode/
+.lib/
 
 cmake-*/
-firmware.map
+*.map
 
 .idea/
 venv/

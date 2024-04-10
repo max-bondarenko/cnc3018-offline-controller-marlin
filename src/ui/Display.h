@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Arduino.h>
-#include <U8g2lib.h>
-#include <etl/vector.h>
 #include <functional>
+#include "U8g2lib.h"
+#include "etl/vector.h"
 
 #include "constants.h"
 #include "devices/GCodeDevice.h"
