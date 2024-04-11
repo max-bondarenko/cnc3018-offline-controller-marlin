@@ -69,8 +69,8 @@ def marlin_repeater(str):
 def check_mode(str):
     if str.startswith("M115"):
         resp.append("FIRMWARE_NAME:Marlin\r\n"
-                    "Cap:AUTOREPORT_POS:0\r\n"
-                    "Cap:AUTOREPORT_POS:0\r\n"
+                    "Cap:AUTOREPORT_POS:1\r\n"
+                    "Cap:AUTOREPORT_TEMP:1\r\n"
                     "Cap:EMERGENCY_PARSER:1\r\n")
         stack.append(marlin_repeater)
     else:
@@ -92,7 +92,7 @@ def write_ok(fw):
 
 
 def main():
-    a = '/dev/ttyUSB0'
+    a = '/dev/ttyUSB1'
 
     q = []
 
@@ -113,7 +113,7 @@ def main():
             print(
                 '{0:b}\n{1:b}\n{2:b}\n{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG], attr[tty.LFLAG]))
             termios.tcdrain(fd)
-
+            # attr[tty.IFLAG] = 0b10000000110
             attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.ECHO
             attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.ISTRIP
             # attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.INLCR
@@ -124,7 +124,7 @@ def main():
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.CSTOPB
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IGNCR
             #  ==================================================
-            attr[tty.OFLAG] = 0x30
+            # attr[tty.OFLAG] = 0x30
             attr[tty.OFLAG] = attr[tty.OFLAG] | termios.CS8
             attr[tty.OFLAG] = attr[tty.OFLAG] & ~termios.CSTOPB
 

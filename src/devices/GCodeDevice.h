@@ -54,11 +54,17 @@ public:
     constexpr static uint8_t MAX_GCODE_LINE = 96;
     constexpr static uint8_t BUFFER_LEN = 255;
     constexpr static uint8_t SHORT_BUFFER_LEN = 100;
+    const char* name = nullptr;
+
+    struct Config {
+        etl::vector<u_int16_t, 10> spindle{0, 1, 10, 100, 1000};
+        etl::vector<u_int16_t, 10> feed{50, 100, 500, 1000, 2000};
+        etl::vector<float, 10> dist{0.1, 0.5, 1, 5, 10, 50};
+    };
 
     GCodeDevice(WatchedSerial& _printerSerial, Job& _job) : printerSerial(_printerSerial), job(_job) {
         spindleValues = new etl::vector<u_int16_t, 10>{0};
     }
-
     virtual ~GCodeDevice() { clear_observers(); }
 
     virtual void begin(SetupFN* const onBegin);
@@ -108,7 +114,8 @@ public:
 protected:
     WatchedSerial& printerSerial;
     Job& job;
-    etl::ivector<u_int16_t>* spindleValues;
+    etl::ivector<u_int16_t>* spindleValues; //todo
+    Config config;
 
     bool canTimeout,
             xoff,
@@ -153,4 +160,6 @@ private:
     void disarmRxTimeout();
 
     void checkTimeout();
+
+    static int handler(void* store,  const char* section, const char* name, const char* value);
 };

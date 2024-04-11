@@ -90,12 +90,13 @@ private:
             switch (ch) {
                 case '\n':
                 case '\r':
+                    ch = '\n';
                     break;
                 default:
                     if (respLen < MAX_LINE)
                         resp[respLen++] = ch;
             }
-            if (ch == '\n' || ch == '\r') {
+            if (ch == '\n') {
                 resp[respLen] = 0;
                 DETECTOR_LOGF("> [%s]\n", resp);
                 String _resp(resp);

@@ -14,6 +14,27 @@ elseif (WIN32)
             )
 endif ()
 
+set(LIB_DOWNLOAD_PATH ${CMAKE_CURRENT_SOURCE_DIR}/.lib)
+set(LIB_ini lib_ini)
+set(LIB_ini_github_version-URL https://raw.githubusercontent.com/benhoyt/inih/r58)
+
+if (NOT EXISTS ${LIB_DOWNLOAD_PATH})
+    file(MAKE_DIRECTORY ${LIB_DOWNLOAD_PATH})
+endif ()
+
+if (NOT EXISTS ${LIB_DOWNLOAD_PATH}/${LIB_ini})
+    file(MAKE_DIRECTORY ${LIB_DOWNLOAD_PATH}/${LIB_ini})
+    file(DOWNLOAD ${LIB_ini_github_version-URL}/ini.c ${LIB_DOWNLOAD_PATH}/${LIB_ini}/ini.c)
+    file(DOWNLOAD ${LIB_ini_github_version-URL}/ini.h ${LIB_DOWNLOAD_PATH}/${LIB_ini}/ini.h)
+    set(LIB_ini_PATH ${LIB_DOWNLOAD_PATH}/${LIB_ini})
+else ()
+    if (EXISTS ${LIB_DOWNLOAD_PATH}/${LIB_ini}/ini.c)
+        set(LIB_ini_PATH ${LIB_DOWNLOAD_PATH}/${LIB_ini} CACHE PATH "")
+    else ()
+        set(LIB_ini_PATH NOT-FOUND CACHE PATH "")
+    endif ()
+endif ()
+
 find_path(ARDUINO_SDK_PATH
         NAMES lib/version.txt
         PATH_SUFFIXES share/arduino
@@ -167,7 +188,17 @@ else ()
     ard_lib(SD SD_path ${SD_LIB_path})
 endif ()
 
+# ================================ Lib INI =======================
+if (LIB_ini_PATH)
+    add_library(ini ${LIB_ini_PATH}/ini.c)
+    target_compile_definitions(ini PRIVATE INI_ALLOW_BOM=0
+            INI_ALLOW_INLINE_COMMENTS=1
+            INI_USE_STACK=1
+            INI_ALLOW_REALLOC=0)
+    target_compile_options(ini PRIVATE ${DEBUG_OPT_FLAG})
+endif ()
 
+# ================================ Lib SD =======================
 target_compile_options(SD PRIVATE -Wno-deprecated -Wno-deprecated-declarations)
 ard_lib(SPI SPI_path ${PLATFORM-PATH})
 ard_lib(Wire Wire_path ${PLATFORM-PATH})
@@ -195,8 +226,9 @@ add_library(drivers
         src/devices/GrblDevice.cpp
         src/devices/MarlinDevice.cpp
         )
-target_include_directories(drivers PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include )
+target_include_directories(drivers PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH} )
 target_compile_options(drivers PRIVATE ${DEBUG_OPT_FLAG})
+target_link_libraries(drivers PUBLIC ini)
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     target_compile_definitions(controller PUBLIC
