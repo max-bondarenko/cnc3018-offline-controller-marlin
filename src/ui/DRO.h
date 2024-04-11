@@ -14,7 +14,7 @@ extern Job job;
 class DRO : public Screen {
 public:
 
-    explicit DRO(GCodeDevice& d) : dev(d), cMode{Mode::AXES}, nextRefresh{1}, cDist{3}, cFeed{3}, cSpindleVal{0} {}
+    explicit DRO(GCodeDevice& d) : dev(d), cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {}
 
     virtual ~DRO() {}
 

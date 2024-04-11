@@ -16,7 +16,7 @@ class Job;
 // todo done 1 switch to states from flags for protocol state
 // TODO done 2 make observable events meaningful
 // TODO done 3 check RxTimeout , make it work as heartbeat
-// todo  4  add full presets(spindle, dist , feed) from file, <device>_setup.txt + setup.txt
+// todo done 4  add full presets(spindle, dist , feed) from ini file (section is device name)
 
 ///
 /// Device abstraction statuses.
@@ -55,19 +55,19 @@ public:
     constexpr static uint8_t BUFFER_LEN = 255;
     constexpr static uint8_t SHORT_BUFFER_LEN = 100;
     const char* name = nullptr;
-
+    // default
     struct Config {
         etl::vector<u_int16_t, 10> spindle{0, 1, 10, 100, 1000};
         etl::vector<u_int16_t, 10> feed{50, 100, 500, 1000, 2000};
-        etl::vector<float, 10> dist{0.1, 0.5, 1, 5, 10, 50};
+        etl::vector<float, 10> dist{0.1, 0.5, 1, 5, 10, 50, 150};
     };
 
     GCodeDevice(WatchedSerial& _printerSerial, Job& _job) : printerSerial(_printerSerial), job(_job) {
-        spindleValues = new etl::vector<u_int16_t, 10>{0};
     }
+
     virtual ~GCodeDevice() { clear_observers(); }
 
-    virtual void begin(SetupFN* const onBegin);
+    virtual void begin(SetupFN* onBegin);
 
     virtual bool scheduleCommand(const char* cmd, size_t len);
 
@@ -95,8 +95,6 @@ public:
 
     bool supportLineNumber() const { return useLineNumber; }
 
-    virtual etl::ivector<u_int16_t>* getSpindleValues() const = 0;
-
     float getX() const { return x; }
 
     float getY() const { return y; }
@@ -111,35 +109,35 @@ public:
 
     int32_t getResendLine() const { return resendLine; }
 
+    const Config& getConfig() const { return config; }
+
 protected:
     WatchedSerial& printerSerial;
     Job& job;
-    etl::ivector<u_int16_t>* spindleValues; //todo
     Config config;
 
     bool canTimeout,
-            xoff,
-            xoffEnabled = false,
-            useLineNumber = false;
+        xoff,
+        xoffEnabled = false,
+        useLineNumber = false;
 
     char curUnsentCmd[MAX_GCODE_LINE + 1], curUnsentPriorityCmd[MAX_GCODE_LINE + 1];
 
     size_t curUnsentCmdLen = 0,
-            curUnsentPriorityCmdLen = 0;
+        curUnsentPriorityCmdLen = 0;
 
     size_t lastStatus = DeviceStatus::NONE;
 
     const char* lastResponse = nullptr;
     const char* lastStatusStr = nullptr;
 
-
     float x = 0.0,
-            y = 0.0,
-            z = 0.0,
-            feed = 0.0;
+        y = 0.0,
+        z = 0.0,
+        feed = 0.0;
 
     uint32_t spindleVal = 0,
-            serialRxTimeout = 0;
+        serialRxTimeout = 0;
 
     int32_t resendLine = -1;
 
@@ -154,12 +152,11 @@ protected:
     void readLockedStatus();
 
 private:
+    static int configHandler(void* store, const char* section, const char* name, const char* value);
 
     void extendRxTimeout();
 
     void disarmRxTimeout();
 
     void checkTimeout();
-
-    static int handler(void* store,  const char* section, const char* name, const char* value);
 };

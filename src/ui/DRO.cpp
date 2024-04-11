@@ -74,11 +74,9 @@ void DRO::drawContents() {
     sx2 += 10;
     snprintf(str, LEN, "%ld", dev.getSpindleVal());
     u8g2.drawStr(sx2, sy, str);
-//    snprintf(str, LEN, "%u", JOG_FEEDS[cFeed]);
-    snprintf(str, LEN, "%u", 10);
+    snprintf(str, LEN, "%u", dev.getConfig().feed.at(cFeed));
     u8g2.drawStr(sx2, sy + lh, str);
-
-    float jd = 0.1 ;// todo JOG_DISTS[cDist];
+    float jd = dev.getConfig().dist.at(cDist);
     snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
     u8g2.drawStr(sx2, sy + lh * 2, str);
 }
@@ -117,8 +115,8 @@ void DRO::onButton(int bt, Display::ButtonEvent evt) {
 void DRO::onButtonAxes(int bt, Evt evt) {
     if (evt == Evt::DOWN || evt == Evt::HOLD) {
         int axis = -1;
-        float d = 01.1; //todo DRO::JOG_DISTS[cDist];
-        uint16_t f = 10 ;// todo  DRO::JOG_FEEDS[cFeed];
+        float d = dev.getConfig().dist.at(cDist);
+        uint16_t f = dev.getConfig().feed.at(cFeed);
         switch (bt) {
             case Display::BT_L:
                 axis = 0;
@@ -155,12 +153,14 @@ void DRO::onButtonShift(int bt, Evt evt) {
     if (!(evt == Evt::DOWN || evt == Evt::HOLD))
         return;
 
-    size_t n_spindle_val = dev.getSpindleValues()->size() - 1;
+    size_t n_spindle_val = dev.getConfig().spindle.size() - 1;
+    size_t n_dist_val = dev.getConfig().dist.size() - 1;
+    size_t n_feed_val = dev.getConfig().feed.size() - 1;
 
     switch (bt) {
         case Display::BT_R:
-            if (evt == Evt::HOLD) cDist =  0 ; //todo  N_JOG_DISTS - 1;
-            else if (cDist < 0) cDist++;
+            if (evt == Evt::HOLD) cDist = n_dist_val;
+            else if (cDist < n_dist_val) cDist++;
             break;
         case Display::BT_L:
             if (evt == Evt::HOLD) cDist = 0;
@@ -178,7 +178,7 @@ void DRO::onButtonShift(int bt, Evt evt) {
                 if (evt == Evt::HOLD) cSpindleVal = 0;
                 else if (cSpindleVal > 0) cSpindleVal--;
             }
-            uint16_t speed = dev.getSpindleValues()->at(cSpindleVal);
+            uint16_t speed = dev.getConfig().spindle.at(cSpindleVal);
             if (speed != 0) {
                 char t[15];
                 int l = snprintf(t, 15, "M3 S%d", speed);
@@ -196,8 +196,8 @@ void DRO::onButtonShift(int bt, Evt evt) {
             break;
         case Display::BT_UP:
             if (evt == Evt::HOLD)
-                cFeed =  0 ;  // N_JOG_FEEDS - 1; //todo
-            else if (cFeed < 1)
+                cFeed =  n_feed_val;
+            else if (cFeed < n_feed_val)
                 cFeed++;
             break;
         default:; // skip

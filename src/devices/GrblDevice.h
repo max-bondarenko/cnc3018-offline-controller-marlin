@@ -54,8 +54,6 @@ public:
         }
     }
 
-    etl::ivector<u_int16_t>* getSpindleValues() const override;
-
     /// WPos = MPos - WCO
     float getXOfs() const { return ofsX; }
 

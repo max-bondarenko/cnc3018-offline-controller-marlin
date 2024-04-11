@@ -64,6 +64,7 @@ bool MarlinDevice::checkProbeResponse(const String& input) {
 MarlinDevice::MarlinDevice(WatchedSerial& _printerSerial, Job& _job) : GCodeDevice(_printerSerial, _job) {
     canTimeout = false;
     useLineNumber = true;
+    config.spindle = etl::vector<u_int16_t, 10>{0, 1, 64, 255};
     compatibility.auto_temp = 0;
     compatibility.auto_position = 0;
     compatibility.emergency_parser = 0;
@@ -111,8 +112,9 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
     SetupFN fn = [this](WatchedSerial& s) {
         char buffer[101]; // assume not longer then 100B
         buffer[100] = 0;
-        while (s.readBytesUntil('\n', buffer, 100) != 0) {
+        for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != -1; i--) {
             if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
+                buffer[0] = 0;
                 String _s(buffer + 4);
                 // OPTIMIZATION
                 if (_s.indexOf("AUTOREPORT_") != -1) {
@@ -124,8 +126,9 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
                 } else if (_s.indexOf("EMERGENCY_PARSER") != -1 && _s.indexOf(":1", 16) != -1) {
                     this->compatibility.emergency_parser = 1;
                 }
-            } else
-                break;
+            } else {
+                i /= 2;
+            }
         }
     };
     GCodeDevice::begin(&fn);
@@ -316,8 +319,4 @@ void MarlinDevice::parseError(const char* input) {
     if (strstr(cpy, "Last Line") != nullptr) {
 //        int lastResponse = atoi((cpy + 10)); TODO
     }
-}
-
-etl::ivector<u_int16_t>* MarlinDevice::getSpindleValues() const {
-    return nullptr;// todo
 }

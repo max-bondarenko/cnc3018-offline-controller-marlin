@@ -7,8 +7,9 @@
 #include "WString.h"
 
 // TODO list
-// TODO 1 marlin features check
-// TODO 2 status poling according maarlin state
+// TODO done 1 marlin features check
+// TODO  2 status polling according marlin state 70%
+// TODO     2.1 make it except Job commands feed. same as for grbl
 
 static const char* const OK_str = "ok";
 
@@ -30,8 +31,6 @@ public:
     MarlinDevice(WatchedSerial& _printerSerial, Job& _job);
 
     virtual ~MarlinDevice() {}
-
-    etl::ivector<u_int16_t>* getSpindleValues() const override;
 
     bool jog(uint8_t axis, float dist, uint16_t feed) override;
 

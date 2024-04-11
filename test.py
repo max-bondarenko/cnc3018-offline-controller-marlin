@@ -92,7 +92,7 @@ def write_ok(fw):
 
 
 def main():
-    a = '/dev/ttyUSB1'
+    a = '/dev/ttyUSB0'
 
     q = []
 
@@ -107,24 +107,17 @@ def main():
     try:
         with open(a, 'rb') as f:
             fd = f.fileno()
-            # tty.setraw(fd)
             attr = termios.tcgetattr(fd)
 
-            print(
-                '{0:b}\n{1:b}\n{2:b}\n{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG], attr[tty.LFLAG]))
             termios.tcdrain(fd)
-            # attr[tty.IFLAG] = 0b10000000110
-            attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.ECHO
+            print('o_flag:{:b}'.format(attr[tty.OFLAG]))
             attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.ISTRIP
-            # attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.INLCR
 
-            # attr[tty.IFLAG] = attr[tty.IFLAG] | termios.ICRNL
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IXOFF
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IXON
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.CSTOPB
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IGNCR
             #  ==================================================
-            # attr[tty.OFLAG] = 0x30
             attr[tty.OFLAG] = attr[tty.OFLAG] | termios.CS8
             attr[tty.OFLAG] = attr[tty.OFLAG] & ~termios.CSTOPB
 
@@ -134,7 +127,7 @@ def main():
             attr[tty.ISPEED] = termios.B9600
             attr[tty.OSPEED] = termios.B9600
             termios.tcsetattr(fd, termios.TCSADRAIN, attr)
-            print("========")
+            print('>>o_flag:{:b}'.format(attr[tty.OFLAG]))
             print(
                 '{0:b}\n{1:b}\n{2:b}\n{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG], attr[tty.LFLAG]))
             a = ""

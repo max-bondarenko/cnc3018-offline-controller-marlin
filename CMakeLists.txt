@@ -195,7 +195,7 @@ if (LIB_ini_PATH)
             INI_ALLOW_INLINE_COMMENTS=1
             INI_USE_STACK=1
             INI_ALLOW_REALLOC=0)
-    target_compile_options(ini PRIVATE ${DEBUG_OPT_FLAG})
+    target_compile_options(ini PRIVATE ${OPT_FLAG})
 endif ()
 
 # ================================ Lib SD =======================

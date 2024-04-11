@@ -240,7 +240,3 @@ const char* GrblDevice::getStatusStr() const {
             return "?";
     }
 }
-
-etl::ivector<u_int16_t>* GrblDevice::getSpindleValues() const {
-    return nullptr; // todo
-}

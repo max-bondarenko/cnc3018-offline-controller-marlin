@@ -117,11 +117,11 @@ void MarlinDRO::drawContents() {
 
     /// distance  ======
     sx_start_right += 10;
-    const float& jd = 100.9; // todo
+    const float& jd = dev.getConfig().dist.at(cDist);
     snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
     u8g2.drawStr(sx_start_right, sy, str);
     /// Feed ======
-    snprintf(str, LEN, "%d", 10 ); // TODO
+    snprintf(str, LEN, "%d", dev.getConfig().feed.at(cFeed));
     u8g2.drawStr(sx_start_right, sy + lineHeight, str);
     if (cMode != Mode::TEMP) {
         /// spindle ======
@@ -177,7 +177,8 @@ void MarlinDRO::onButton(int bt, Display::ButtonEvent evt) {
             break;
         case Mode::SPINDLE:
             onButtonShift(bt, evt);
-            dev.adjustSpindle(dev.getSpindleValues()->at(cSpindleVal));
+            // huck. marlin dont return status
+            dev.adjustSpindle(dev.getConfig().spindle.at(cSpindleVal));
             break;
         case Mode::TEMP:
             onButtonTemp(bt, evt);
@@ -189,8 +190,8 @@ void MarlinDRO::onButton(int bt, Display::ButtonEvent evt) {
 void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
     if (evt == Evt::DOWN || evt == Evt::HOLD) {
         uint8_t axis = 0xFF;
-        float dist = 10.1; // todo JOG_DISTS[cDist];
-        uint16_t feed = 10 ;// todo JOG_FEEDS[cFeed];
+        float dist = dev.getConfig().dist.at(cDist);
+        uint16_t feed = dev.getConfig().feed.at(cFeed);
         switch (bt) {
             // === AXIS
             case Display::BT_ZUP:
