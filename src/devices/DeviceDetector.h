@@ -8,13 +8,11 @@
 
 #include "debug.h"
 
-constexpr static uint8_t N_DEVICES = 2;
-constexpr static uint8_t N_ATTEMPTS = 3;
+constexpr uint8_t N_ATTEMPTS = 3;
 constexpr static uint32_t serialBauds[] = {57600, 115200, 9600, 250000};
 constexpr static uint32_t N_SERIAL_BAUDS = sizeof(serialBauds) / sizeof(serialBauds[0]);
-const char* deviceNames[] = {"grbl", "marlin"};
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 class DeviceDetector {
 public:
     static void init() {
@@ -23,7 +21,7 @@ public:
         cAttempt = 0;
         cSpeed = 0;
         cDev = 0;
-        deviceName = deviceNames[cDev];
+        deviceName = DEVICE_NAMES[cDev];
         serialBaud = serialBauds[cSpeed];
     }
 
@@ -52,8 +50,7 @@ private:
 
     static void sendNextProbe() {
         serialBaud = serialBauds[cSpeed];
-        deviceName = deviceNames[cDev];
-
+        deviceName = DEVICE_NAMES[cDev];
         while (printerSerial.available()) {
             printerSerial.read();
         }
@@ -61,17 +58,17 @@ private:
         printerSerial.begin(serialBaud);
         DETECTOR_LOGLN("Det >");
         switch (cDev) {
-            case 0:
+            case DeviceName::GRBL:
                 GrblDevice::sendProbe(printerSerial);
                 break;
-            default :
+            case DeviceName::MARLIN:
                 MarlinDevice::sendProbe(printerSerial);
         }
         cAttempt++;
         if (cAttempt == N_ATTEMPTS) {
             cAttempt = 0;
             cDev++;
-            if (cDev == N_DEVICES) {
+            if (cDev == DeviceName::N_DEVICES) {
                 cDev = 0;
                 // ring
                 cSpeed++;
@@ -101,14 +98,13 @@ private:
                 DETECTOR_LOGF("> [%s]\n", resp);
                 String _resp(resp);
                 bool ret = false;
-                if (cDev == 0) {
+                if (cDev == DeviceName::GRBL) {
                     ret = GrblDevice::checkProbeResponse(_resp);
-                } else if (cDev == 1) {
+                } else if (cDev == DeviceName::MARLIN) {
                     ret = MarlinDevice::checkProbeResponse(_resp);
                 }
-
                 if (ret) {
-                    createDevice(cDev, printerSerial);
+                    createDevice(deviceName, printerSerial);
                     cResult = 1;
                     return;
                 }
@@ -116,26 +112,25 @@ private:
             }
         }
     }
-
 };
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 uint32_t DeviceDetector<T, printerSerial, createDevice>::serialBaud;
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 const char* DeviceDetector<T, printerSerial, createDevice>::deviceName;
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 uint8_t DeviceDetector<T, printerSerial, createDevice>::cSpeed;
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 uint8_t  DeviceDetector<T, printerSerial, createDevice>::cAttempt;
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 int  DeviceDetector<T, printerSerial, createDevice>::cResult;
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 uint8_t  DeviceDetector<T, printerSerial, createDevice>::cDev;
 
-template<class T, T& printerSerial, void (* createDevice)(int, T&)>
+template<class T, T& printerSerial, void (* createDevice)(const char* const, T&)>
 uint32_t  DeviceDetector<T, printerSerial, createDevice>::nextProbeTime;

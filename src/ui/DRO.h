@@ -31,10 +31,6 @@ protected:
         // 0    1      2
         AXES, SPINDLE, TEMP, N_VALS
     };
-    constexpr static float JOG_DISTS[] = {0.1, 0.5, 1, 5, 10, 50};
-    constexpr static size_t N_JOG_DISTS = sizeof(JOG_DISTS) / sizeof(JOG_DISTS[0]);
-    constexpr static uint16_t JOG_FEEDS[] = {50, 100, 500, 1000, 2000};
-    constexpr static size_t N_JOG_FEEDS = sizeof(JOG_FEEDS) / sizeof(JOG_FEEDS[0]);
 
     GCodeDevice& dev;
     Mode cMode;

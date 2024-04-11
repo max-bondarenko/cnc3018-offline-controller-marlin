@@ -5,7 +5,6 @@
 
 class GrblDevice : public GCodeDevice {
 public:
-    const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 10, 100, 1000};
 
     enum class GrblStatus {
         Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep

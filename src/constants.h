@@ -29,6 +29,14 @@ constexpr char AXIS[] =     {'X', 'Y', 'Z' , 'E'};
 constexpr char AXIS_WCS[] = {'x', 'y', 'z'};
 constexpr char PRINTER[] =  {'T', 'B'};
 
+enum DeviceName {
+    GRBL = 0,
+    MARLIN,
+    N_DEVICES
+};
+static const char* const DEVICE_NAMES[] = {"grbl", "marlin"};
+
+
 //================ PROTOCOL ==============
 constexpr char XON =  0x11;
 constexpr char XOFF = 0x13;
@@ -50,7 +58,7 @@ constexpr size_t PROBE_INTERVAL = 600;
 constexpr size_t REFRESH_INTL = 500;
 constexpr size_t KEEPALIVE_INTERVAL = 5000;    // Marlin defaults to 2 seconds, get a little of margin
 
-#define SPINDLE_PRESET_FILE "spindle.txt"
+#define PRESET_FILE "presets.ini"
 
 
 #endif //CNC_3018_CONSTANTS_H
