@@ -226,15 +226,15 @@ add_library(drivers
         src/devices/GrblDevice.cpp
         src/devices/MarlinDevice.cpp
         )
-target_include_directories(drivers PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH} )
+target_include_directories(drivers PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH})
 target_compile_options(drivers PRIVATE ${DEBUG_OPT_FLAG})
 target_link_libraries(drivers PUBLIC ini)
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     target_compile_definitions(controller PUBLIC
-#            LOG_DEBUG
-#            LOG_DETECTOR
-#            USB_TO_SERIAL
+            #            LOG_DEBUG
+            #            LOG_DETECTOR
+            #            USB_TO_SERIAL
             )
 
 endif ()
@@ -288,8 +288,16 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         VERBATIM)
 
 add_custom_target(${PROJECT_NAME}-size
-        COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -A -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf
-        COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -B -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf
+        COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -A -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf |
+        grep -E '^\(.text|.data|.rodata|.text.align|.ARM.exidx\)[[:space:]]+[[:digit:]]+' |
+        awk '{sum+=$$2} END { printf \"FLASH: %\#6.0dKB [%d B]\\n\",sum/1024, sum }'
+        # ===================================
+        COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -A -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf |
+        grep -E '^\(.data|.bss|.noinit\)[[:space:]]+[[:digit:]]+' |
+        awk '{sum+=$$2} END { printf \"RAM: %\#8.0dKB [%d B]\\n\",sum/1024, sum }'
+        # ===================================
+        COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -B -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf -d ${PROJECT_BINARY_DIR}/${HEX_FILE}
+        # ===================================
         DEPENDS ${PROJECT_NAME}.elf
         )
 

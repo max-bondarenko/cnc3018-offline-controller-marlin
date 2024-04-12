@@ -291,7 +291,7 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
                     bedPower = strtol(fromMachine + 3, nullptr, STRTOLL_BASE);
                 } else {
                     bedTemp = strtol(fromMachine + 2, nullptr, STRTOLL_BASE);
-                    nextBedTemp = true; // TODO check may be bug !!!
+                    nextBedTemp = true;
                 }
                 break;
             case 'X':
