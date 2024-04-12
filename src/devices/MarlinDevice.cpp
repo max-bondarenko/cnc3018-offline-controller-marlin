@@ -8,7 +8,7 @@
 #include "util.h"
 #include "debug.h"
 
-#define LOG_EXTRA_INFO(a) ;
+#define LOG_EXTRA_INFO(a) //noop
 #ifdef LOG_DEBUG
 #define LOG_EXTRA_INFO(a) a;
 #endif
@@ -171,11 +171,11 @@ void MarlinDevice::toggleRelative() {
     relative = !relative;
 }
 
-// TODO optimize all this silly ifs
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
-    char* lr = const_cast<char* >(OK_str); //ugly
-    lastResponse = "";
+    char* lr = nullptr;
     bool need_pop = true;
+    char* str;
+    lastResponse = "";
     LOGF("> [%s]\n", resp);
     if (startsWith(resp, ERR_str)) {
         lr = resp;
@@ -194,57 +194,62 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         need_pop = false;
     } else if (startsWith(resp, OK_str)) {
         if (len > 2) {
-            parseOk(resp + 2, len - 2);LOG_EXTRA_INFO(LastResponse = resp + 2)
+            parseOk(resp + 2, len - 2);
+            lr = const_cast<char* >(OK_str);
+            LOG_EXTRA_INFO(lastResponse = resp + 2;)
         }
         if (resendLine > 0) { // was resend before
             resendLine = -1;
         }
         lastStatus = DeviceStatus::OK;
-    } else {
-        if (strstr(resp, BUSY_str) != nullptr) {
-            lr = resp;
-            lr[5] = 0;
-            lastResponse = resp + 6; // marlin do space after :
-            lastStatus = DeviceStatus::BUSY;
-        } else if (startsWith(resp, ECHO_str)) {
-            // echo: busy must be before this
-            lr = resp;
-            lr[4] = 0;
-            lastResponse = resp + 5;// has space after ':'
-            //echo:Cold extrudes are enabled (min temp 170C)
-            if (!outQueue.empty() && outQueue.front().indexOf(M302_COLD_EXTRUDER_STATUS) != -1) {
-                if (strstr(lastResponse, "disabled") != nullptr) {
-                    char* string = strstr(lastResponse, "min temp ");
-                    if (string != nullptr) {
-                        minExtrusionTemp = strtol(string + 9, nullptr, STRTOLL_BASE);
-                    }
+    } else if ((str = strstr(resp, BUSY_str)) != nullptr) {
+        // "echo:busy: processing"
+        lr = const_cast<char* >(BUSY_str);
+        lastResponse = str + 6;
+        lastStatus = DeviceStatus::BUSY;
+    } else if (startsWith(resp, ECHO_str)) {
+        // echo: busy must be before this
+        lr = resp;
+        lr[4] = 0;
+        lastResponse = resp + 5;// has space after ':'
+        //echo:Cold extrudes are enabled (min temp 170C)
+        if (!outQueue.empty() && outQueue.front().indexOf(M302_COLD_EXTRUDER_STATUS) != -1) {
+            if (strstr(lastResponse, "disabled") != nullptr) {
+                char* string = strstr(lastResponse, "min temp ");
+                if (string != nullptr) {
+                    minExtrusionTemp = strtol(string + 9, nullptr, STRTOLL_BASE);
                 }
             }
-            lastStatus = DeviceStatus::OK;
-        } else if (startsWith(resp, RESEND_str)) {
-            lr = resp;
-            lr[6] = 0;
-            // MAY have "Resend:Error
-            LOG_EXTRA_INFO(LastResponse = resp + 7)
-            resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
-            lastStatus = DeviceStatus::RESEND;
-            // no pop. resend
-        } else {
-            if (startsWith(resp, DEBUG_str)) {
-                lr = resp;
-                lr[5] = 0;
-                lastResponse = resp + 5;
-            } else {
-                // M154 Snn or  M155 Snn
-                parseOk(resp, len);
-                need_pop = false;
-            }
-            lastStatus = DeviceStatus::OK;
         }
+        lastStatus = DeviceStatus::OK;
+    } else if (startsWith(resp, RESEND_str)) {
+        lr = resp;
+        lr[6] = 0;
+        // MAY have "Resend:Error
+        LOG_EXTRA_INFO(lastResponse = resp + 7)
+        resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
+        lastStatus = DeviceStatus::RESEND;
+        // no pop. resend
+    } else if (startsWith(resp, DEBUG_str)) {
+        lr = resp;
+        lr[5] = 0;
+        lastResponse = resp + 5;
+        lastStatus = DeviceStatus::OK;
+    } else {
+        // M154 Snn or  M155 Snn
+        parseOk(resp, len);
+        if (lastStatus == DeviceStatus::BUSY) {
+            lr = const_cast<char* >(BUSY_str);
+        } else {
+            lastStatus = DeviceStatus::OK;
+            lr = const_cast<char* >(OK_str);
+        }
+        need_pop = false;
     }
     if (need_pop && !outQueue.empty())
         outQueue.pop_front();
-    lastStatusStr = lr;
+    if (lr != nullptr)
+        lastStatusStr = lr;
 }
 
 bool MarlinDevice::tempChange(uint8_t temp) {

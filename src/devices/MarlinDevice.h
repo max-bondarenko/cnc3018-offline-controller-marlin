@@ -10,6 +10,7 @@
 // TODO done 1 marlin features check
 // TODO  2 status polling according marlin state 70%
 // TODO     2.1 make it except Job commands feed. same as for grbl
+// TODO done kindaa 3 busy state is wierd. make it wait for "unbusy"
 
 static const char* const OK_str = "ok";
 static const char* const ERR_str = "Err";
