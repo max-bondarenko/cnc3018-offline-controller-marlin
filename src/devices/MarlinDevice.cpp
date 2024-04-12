@@ -8,6 +8,10 @@
 #include "util.h"
 #include "debug.h"
 
+#define LOG_EXTRA_INFO(a) ;
+#ifdef LOG_DEBUG
+#define LOG_EXTRA_INFO(a) a;
+#endif
 
 void MarlinDevice::sendProbe(Stream& serial) {
     serial.print("\n");
@@ -89,8 +93,7 @@ void MarlinDevice::trySendCommand() {
         LOGF("[%s]\n", cmd);
         printerSerial.write((const unsigned char*) cmd, size);
         printerSerial.write('\n');
-        //delete
-        outQueue.pop_front();
+        // clean
         lastResponse = nullptr;
         lastStatus = DeviceStatus::WAIT;
     }
@@ -148,6 +151,7 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
         scheduleCommand(msg, 9);
     }
     scheduleCommand(RESET_LINE_NUMBER, 8);
+    scheduleCommand(M302_COLD_EXTRUDER_STATUS, 5);
 }
 
 void MarlinDevice::requestStatusUpdate() {
@@ -170,68 +174,76 @@ void MarlinDevice::toggleRelative() {
 // TODO optimize all this silly ifs
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     char* lr = const_cast<char* >(OK_str); //ugly
-    lastResponse = nullptr;
+    lastResponse = "";
+    bool need_pop = true;
     LOGF("> [%s]\n", resp);
-    if (startsWith(resp, "Error") || startsWith(resp, "!!")) {
-        if (startsWith(resp, "Error")) {
-            lr = resp;
-            lr[5] = 0;
-            lastResponse = resp + 6;
-            parseError(lastResponse); // TODO
-        } else {
-            lr = resp;
-            lr[2] = 0;
-            lastResponse = resp + 3;
-        }
+    if (startsWith(resp, ERR_str)) {
+        lr = resp;
+        lr[5] = 0;
+        lastResponse = resp + 6;
+        parseError(lastResponse);
         lastStatus = DeviceStatus::DEV_ERROR;
         outQueue.clear();
+        need_pop = false;
+    } else if (startsWith(resp, ErrorExclamation_str)) {
+        lr = resp;
+        lr[2] = 0;
+        lastResponse = resp + 3;
+        lastStatus = DeviceStatus::DEV_ERROR;
+        outQueue.clear();
+        need_pop = false;
+    } else if (startsWith(resp, OK_str)) {
+        if (len > 2) {
+            parseOk(resp + 2, len - 2);LOG_EXTRA_INFO(LastResponse = resp + 2)
+        }
+        if (resendLine > 0) { // was resend before
+            resendLine = -1;
+        }
+        lastStatus = DeviceStatus::OK;
     } else {
-        if (startsWith(resp, OK_str)) {
-            if (len > 2) {
-                parseOk(resp + 2, len - 2);
-#ifdef LOG_DEBUG
-                lastResponse = resp + 2;
-#endif
-            }
-            if (resendLine > 0) { // was resend before
-                resendLine = -1;
+        if (strstr(resp, BUSY_str) != nullptr) {
+            lr = resp;
+            lr[5] = 0;
+            lastResponse = resp + 6; // marlin do space after :
+            lastStatus = DeviceStatus::BUSY;
+        } else if (startsWith(resp, ECHO_str)) {
+            // echo: busy must be before this
+            lr = resp;
+            lr[4] = 0;
+            lastResponse = resp + 5;// has space after ':'
+            //echo:Cold extrudes are enabled (min temp 170C)
+            if (!outQueue.empty() && outQueue.front().indexOf(M302_COLD_EXTRUDER_STATUS) != -1) {
+                if (strstr(lastResponse, "disabled") != nullptr) {
+                    char* string = strstr(lastResponse, "min temp ");
+                    if (string != nullptr) {
+                        minExtrusionTemp = strtol(string + 9, nullptr, STRTOLL_BASE);
+                    }
+                }
             }
             lastStatus = DeviceStatus::OK;
+        } else if (startsWith(resp, RESEND_str)) {
+            lr = resp;
+            lr[6] = 0;
+            // MAY have "Resend:Error
+            LOG_EXTRA_INFO(LastResponse = resp + 7)
+            resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
+            lastStatus = DeviceStatus::RESEND;
+            // no pop. resend
         } else {
-            if (strstr(resp, "busy:") != nullptr) {
+            if (startsWith(resp, DEBUG_str)) {
                 lr = resp;
                 lr[5] = 0;
-                lastResponse = resp + 6; // marlin do space after :
-                lastStatus = DeviceStatus::BUSY;
-            }
-            if (startsWith(resp, "echo:")) {
-                // echo: busy must be before this
-                lr = resp;
-                lr[5] = 0;
-                lastResponse = resp + 6;
-            } else if (startsWith(resp, "Resend:")) {
-                lr = resp;
-                lr[6] = 0;
-                // MAY have "Resend:Error
-#ifdef LOG_DEBUG
-                lastResponse = resp + 7;
-#endif
-                resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
-                lastStatus = DeviceStatus::RESEND;
-                // no pop. resend
+                lastResponse = resp + 5;
             } else {
-                if (startsWith(resp, "DEBUG:")) {
-                    lr = resp;
-                    lr[5] = 0;
-                    lastResponse = resp + 5;
-                } else {
-                    // M154 Snn or  M155 Snn
-                    parseOk(resp, len);
-                }
-                lastStatus = DeviceStatus::OK;
+                // M154 Snn or  M155 Snn
+                parseOk(resp, len);
+                need_pop = false;
             }
+            lastStatus = DeviceStatus::OK;
         }
     }
+    if (need_pop && !outQueue.empty())
+        outQueue.pop_front();
     lastStatusStr = lr;
 }
 
@@ -310,7 +322,6 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
         fromMachine = strtok(nullptr, " ");
     }
     end:;// noop
-#undef ATOF
 }
 
 void MarlinDevice::parseError(const char* input) {

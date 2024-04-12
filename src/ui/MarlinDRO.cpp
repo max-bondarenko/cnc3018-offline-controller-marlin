@@ -97,8 +97,9 @@ void MarlinDRO::drawContents() {
             snprintf(buffer, 12, "%5.1f/%3d", dev.getTemp(), expectedTemp);
             u8g2.drawStr(lineWidth * 2 - 3, sy + lineHeight, buffer);
             drawPower(sy + lineHeight * 2 - 2, lineHeight, dev.getHotendPower());
-            /// == extruder Axis
-            drawAxis(AXIS[3], dev.getE(), axisPadding, sy + lineHeight * 2);
+            /// == extruder Axis ================= v-big E-v/v-- small E ---v
+            drawAxis(dev.isExtrusionEnabled() ? AXIS[3] :
+                     (AXIS[3] + 0x20), dev.getE(), axisPadding, sy + lineHeight * 2);
             sx_start_right += 11; //padding for spindle/feed values
         }
             break;
@@ -203,10 +204,9 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
                 break;
             default:; //noop
         }
-        if (axis != 0xFF) {
+        if (axis != 0xFF && dev.isExtrusionEnabled()) {
             dev.jog(axis, dist, feed);
         }
-
         int temp = (uint8_t) round(dist);
         switch (bt) {
             // ======== temperature ========

@@ -12,6 +12,12 @@
 // TODO     2.1 make it except Job commands feed. same as for grbl
 
 static const char* const OK_str = "ok";
+static const char* const ERR_str = "Err";
+static const char* const ErrorExclamation_str = "!!";
+static const char* const BUSY_str = "busy";
+static const char* const ECHO_str = "echo";
+static const char* const RESEND_str = "Resend";
+static const char* const DEBUG_str = "DEBUG";
 
 struct Compat {
     char auto_temp: 1;
@@ -70,6 +76,10 @@ public:
         return compatibility;
     }
 
+    bool isExtrusionEnabled() const {
+        return minExtrusionTemp <= (int16_t) floor(hotendTemp);
+    }
+
 protected:
     void trySendCommand() override;
 
@@ -87,7 +97,7 @@ private:
     bedRequestedTemp = 0,
             hotendPower = 0,
             bedPower = 0;
-
+    int16_t minExtrusionTemp = -1;
     bool relative = false;
     Compat compatibility;
 

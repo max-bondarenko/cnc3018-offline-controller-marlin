@@ -6,7 +6,6 @@
 #include "devices/MarlinDevice.h"
 // TODO list
 // TODO 1 add prev state
-// TODO 2 add resend
 
 typedef etl::observer<JobStatusEvent> JobObserver;
 
