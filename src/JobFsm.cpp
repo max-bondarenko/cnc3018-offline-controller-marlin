@@ -1,5 +1,5 @@
 #include "JobFsm.h"
-#include <string>
+#include "WString.h"
 
 bool JobFsm::readCommandsToBuffer() {
     if (filePos >= fileSize){
@@ -11,7 +11,7 @@ bool JobFsm::readCommandsToBuffer() {
         while (gcodeFile.available() > 0) {
             int readChar = gcodeFile.read();
             filePos++;
-            if (';' == readChar) {
+            if (';' == readChar || '(' == readChar) {
                 got_comment = true;
                 continue;
             }
@@ -26,7 +26,7 @@ bool JobFsm::readCommandsToBuffer() {
             }
         }
         curLine[curLinePos] = 0;
-        LOGLN("Got new line");
+        JOB_LOGLN("Got new line");
 
         bool empty = true;
         for (size_t i = 0; i < curLinePos; i++) {
@@ -40,23 +40,21 @@ bool JobFsm::readCommandsToBuffer() {
         else 
             break;
     }
-    LOGLN("put line to buf");
-    std::string line(curLinePos + (addLineN ? 10 : 0), '\0');
+    JOB_LOGLN("put line to buf");
+    String line(curLinePos + (addLineN ? 10 : 0), '\0');
     if (addLineN) {
         // line number and checksum
         line = "N";
-        line += std::to_string(++curLineNum);
+        line += String(++curLineNum);
         line += " ";
         line += curLine;
-        // right trim
-        line.erase(std::find_if(line.rbegin(), line.rend(),
-                                std::not1(std::ptr_fun<int, int>(std::isspace))).base(), line.end());
+        line.trim();
         uint8_t checksum = 0, count = line.length();
         const char* out = line.c_str();
         while (count)
             checksum ^= out[--count];
         line += '*';
-        line += std::to_string(checksum);
+        line += String(checksum);
     } else {
         line = curLine;
     }
@@ -79,7 +77,7 @@ void JobFsm::setFile(const char* file) {
     endTime = 0;
 }
 
-uint32_t JobFsm::getPrintDuration() {
+uint32_t JobFsm::getPrintDuration() const {
     return (endTime != 0 ? endTime : millis()) - startTime;
 }
 

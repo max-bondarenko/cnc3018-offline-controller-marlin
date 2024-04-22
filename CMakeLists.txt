@@ -215,20 +215,19 @@ target_link_libraries(U8g2 PUBLIC SPI Wire)
 
 file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
 list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
-list(FILTER SRC_LIST EXCLUDE REGEX "src/devices/*")
+list(FILTER SRC_LIST EXCLUDE REGEX "src/Job*")
 add_library(controller ${SRC_LIST})
-set(main_include src sec/ui src/gcode src/devices)
+set(main_include src src/ui src/gcode src/devices)
 target_include_directories(controller PUBLIC ${main_include})
 target_compile_options(controller PRIVATE ${OPT_FLAG})
 
-add_library(drivers
-        src/devices/GCodeDevice.cpp
-        src/devices/GrblDevice.cpp
-        src/devices/MarlinDevice.cpp
+add_library(for_debug
+        src/Job.cpp
+        src/JobFsm.cpp
         )
-target_include_directories(drivers PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH})
-target_compile_options(drivers PRIVATE ${DEBUG_OPT_FLAG})
-target_link_libraries(drivers PUBLIC ini)
+target_include_directories(for_debug PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH})
+target_compile_options(for_debug PRIVATE ${DEBUG_OPT_FLAG})
+target_link_libraries(for_debug PUBLIC ini)
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     target_compile_definitions(controller PUBLIC
@@ -240,7 +239,7 @@ if (CMAKE_BUILD_TYPE STREQUAL "debug")
 endif ()
 
 target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)
-target_link_libraries(controller PUBLIC U8g2 drivers)
+target_link_libraries(controller PUBLIC U8g2 for_debug)
 
 if (EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT "-T ${LINKER_SCRIPT}")

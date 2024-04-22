@@ -32,7 +32,7 @@ private:
     int expectedBedTemp = 0;
     bool relative;
 
-    void drawAxisIcons(uint8_t sx, uint8_t sy, const uint8_t lineHeight) const;
+    void drawAxisIcons(uint8_t sx, uint8_t sy, uint8_t lineHeight) const;
 
     void inline drawPower(uint16_t sy, uint8_t lineHeight, uint16_t val);
 };

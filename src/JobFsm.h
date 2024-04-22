@@ -7,7 +7,7 @@
 #include "etl/message.h"
 #include "etl/array.h"
 
-#include <string>
+#include "WString.h"
 
 const etl::message_router_id_t JOB_BUS_NUMBER = 1;
 
@@ -50,8 +50,8 @@ struct PauseMessage : public etl::message<EventId::PAUSE> {
 struct ResumeMessage : public etl::message<EventId::RESUME> {
 };
 struct SendMessage : public etl::message<EventId::SEND> {
-    std::string& cmd;
-    explicit SendMessage(std::string& s): cmd(s) {};
+    String& cmd;
+    explicit SendMessage(String& s): cmd(s) {};
 };
 struct AckMessage : public etl::message<EventId::ACK> {
 };
@@ -99,7 +99,7 @@ public:
     size_t curLinePos;
     size_t curLineNum;
 
-    etl::array<std::string, MAX_BUF> buffer;
+    etl::array<String, MAX_BUF> buffer;
 
     bool readCommandsToBuffer();
 
@@ -107,7 +107,7 @@ public:
 
     void closeFile();
 
-    uint32_t getPrintDuration();
+    uint32_t getPrintDuration() const;
 
 };
 
