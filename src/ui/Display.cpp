@@ -117,8 +117,10 @@ void Display::draw() {
 #include "../assets/connected.XBM"
 
 void Display::drawStatusBar() {
-    constexpr int LEN = 26;
-    char str[LEN];
+    constexpr int MAX_LEN = 22;
+    constexpr int MAX_STATUS_LEN = 12;
+
+    char str[MAX_LEN];
 
     u8g2.setFont(u8g2_font_nokiafc22_tr);
     u8g2.setDrawColor(1);
@@ -138,11 +140,11 @@ void Display::drawStatusBar() {
         default:
             u8g2.drawXBM(x, 0, connected_width, connected_height, (const uint8_t*) connected_bits);
     }
-    memcpy(str, devStatusString.c_str(), LEN);
-    str[LEN - 1] = 0;
+    memcpy(str, devStatusString.c_str(), MAX_STATUS_LEN);
+    str[MAX_STATUS_LEN] = 0;
     u8g2.drawStr(10, y, str);
-    memcpy(str, devLastResponse.c_str(), LEN);
-    str[LEN - 1] = 0;
+    memcpy(str, devLastResponse.c_str(), MAX_LEN);
+    str[MAX_LEN - 1] = 0;
     u8g2.drawStr(2, y + fH, str);
     //job status
     if (job.isValid()) {

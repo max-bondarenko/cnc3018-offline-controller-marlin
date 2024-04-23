@@ -20,7 +20,7 @@ def expect_line(str):
         resp.append("ok\r\n")
         stack.append(line_number)
     else:
-        resp.append("!!: Wrong number\r\n")
+        resp.append("!!: _123456789_12345678_==\r\n")
 
 
 def line_number(str):
@@ -29,7 +29,7 @@ def line_number(str):
         N += 1
         print("\t\t N++")
         if N == 3:
-            resp.append("Resend:3\r\n")
+            resp.append("Resend:3 _123456789_123456789\r\n")
             stack.append(expect_line)
             return
         if N == 5:
@@ -39,6 +39,8 @@ def line_number(str):
             global x
             x += 1.03
             resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f}\r\n".format(x, y, z, e))
+    else:
+        resp.append("ok\r\n")
     stack.append(line_number)
 
 
