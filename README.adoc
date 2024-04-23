@@ -141,6 +141,7 @@ In any case refer to link:https://marlinfw.org/docs/configuration/configuration.
 ### Job states
 
 Job control works as explicit FSM with flowing state diagram.
+On Pause, if it in WAIT state, will wait for response, and set on PAUSE.
 
     ┌──────────┐
     │          │
@@ -150,22 +151,21 @@ Job control works as explicit FSM with flowing state diagram.
                     │   ┌────complete────┤       ├───pause──┐ │
                     │   │                │ Ready │          │ │
                     │   │            ┌───┤       │◄────┐ ┌──▼─┴─────┐
-                    │   │            │   └───────┘     │ │          │
-                    │   │       send cmd              ack│  Pause   │
-                    │   │            │  ┌──────────┐   │ │          │
-              ┌─────┴───▼┐           │  │          ├───┘ └──▲──┬────┘
-              │          │           └──►  Wait    │        │  │
-              │  finish  │              │ response ├─pause──┘  │
-              │          ◄────err───────┤          │           │
-              └──────────┘              └───▲──────┘           │
-                                            │                  │
-                                            └──────resume──────┘
+                    │   │            │   └───▲───┘     │ │          │
+                    │   │       send cmd   pause      ack│  Pause   │
+                    │   │            │  ┌────┴─────┐   │ │          │
+              ┌─────┴───▼┐           │  │          ├───┘ └──────────┘
+              │          │           └──►  Wait    │
+              │  finish  │              │ response │
+              │          ◄────err───────┤          │
+              └──────────┘              └──────────┘
 
-## Spindle preset.
 
-See link:spindle.txt[example]. Device read only first line, skip everything above. Line length limited to 99 chars,
-9 2-byte integer values delimited with comas. First "0" is not needed, it always presents. Please use with caution,
-You will use what You write in file.
+
+## Device preset.
+
+See link:presets.ini[example]. First "0" is not needed for spindle, it always presents.
+Please use with caution, You will use what You write in file.
 
 ## Links
 
