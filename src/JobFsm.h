@@ -94,6 +94,7 @@ public:
     uint32_t endTime;
     // add LineNumber and CRC to command
     bool addLineN = false;
+    bool pause = false;
 
     char curLine[MAX_LINE_LEN + 1];
     size_t curLinePos;

@@ -5,7 +5,7 @@
 #include "debug.h"
 #include "devices/MarlinDevice.h"
 // TODO list
-// TODO 1 add prev state
+// TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
 
 typedef etl::observer<JobStatusEvent> JobObserver;
 
@@ -64,7 +64,7 @@ public:
 
 
 class ReadyState : public etl::fsm_state<JobFsm, ReadyState, StateId::READY,
-        StartMessage, SendMessage, PauseMessage, CompleteMessage> {
+    StartMessage, SendMessage, PauseMessage, CompleteMessage> {
 public:
 
     etl::fsm_state_id_t on_event(const StartMessage& event) {
@@ -96,12 +96,10 @@ public:
 class PauseState : public etl::fsm_state<JobFsm, PauseState, StateId::PAUSED, ResumeMessage, CompleteMessage> {
 public:
     etl::fsm_state_id_t on_event(const ResumeMessage& event) {
-        // TODO add prev time
         return StateId::READY;
     }
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
-        // TODO add prev time
         return StateId::FINISH;
     }
 
@@ -112,7 +110,7 @@ public:
 };
 
 class WaitState
-        : public etl::fsm_state<JobFsm, WaitState, StateId::WAIT_RESP, AckMessage, PauseMessage, CompleteMessage> {
+    : public etl::fsm_state<JobFsm, WaitState, StateId::WAIT_RESP, AckMessage, PauseMessage, CompleteMessage> {
 public:
 
     etl::fsm_state_id_t on_event(const AckMessage& event) {
@@ -120,7 +118,8 @@ public:
     }
 
     etl::fsm_state_id_t on_event(const PauseMessage& event) {
-        return StateId::PAUSED;
+        get_fsm_context().pause = true;
+        return STATE_ID;
     }
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
@@ -146,13 +145,13 @@ class Job : public etl::observable<JobObserver, 3> {
     WaitState waitState;
     PauseState pauseState;
     etl::ifsm_state* stateList[StateId::NUMBER_OF_STATES] =
-            {&initState, &finishState, &errorState, &readyState, &waitState, &pauseState};
+        {&initState, &finishState, &errorState, &readyState, &waitState, &pauseState};
 public:
 
     Job() {
         fsm = new JobFsm();
         fsm->set_states(stateList, etl::size(stateList));
-        fsm->start(true);
+        fsm->start(false);
     }
 
     void inline setDevice(GCodeDevice* dev_) {
@@ -163,6 +162,7 @@ public:
     void inline setFile(const char* file) {
         auto m = SetFileMessage{};
         m.fileName = file;
+        fsm->pause = false; //reset pause if any
         fsm->receive(m);
     }
 
@@ -177,7 +177,7 @@ public:
     void setPaused(bool v) {
         if (v)
             fsm->receive(PauseMessage{});
-        else
+        else if (fsm->get_state_id() == StateId::PAUSED)
             fsm->receive(ResumeMessage{});
     }
 
@@ -204,7 +204,10 @@ public:
     void step() {
         switch (fsm->get_state_id()) {
             case StateId::READY:
-                if (fsm->readCommandsToBuffer()) {
+                if (fsm->pause) {
+                    fsm->pause = false;
+                    fsm->receive(PauseMessage{});
+                } else if (fsm->readCommandsToBuffer()) {
                     fsm->receive(SendMessage{fsm->buffer.at(fsm->curLineNum % JobFsm::MAX_BUF)});
                 } else {
                     fsm->receive(CompleteMessage{false});
