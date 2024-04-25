@@ -83,7 +83,7 @@ bool MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
 }
 
 void MarlinDevice::trySendCommand() {
-    if (lastStatus == DeviceStatus::WAIT) {
+    if (lastStatus >= DeviceStatus::WAIT) {
         return;
     }
     if (printerSerial.availableForWrite() && !outQueue.empty()) {
@@ -115,7 +115,7 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
     SetupFN fn = [this](WatchedSerial& s) {
         char buffer[101]; // assume not longer then 100B
         buffer[100] = 0;
-        for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != -1; i--) {
+        for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != 0U; i--) {
             IO_LOGLN(buffer);
             if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
                 buffer[0] = 0;
@@ -165,12 +165,44 @@ void MarlinDevice::requestStatusUpdate() {
 }
 
 void MarlinDevice::reset() {
+    outQueue.clear();
     lastStatus = DeviceStatus::OK;
+    lastResponse = nullptr;
+    // will not read compatibilities. reset should not change it
+    begin(nullptr);
 }
 
 void MarlinDevice::toggleRelative() {
     relative = !relative;
 }
+
+/*
+
+  X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
+ T:170.00 /170.00 @:45
+X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
+ T:170.00 /170.00 @:45
+> [N1 M104 S170*98]
+ok
+> [N2 M109 S170*108]
+ T:170.00 /170.00 @:45 W:?
+> [N2 M109 S170*108]
+X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
+> [N2 M109 S170*108]
+ T:170.00 /170.00 @:45
+> [N2 M109 S170*108]
+ T:170.00 /170.00 @:45 W:12
+> [N2 M109 S170*108]
+X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
+> [N2 M109 S170*108]
+ T:170.00 /170.00 @:45
+> [N2 M109 S170*108]
+ T:170.00 /170.00 @:45 W:11
+echo:busy: processing
+> [N3 G21*25]
+
+  "Error:Line Number is not Last Line Number+1, Last Line: 6"
+ */
 
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     char* lr = nullptr;
@@ -186,28 +218,34 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lastStatus = DeviceStatus::DEV_ERROR;
         outQueue.clear();
         need_pop = false;
-    } else if (startsWith(resp, ErrorExclamation_str)) {
+    } else if (startsWith(resp, ERROR_EXCLAMATION_str)) {
         lr = resp;
         lr[2] = 0;
         lastResponse = resp + 3;
         lastStatus = DeviceStatus::DEV_ERROR;
         outQueue.clear();
         need_pop = false;
+    } else if (startsWith(resp, START_str) && len == ((sizeof(START_str)) / (sizeof(START_str[0]))) + 1 ){ // START_str.len + 1
+        //restart everything on marlin hard reset
+        job.stop();
+        reset();
+        return;
     } else if (startsWith(resp, OK_str)) {
         if (len > 2) {
             parseOk(resp + 2, len - 2);
-            lr = const_cast<char* >(OK_str);
             LOG_EXTRA_INFO(lastResponse = resp + 2;)
         }
         if (resendLine > 0) { // was resend before
             resendLine = -1;
         }
+        lr = const_cast<char* >(OK_str);
         lastStatus = DeviceStatus::OK;
     } else if ((str = strstr(resp, BUSY_str)) != nullptr) {
         // "echo:busy: processing"
         lr = const_cast<char* >(BUSY_str);
         lastResponse = str + 6;
         lastStatus = DeviceStatus::BUSY;
+        need_pop = false;
     } else if (startsWith(resp, ECHO_str)) {
         // echo: busy must be before this
         lr = resp;
@@ -239,12 +277,6 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     } else {
         // M154 Snn or  M155 Snn
         parseOk(resp, len);
-        if (lastStatus == DeviceStatus::BUSY) {
-            lr = const_cast<char* >(BUSY_str);
-        } else {
-            lastStatus = DeviceStatus::OK;
-            lr = const_cast<char* >(OK_str);
-        }
         need_pop = false;
     }
     if (need_pop && !outQueue.empty())

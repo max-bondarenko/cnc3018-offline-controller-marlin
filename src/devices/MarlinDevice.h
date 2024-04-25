@@ -13,8 +13,9 @@
 // TODO done kindaa 3 busy state is wierd. make it wait for "unbusy"
 
 static const char* const OK_str = "ok";
+static const char* const START_str = "start";
 static const char* const ERR_str = "Err";
-static const char* const ErrorExclamation_str = "!!";
+static const char* const ERROR_EXCLAMATION_str = "!!";
 static const char* const BUSY_str = "busy";
 static const char* const ECHO_str = "echo";
 static const char* const RESEND_str = "Resend";

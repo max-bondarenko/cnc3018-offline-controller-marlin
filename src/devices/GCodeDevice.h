@@ -13,10 +13,12 @@ class Job;
 #include "debug.h"
 
 
-// todo done 1 switch to states from flags for protocol state
+// todo  1 switch to states from flags for protocol state
 // TODO done 2 make observable events meaningful
 // TODO done 3 check RxTimeout , make it work as heartbeat
 // todo done 4  add full presets(spindle, dist , feed) from ini file (section is device name)
+// todo 5 move read preset out of begin()
+
 
 ///
 /// Device abstraction statuses.
