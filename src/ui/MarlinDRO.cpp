@@ -53,81 +53,74 @@ void MarlinDRO::drawContents() {
 
     uint8_t sx = startLeftPanel,
         sx_start_right = startRightPanel;
-    uint8_t sy = Display::STATUS_BAR_HEIGHT; // bar Height 0 - 15.
+    uint8_t sy = Display::STATUS_BAR_HEIGHT + 7; // bar Height 0 - 15.
 
-    if (dev.canJog() && !job.isRunning()) {
-        /// =============== draw control bar =============
-        u8g2.setDrawColor(1);
-        constexpr uint8_t endOfLeft = 43 + 15;
-        uint8_t boxY = sy + 3;
-        switch (cMode) {
-            case Mode::AXES : {
-                u8g2.drawFrame(sx, boxY, 73, lineHeight * 3 + 4);
-                drawAxisIcons(endOfLeft + 4, boxY + 2, lineHeight);
-                break;
+    if (!job.isRunning()) {
+        if (dev.canJog()) {
+            u8g2.setDrawColor(1);
+            constexpr uint8_t endOfLeft = 43 + 15;
+            uint8_t boxY = sy - 4;
+            /// =============== draw frame and icons =============
+            switch (cMode) {
+                case Mode::AXES : {
+                    u8g2.drawFrame(sx, boxY, 73, lineHeight * 3 + 4);
+                    drawAxisIcons(endOfLeft + 4, boxY + 2, lineHeight);
+                    break;
+                }
+                case Mode::SPINDLE: {
+                    u8g2.drawFrame(sx_start_right, boxY, 54, lineHeight * 3 + 4);
+                    drawAxisIcons(sx_start_right + 43, boxY + 2, lineHeight);
+                    break;
+                }
+                case Mode::TEMP : {
+                    u8g2.drawFrame(sx, boxY, 125, lineHeight * 3 + 4);
+                    drawAxisIcons(endOfLeft + 17, boxY + 2, lineHeight);
+                }
+                default :
+                    break;
             }
-            case Mode::SPINDLE: {
-                u8g2.drawFrame(sx_start_right, boxY, 54, lineHeight * 3 + 4);
-                drawAxisIcons(sx_start_right + 43, boxY + 2, lineHeight);
-                break;
-            }
-            case Mode::TEMP : {
-                u8g2.drawFrame(sx, boxY, 125, lineHeight * 3 + 4);
-                drawAxisIcons(endOfLeft + 17, boxY + 2, lineHeight);
-            }
-            default :
-                break;
         }
-    }
-    sy += 7;
-    switch (cMode) {
-        case Mode::TEMP : {
-            char buffer[13];
-            buffer[1] = 0;
-            buffer[0] = PRINTER[1] /*B*/;
-            u8g2.drawStr(axisPadding, sy, buffer);
-            buffer[0] = PRINTER[0] /*T*/;
-            /// === draw Extrude & temps panel ==
-            /// BED
-            u8g2.drawStr(axisPadding, sy + lineHeight, buffer);
-            snprintf(buffer, 12, "%5.1f/%3d", dev.getBedTemp(), expectedBedTemp);
-            u8g2.drawStr(lineWidth * 2 - 3, sy, buffer);
-            drawPower(sy + lineHeight - 2, lineHeight, dev.getBedPower());
-            /// Extruder Temp
-            snprintf(buffer, 12, "%5.1f/%3d", dev.getTemp(), expectedTemp);
-            u8g2.drawStr(lineWidth * 2 - 3, sy + lineHeight, buffer);
-            drawPower(sy + lineHeight * 2 - 2, lineHeight, dev.getHotendPower());
-            /// == extruder Axis ================= v-big E-v/v-- small E ---v
-            drawAxis(dev.isExtrusionEnabled() ? AXIS[3] :
-                     (AXIS[3] + 0x20), dev.getE(), axisPadding, sy + lineHeight * 2);
+
+        if (cMode == Mode::TEMP) {
+            drawTemp(axisPadding, sy, lineHeight, lineWidth);
+            drawPower(axisPadding + lineWidth * 10 + 4, sy + lineHeight - 2, lineHeight, dev.getBedPower());
+            drawPower(axisPadding + lineWidth * 10 + 4, sy + lineHeight * 2 - 2, lineHeight, dev.getHotendPower());
             sx_start_right += 11; //padding for spindle/feed values
-        }
-            break;
-        default:
+        } else {
             drawAxis(AXIS[0], dev.getX(), axisPadding, sy);
             drawAxis(AXIS[1], dev.getY(), axisPadding, sy + lineHeight);
             drawAxis(AXIS[2], dev.getZ(), axisPadding, sy + lineHeight * 2);
-    }
-    ///  draw right panel ====================
-    sx_start_right += 3;
-    u8g2.drawXBM(sx_start_right, sy + ICON_TOP_PADDING, dist_width, dist_height, (uint8_t*) dist_bits);
-    u8g2.drawXBM(sx_start_right, sy + lineHeight + ICON_TOP_PADDING, feed_width, feed_height, (uint8_t*) feed_bits);
-    if (cMode != Mode::TEMP) {
-        u8g2.drawXBM(sx_start_right, sy + lineHeight * 2, spindle_width, spindle_height, (uint8_t*) spindle_bits);
+        }
+        ///  draw right panel ====================
+        sx_start_right += 3;
+        u8g2.drawXBM(sx_start_right, sy + ICON_TOP_PADDING, dist_width, dist_height, (uint8_t*) dist_bits);
+        u8g2.drawXBM(sx_start_right, sy + lineHeight + ICON_TOP_PADDING, feed_width, feed_height, (uint8_t*) feed_bits);
+        if (cMode != Mode::TEMP) {
+            u8g2.drawXBM(sx_start_right, sy + lineHeight * 2, spindle_width, spindle_height, (uint8_t*) spindle_bits);
+        }
+        /// distance  ======
+        sx_start_right += 10;
+        const float& jd = dev.getConfig().dist.at(cDist);
+        snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
+        u8g2.drawStr(sx_start_right, sy, str);
+        /// Feed ======
+        snprintf(str, LEN, "%d", dev.getConfig().feed.at(cFeed));
+        u8g2.drawStr(sx_start_right, sy + lineHeight, str);
+        if (cMode != Mode::TEMP) {
+            /// spindle ======
+            snprintf(str, LEN, "%ld", dev.getSpindleVal());
+            u8g2.drawStr(sx_start_right, sy + lineHeight * 2, str);
+        }
     }
 
-    /// distance  ======
-    sx_start_right += 10;
-    const float& jd = dev.getConfig().dist.at(cDist);
-    snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
-    u8g2.drawStr(sx_start_right, sy, str);
-    /// Feed ======
-    snprintf(str, LEN, "%d", dev.getConfig().feed.at(cFeed));
-    u8g2.drawStr(sx_start_right, sy + lineHeight, str);
-    if (cMode != Mode::TEMP) {
-        /// spindle ======
-        snprintf(str, LEN, "%ld", dev.getSpindleVal());
-        u8g2.drawStr(sx_start_right, sy + lineHeight * 2, str);
+    if (job.isRunning()) {
+        drawAxis(AXIS[0], dev.getX(), axisPadding, sy);
+        drawAxis(AXIS[1], dev.getY(), axisPadding, sy + lineHeight);
+        drawAxis(AXIS[2], dev.getZ(), axisPadding, sy + lineHeight * 2);
+        sx = sx_start_right - 13;
+        drawTemp(sx, sy, lineHeight, lineWidth);
+        drawPower(sx + lineWidth * 10 + 4, sy + lineHeight - 2, lineHeight, dev.getBedPower());
+        drawPower(sx + lineWidth * 10 + 4, sy + lineHeight * 2 - 2, lineHeight, dev.getHotendPower());
     }
 }
 
@@ -208,6 +201,8 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
             dev.jog(axis, dist, feed);
         }
         int temp = (uint8_t) round(dist);
+        auto expectedTempPrev = expectedTemp;
+        auto expectedBedPrev = expectedBedTemp;
         switch (bt) {
             // ======== temperature ========
             case Display::BT_UP:
@@ -236,23 +231,58 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
                 break;
             default:;
         }
-        dev.tempChange(expectedTemp);
+        if (expectedTemp ^ expectedTempPrev)
+            dev.tempChange(expectedTemp);
+        if (expectedBedTemp ^ expectedBedPrev)
+            dev.bedTempChange(expectedBedTemp);
         doDirty();
     }
 }
 
 
-void MarlinDRO::drawPower(uint16_t sy, uint8_t lineHeight, uint16_t val) {
+void MarlinDRO::drawPower(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint16_t val) const {
     U8G2& u8g2 = display->getU8G2();
     val = val >= 127 ? lineHeight - 2 :
-          val >= 64 ? lineHeight / 2 :
+          val >= 64 ? lineHeight - 4 :
           val > 0 ? 2 : 0;
-    int8_t wide = val > 6 ? 3 :
-                  val > 4 ? 2 : 1;
-    int16_t lx = 70 + 3;
-    // (2)( lx - wide,sy - val)   --  (lx + wide,sy - val)  (0)
-    //                 \                      /
-    //                       \            /
-    //                        (lx, sy )  (1)
-    u8g2.drawTriangle(lx + wide, sy - val, lx, sy, lx - wide, sy - val);
+    int8_t wide = val > 6 ? 3U : 2U;
+    int16_t lx = sx + 4;
+    // (2)(lx - wide,sy - val) -- (lx,sy - val)(0)
+    //                 \              |
+    //                   \            |
+    //                     \          |
+    //                       \        |
+    //                         \      |
+    //                           \    |
+    //                             \  |
+    //                        (lx,sy)(1)
+    u8g2.drawTriangle(lx, sy - val, lx, sy, lx - wide, sy - val);
+}
+
+void MarlinDRO::drawTemp(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint8_t lineWidth) const {
+    U8G2& u8g2 = display->getU8G2();
+    char buffer[13];
+    buffer[1] = 0;
+    buffer[0] = PRINTER[1] /*B*/;
+    u8g2.drawStr(sx, sy, buffer);
+    buffer[0] = PRINTER[0] /*T*/;
+    /// === draw Extrude & temps panel ==
+    /// BED
+    u8g2.drawStr(sx, sy + lineHeight, buffer);
+    snprintf(buffer, 6, "%5.1f", dev.getBedTemp());
+    u8g2.drawStr(sx + lineWidth * 2 - 5, sy, buffer);
+    // narrow '/'
+    u8g2.drawLine(sx + lineWidth * 7 - 1, sy + lineHeight - 3, sx + lineWidth * 7 + 1, sy);
+    snprintf(buffer, 4, "%3lu", dev.getBedRequestedTemp());
+    u8g2.drawStr(sx + lineWidth * 7 + 2, sy, buffer);
+    /// Extruder Temp
+    snprintf(buffer, 6, "%5.1f", dev.getTemp());
+    u8g2.drawStr(sx + lineWidth * 2 - 5, sy + lineHeight, buffer);
+    // narrow '/'
+    u8g2.drawLine(sx + lineWidth * 7 - 1, sy + lineHeight * 2 - 3, sx + lineWidth * 7 + 1, sy + lineHeight);
+    snprintf(buffer, 4, "%3lu", dev.getHotendRequestedTemp());
+    u8g2.drawStr(sx + lineWidth * 7 + 2, sy + lineHeight, buffer);
+    /// == extruder Axis ================= v-big E-v/v-- small E ---v
+    drawAxis(dev.isExtrusionEnabled() ? AXIS[3] :
+             (AXIS[3] + 0x20), dev.getE(), sx, sy + lineHeight * 2);
 }

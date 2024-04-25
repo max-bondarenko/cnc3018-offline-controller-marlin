@@ -45,11 +45,11 @@ protected:
 
     uint8_t defaultAxisPrecision ;
 
-    void drawAxis(char axis, float value, int x, int y);
+    void drawAxis(char axis, float value, int x, int y) const;
 
     void drawContents() override;
 
-    virtual void drawAxisCoords(int sx, int sy, u_int8_t lineHeight);
+    virtual void drawAxisCoords(int sx, int sy, u_int8_t lineHeight) const;
 
     void onButton(int bt, Evt arg) override;
 

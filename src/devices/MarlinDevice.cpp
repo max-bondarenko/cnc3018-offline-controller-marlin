@@ -115,7 +115,8 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
     SetupFN fn = [this](WatchedSerial& s) {
         char buffer[101]; // assume not longer then 100B
         buffer[100] = 0;
-        for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != 0U; i--) {
+        // do not check readBytesUntil. return value!!, let it read
+        for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != -1; i--) {
             IO_LOGLN(buffer);
             if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
                 buffer[0] = 0;
@@ -175,34 +176,6 @@ void MarlinDevice::reset() {
 void MarlinDevice::toggleRelative() {
     relative = !relative;
 }
-
-/*
-
-  X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
- T:170.00 /170.00 @:45
-X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
- T:170.00 /170.00 @:45
-> [N1 M104 S170*98]
-ok
-> [N2 M109 S170*108]
- T:170.00 /170.00 @:45 W:?
-> [N2 M109 S170*108]
-X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
-> [N2 M109 S170*108]
- T:170.00 /170.00 @:45
-> [N2 M109 S170*108]
- T:170.00 /170.00 @:45 W:12
-> [N2 M109 S170*108]
-X:10.00 Y:-10.00 Z:5.00 E:0.00 Count X:4000 Y:-4000 Z:4000
-> [N2 M109 S170*108]
- T:170.00 /170.00 @:45
-> [N2 M109 S170*108]
- T:170.00 /170.00 @:45 W:11
-echo:busy: processing
-> [N3 G21*25]
-
-  "Error:Line Number is not Last Line Number+1, Last Line: 6"
- */
 
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     char* lr = nullptr;
@@ -289,6 +262,13 @@ bool MarlinDevice::tempChange(uint8_t temp) {
     constexpr size_t LN = 11;
     char msg[LN];
     int l = snprintf(msg, LN, "%s S%d", M104_SET_EXTRUDER_TEMP, temp);
+    return scheduleCommand(msg, l);
+}
+
+bool MarlinDevice::bedTempChange(uint8_t temp) {
+    constexpr size_t LN = 11;
+    char msg[LN];
+    int l = snprintf(msg, LN, "%s S%d", M140_SET_BED_TEMP, temp);
     return scheduleCommand(msg, l);
 }
 

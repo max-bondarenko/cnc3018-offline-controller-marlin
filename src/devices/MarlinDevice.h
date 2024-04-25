@@ -58,6 +58,8 @@ public:
 
     bool tempChange(uint8_t temp);
 
+    bool bedTempChange(uint8_t temp);
+
     bool isRelative() const { return relative; }
 
     float getE() const { return e; }
@@ -66,9 +68,13 @@ public:
 
     uint32_t getHotendPower() const { return hotendPower; }
 
+    uint32_t getHotendRequestedTemp() const { return hotendRequestedTemp; }
+
     float getBedTemp() const { return bedTemp; }
 
     uint32_t getBedPower() const { return bedPower; }
+
+    uint32_t getBedRequestedTemp() const { return bedRequestedTemp; }
 
     /// marlin does not give current spindle value
     /// use this to set value from DRO to see current set value.

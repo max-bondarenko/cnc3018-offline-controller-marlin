@@ -1,3 +1,4 @@
+import random
 import sys
 import termios
 import threading
@@ -28,17 +29,24 @@ def line_number(str):
         global N
         N += 1
         print("\t\t N++")
-        if N == 3:
+        if N == 3000:
             resp.append("Resend:3 _123456789_123456789\r\n")
             stack.append(expect_line)
             return
-        if N == 5:
-            resp.append("Error: some text\r\n")
-            return
+        # if N == 5:
+        #     resp.append("Error: some text\r\n")
+        #     return
         else:
             global x
+            global e
+            global P
+            e += 10.4
+            T = random.randint(10,250)
+            P = random.randint(1,128)
+
             x += 1.03
-            resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f}\r\n".format(x, y, z, e))
+            resp.append(
+                "ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} T:{4} /123 @:{5} B:103\n".format(x, y, z, e, T, P))
     else:
         resp.append("ok\r\n")
     stack.append(line_number)
@@ -50,33 +58,50 @@ def marlin_repeater(str):
     if str.startswith("G0") or str.startswith("M114"):
         x = x + 0.01
         resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B:{4} @:{4}\r\n".format(x, y, z, e, P))
+        stack.append(marlin_repeater)
+    if str.startswith("G28"):
+        P = 256
+        resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B:{4} @:127\r\n".format(x, y, z, e, P))
+        stack.append(marlin_repeater)
     elif str.startswith("M104"):
         P = P << 1
         if P > 256:
             P = 1
         resp.append("ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} @:{4} B@:{4}\r\n".format(x, y, z, e, P))
-    # comment this branch to check power
-    # elif str.startswith("M110N0"):
-    #     resp.append("ok\r\n")
-    #     global N
-    #     N = 0
-    #     stack.append(line_number)
-    #     return
-    else:
+        stack.append(marlin_repeater)
+    elif str.startswith("G92"):
+        resp.append("echo:busy\n")
+    elif str.startswith("G91"):
+        resp.append("ok\n")
+    elif str.startswith("M110N0"):
         resp.append("ok\r\n")
+        stack.append(marlin_repeater)
+        global N
+        N = 0
+        # stack.append(line_number)
+    elif str.startswith("M302"):
+        resp.append("echo: min temp 150C\n")
+        stack.append(marlin_repeater)
+    elif str.startswith("M"):
+        resp.append("ok\n")
+        stack.append(marlin_repeater)
 
-    stack.append(marlin_repeater)
 
 
-def check_mode(str):
+
+
+
+def last_state(str):
     if str.startswith("M115"):
         resp.append("FIRMWARE_NAME:Marlin\r\n"
                     "Cap:AUTOREPORT_POS:1\r\n"
                     "Cap:AUTOREPORT_TEMP:1\r\n"
                     "Cap:EMERGENCY_PARSER:1\r\n")
         stack.append(marlin_repeater)
+    elif str.startswith("N"):
+        line_number(str)
     else:
-        stack.append(check_mode)
+        marlin_repeater(str)
 
 
 def writeOkEach2sec(fw):
@@ -134,7 +159,8 @@ def main():
                 '{0:b}\n{1:b}\n{2:b}\n{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG], attr[tty.LFLAG]))
             a = ""
 
-            stack.append(check_mode)
+            fw.writelines(["ok\n"])
+            stack.append(last_state)
             while f.readable():
                 b = f.read(1)
                 print(".", end='')
@@ -144,13 +170,14 @@ def main():
                         a += b.decode(encoding='utf-8')
                 else:
                     print('')
-
                     while stack.__len__() > 0:
                         print("> " + a)
-                        pop = stack.pop()
+                        pop = stack[stack.__len__() -1]
                         pop(a)
                         if resp.__len__() > 0:
                             resp_pop = resp.pop()
+                            if stack.__len__() > 1:
+                                stack.pop() # do not remove last state
                             print("<  " + resp_pop)
                             fw.writelines([resp_pop])
                         break

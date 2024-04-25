@@ -36,10 +36,10 @@ void GrblDRO::begin() {
     }));
 }
 
-void GrblDRO::drawAxisCoords(int sx, int sy, u_int8_t lineHeight) {
+void GrblDRO::drawAxisCoords(int sx, int sy, u_int8_t lineHeight) const {
     float t[3] = {0, 0, 0};
-
     char ax[3];
+
     if (useWCS) {
         memcpy(ax, AXIS_WCS, 3);
         t[0] = dev.getXOfs();

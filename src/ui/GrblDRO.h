@@ -8,7 +8,7 @@
 
 class GrblDRO : public DRO {
 public:
-    GrblDRO(GrblDevice &d) : DRO(d), dev(d), useWCS(false){
+    GrblDRO(GrblDevice& d) : DRO(d), dev(d), useWCS(false) {
         defaultAxisPrecision = 3;
     }
 
@@ -17,9 +17,10 @@ public:
     void begin() override;
 
 protected:
-    void drawAxisCoords(int sx, int sy, u_int8_t lineHeight) override;
+    GrblDevice& dev;
 
-    GrblDevice &dev;
+    void drawAxisCoords(int sx, int sy, u_int8_t lineHeight) const override;
+
 private:
     bool useWCS;
 };

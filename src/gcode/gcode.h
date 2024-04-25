@@ -15,6 +15,7 @@
 #define M108_CONTINUE                    "M108"
 #define M109_SET_EXTRUDER_TEMP_WAIT      "M109"
 #define M110_SET_LINE_NUMBER             "M110"
+#define M140_SET_BED_TEMP                "M140"
 #define M302_COLD_EXTRUDER_STATUS        "M302"
 #define RESET_LINE_NUMBER                "M110 N0"
 #define M115_GET_FIRMWARE_VER            "M115"

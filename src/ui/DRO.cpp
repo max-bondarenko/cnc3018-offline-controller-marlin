@@ -206,13 +206,13 @@ void DRO::onButtonShift(int bt, Evt evt) {
     doDirty();
 }
 
-void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) {
+void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) const {
     drawAxis(AXIS[0], dev.getX(), sx, sy);
     drawAxis(AXIS[1], dev.getY(), sx, sy + lineHeight);
     drawAxis(AXIS[2], dev.getZ(), sx, sy + lineHeight * 2);
 }
 
-void DRO::drawAxis(char axis, float value, int x, int y) {
+void DRO::drawAxis(char axis, float value, int x, int y) const{
     static const int LEN = 13;
     static char buffer[LEN];
     snprintf(buffer, LEN, "%c% *.*f", axis, 5 + defaultAxisPrecision, defaultAxisPrecision, value);
