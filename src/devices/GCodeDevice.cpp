@@ -15,7 +15,7 @@ bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
         return false;
     if (curUnsentCmdLen != 0)
         return false;
-    LOGF("< '%s'\n", cmd);
+    DEV_LOGF("< '%s'\n", cmd);
     memcpy(curUnsentCmd, cmd, len);
     curUnsentCmdLen = len;
     return true;
@@ -28,7 +28,7 @@ bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
         return false;
     if (curUnsentPriorityCmdLen != 0)
         return false;
-    LOGF("<p '%s'\n", cmd);
+    DEV_LOGF("<p '%s'\n", cmd);
     memcpy(curUnsentPriorityCmd, cmd, len);
     curUnsentPriorityCmdLen = len;
     return true;
@@ -181,6 +181,7 @@ void GCodeDevice::receiveResponses() {
         }
         if (ch == '\n') {
             resp[respLen] = 0;
+            IO_LOGLN(resp);
             tryParseResponse(resp, respLen);
             respLen = 0;
             extendRxTimeout();

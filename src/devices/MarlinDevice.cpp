@@ -90,7 +90,7 @@ void MarlinDevice::trySendCommand() {
         String& front = outQueue.front();
         const char* cmd = front.c_str();
         auto size = (size_t) front.length();
-        LOGF("[%s]\n", cmd);
+        IO_LOGF("> [%s]\n", cmd);
         printerSerial.write((const unsigned char*) cmd, size);
         printerSerial.write('\n');
         // clean
@@ -116,6 +116,7 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
         char buffer[101]; // assume not longer then 100B
         buffer[100] = 0;
         for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != -1; i--) {
+            IO_LOGLN(buffer);
             if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
                 buffer[0] = 0;
                 String _s(buffer + 4);

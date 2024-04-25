@@ -231,11 +231,15 @@ target_link_libraries(for_debug PUBLIC ini)
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     target_compile_definitions(controller PUBLIC
+            LOG_IO
             #            LOG_DEBUG
             #            LOG_DETECTOR
             #            USB_TO_SERIAL
             )
-
+else()
+    target_compile_definitions(controller PUBLIC
+            LOG_IO
+            )
 endif ()
 
 target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)
