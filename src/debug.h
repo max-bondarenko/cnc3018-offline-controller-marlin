@@ -45,3 +45,9 @@
     #define IO_LOGLN(...)
 #endif
 
+#ifdef LOG_TIME
+    #define TIME_LOGF(...)   do{SerialUSB.printf(__VA_ARGS__);}while(0)
+#else
+    #define LOG_TIME(...)
+#endif
+

@@ -10,6 +10,7 @@
 #include "ui/FileChooser.h"
 #include "ui/Display.h"
 
+#include "etl/deque.h"
 #include "devices/DeviceDetector.h"
 #include "devices/GrblDevice.h"
 #include "devices/MarlinDevice.h"

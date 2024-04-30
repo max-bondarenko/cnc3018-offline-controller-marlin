@@ -95,6 +95,7 @@ protected:
 
 private:
     etl::deque<String, 10> outQueue;
+    Compat compatibility;
 
     float e = 0.0;
     float hotendTemp = 0.0,
@@ -107,9 +108,6 @@ private:
             bedPower = 0;
     int16_t minExtrusionTemp = -1;
     bool relative = false;
-    Compat compatibility;
-
-    void parseError(const char* input);
 
     void parseOk(const char* input, size_t len);
 };

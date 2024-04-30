@@ -1,9 +1,10 @@
-#include <vector>
+#include "etl/deque.h"
+#include "etl/vector.h"
 #include <Arduino.h>
 #include <functional>
+
 #include "constants.h"
 #include "MarlinDevice.h"
-
 #include "Job.h"
 #include "util.h"
 #include "debug.h"
@@ -24,39 +25,6 @@ void MarlinDevice::sendProbe(Stream& serial) {
 ///   The other positions are the positions from the stepper function.
 ///   This helps for debugging a previous stepper function bug.
 /// Compatibility example
-/* Cap:VOLUMETRIC:1
-Cap:AUTOREPORT_POS:1
-Cap:AUTOREPORT_TEMP:1
-Cap:PROGRESS:0
-Cap:PRINT_JOB:1
-Cap:AUTOLEVEL:0
-Cap:RUNOUT:0
-Cap:Z_PROBE:0
-Cap:LEVELING_DATA:0
-Cap:BUILD_PERCENT:0
-Cap:SOFTWARE_POWER:0
-Cap:TOGGLE_LIGHTS:0
-Cap:CASE_LIGHT_BRIGHTNESS:0
-Cap:EMERGENCY_PARSER:0
-Cap:HOST_ACTION_COMMANDS:0
-Cap:PROMPT_SUPPORT:0
-Cap:SDCARD:0
-Cap:REPEAT:0
-Cap:SD_WRITE:0
-Cap:AUTOREPORT_SD_STATUS:0
-Cap:LONG_FILENAME:0
-Cap:LFN_WRITE:0
-Cap:CUSTOM_FIRMWARE_UPLOAD:0
-Cap:EXTENDED_M20:0
-Cap:THERMAL_PROTECTION:0
-Cap:MOTION_MODES:0
-Cap:ARCS:1
-Cap:BABYSTEPPING:0
-Cap:CHAMBER_TEMPERATURE:0
-Cap:COOLER_TEMPERATURE:0
-Cap:MEATPACK:0
-Cap:CONFIG_EXPORT:0
- */
 bool MarlinDevice::checkProbeResponse(const String& input) {
     if (input.indexOf("Marlin") != -1) {
         LOGLN(">> Detected Marlin device <<");
@@ -93,10 +61,9 @@ void MarlinDevice::trySendCommand() {
         IO_LOGF("> [%s]\n", cmd);
         printerSerial.write((const unsigned char*) cmd, size);
         printerSerial.write('\n');
-        // clean
-        lastResponse = nullptr;
-        lastStatus = DeviceStatus::WAIT;
+        outQueue.pop_front();
     }
+    lastResponse = nullptr;
 }
 
 bool MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
@@ -168,6 +135,7 @@ void MarlinDevice::requestStatusUpdate() {
 void MarlinDevice::reset() {
     outQueue.clear();
     lastStatus = DeviceStatus::OK;
+    resendLine = -1;
     lastResponse = nullptr;
     // will not read compatibilities. reset should not change it
     begin(nullptr);
@@ -179,7 +147,6 @@ void MarlinDevice::toggleRelative() {
 
 void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     char* lr = nullptr;
-    bool need_pop = true;
     char* str;
     lastResponse = "";
     LOGF("> [%s]\n", resp);
@@ -187,18 +154,24 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lr = resp;
         lr[5] = 0;
         lastResponse = resp + 6;
-        parseError(lastResponse);
-        lastStatus = DeviceStatus::DEV_ERROR;
-        outQueue.clear();
-        need_pop = false;
+        char cpy[SHORT_BUFFER_LEN];
+        strncpy(cpy, lastResponse, SHORT_BUFFER_LEN);
+        if (char* s = strstr(cpy, "Last Line:")) {
+            // next is resend number
+            JOB_LOGF("d> %s", lastResponse);
+            lastStatus = DeviceStatus::WAIT;
+        } else {
+            outQueue.clear();
+            lastStatus = DeviceStatus::DEV_ERROR;
+        }
     } else if (startsWith(resp, ERROR_EXCLAMATION_str)) {
         lr = resp;
         lr[2] = 0;
         lastResponse = resp + 3;
         lastStatus = DeviceStatus::DEV_ERROR;
         outQueue.clear();
-        need_pop = false;
-    } else if (startsWith(resp, START_str) && len == ((sizeof(START_str)) / (sizeof(START_str[0]))) + 1 ){ // START_str.len + 1
+    } else if (startsWith(resp, START_str) &&
+               len == ((sizeof(START_str)) / (sizeof(START_str[0]))) + 1) { // START_str.len + 1
         //restart everything on marlin hard reset
         job.stop();
         reset();
@@ -208,7 +181,13 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
             parseOk(resp + 2, len - 2);
             LOG_EXTRA_INFO(lastResponse = resp + 2;)
         }
-        if (resendLine > 0) { // was resend before
+        if (lastStatus == DeviceStatus::RESEND) {
+            if (outQueue.empty()) {
+                // in resend state, job did not fill buffer yet
+                return;
+            }
+        }
+        if (resendLine > 0) { // Ack first command after RESEND
             resendLine = -1;
         }
         lr = const_cast<char* >(OK_str);
@@ -218,7 +197,6 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lr = const_cast<char* >(BUSY_str);
         lastResponse = str + 6;
         lastStatus = DeviceStatus::BUSY;
-        need_pop = false;
     } else if (startsWith(resp, ECHO_str)) {
         // echo: busy must be before this
         lr = resp;
@@ -233,15 +211,24 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                 }
             }
         }
+        if (strstr(lastResponse, "cold extrusion prevented") != nullptr) {
+            lastStatus = DeviceStatus::BUSY;
+            return;
+        }
         lastStatus = DeviceStatus::OK;
+        //> [N20 G1 X13.259 Y1.557 E4.08391*109]
+        //Error:Line Number is not Last Line Number+1, Last Line: 11
+        //Resend: 12
+        //ok
     } else if (startsWith(resp, RESEND_str)) {
         lr = resp;
         lr[6] = 0;
         // MAY have "Resend:Error
         LOG_EXTRA_INFO(lastResponse = resp + 7)
+        lastResponse = resp + 7;
         resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
+        outQueue.clear();
         lastStatus = DeviceStatus::RESEND;
-        // no pop. resend
     } else if (startsWith(resp, DEBUG_str)) {
         lr = resp;
         lr[5] = 0;
@@ -250,10 +237,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
     } else {
         // M154 Snn or  M155 Snn
         parseOk(resp, len);
-        need_pop = false;
     }
-    if (need_pop && !outQueue.empty())
-        outQueue.pop_front();
     if (lr != nullptr)
         lastStatusStr = lr;
 }
@@ -342,10 +326,3 @@ void MarlinDevice::parseOk(const char* input, size_t len) {
     end:;// noop
 }
 
-void MarlinDevice::parseError(const char* input) {
-    char cpy[SHORT_BUFFER_LEN];
-    strncpy(cpy, input, SHORT_BUFFER_LEN);
-    if (strstr(cpy, "Last Line") != nullptr) {
-//        int lastResponse = atoi((cpy + 10)); TODO
-    }
-}

@@ -3,9 +3,15 @@
 #include "JobFsm.h"
 #include "gcode/gcode.h"
 #include "debug.h"
+#include "constants.h"
 #include "devices/MarlinDevice.h"
+
+
+
+
 // TODO list
 // TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
+// TODO  refactor buffers
 
 typedef etl::observer<JobStatusEvent> JobObserver;
 
@@ -73,8 +79,20 @@ public:
     }
 
     etl::fsm_state_id_t on_event(const SendMessage& event) {
-        get_fsm_context().dev->scheduleCommand(event.cmd.c_str(), event.cmd.length());
-        return StateId::WAIT_RESP;
+        JobFsm& fsm = get_fsm_context();
+        int dif = fsm.readLineNum - fsm.currentLineNum;
+        int rightLimit = fsm.readLineNum % JOB_BUFFER_SIZE;
+        int i1 = (JOB_BUFFER_SIZE + rightLimit - dif) % JOB_BUFFER_SIZE;
+        for (int i = i1; i != rightLimit;) {
+            String* cmd = fsm.buffer[i];
+            JOB_LOGF("sched [%s]\n", cmd->c_str());
+            if (!fsm.dev->scheduleCommand(cmd->c_str(), cmd->length()))
+                break;
+            fsm.currentLineNum++;
+            ++i;
+            i %= JOB_BUFFER_SIZE;
+        }
+        return StateId::WAIT;
     }
 
 
@@ -110,12 +128,8 @@ public:
 };
 
 class WaitState
-    : public etl::fsm_state<JobFsm, WaitState, StateId::WAIT_RESP, AckMessage, PauseMessage, CompleteMessage> {
+    : public etl::fsm_state<JobFsm, WaitState, StateId::WAIT, ContinueMessage, PauseMessage, CompleteMessage> {
 public:
-
-    etl::fsm_state_id_t on_event(const AckMessage& event) {
-        return StateId::READY;
-    }
 
     etl::fsm_state_id_t on_event(const PauseMessage& event) {
         get_fsm_context().pause = true;
@@ -124,6 +138,10 @@ public:
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
         return event.byError ? StateId::ERROR : StateId::FINISH;
+    }
+
+    etl::fsm_state_id_t on_event(const ContinueMessage& event) {
+        return StateId::READY;
     }
 
     etl::fsm_state_id_t on_event_unknown(const etl::imessage& msg) {
@@ -183,7 +201,7 @@ public:
 
     bool inline isRunning() {
         etl::fsm_state_id_t i = fsm->get_state_id();
-        return i == StateId::READY || i == StateId::WAIT_RESP;
+        return i == StateId::READY || i == StateId::WAIT;
     }
 
     bool inline isValid() {
@@ -208,29 +226,24 @@ public:
                     fsm->pause = false;
                     fsm->receive(PauseMessage{});
                 } else if (fsm->readCommandsToBuffer()) {
-                    fsm->receive(SendMessage{fsm->buffer.at(fsm->curLineNum % JobFsm::MAX_BUF)});
+                    fsm->receive(SendMessage{});
                 } else {
                     fsm->receive(CompleteMessage{false});
                 }
                 notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
                 break;
-            case StateId::WAIT_RESP:
+            case StateId::WAIT:
                 switch (fsm->dev->getLastStatus()) {
                     case DeviceStatus::OK:
-                        fsm->receive(AckMessage{});
+                        fsm->receive(ContinueMessage{});
                         break;
                     case DeviceStatus::DEV_ERROR:
                         fsm->receive(CompleteMessage{true});
                         break;
                     case DeviceStatus::RESEND: {
                         int32_t line = fsm->dev->getResendLine();
-                        size_t dif = fsm->curLineNum - line;
-                        if (dif < JobFsm::MAX_BUF) {
-                            fsm->receive(AckMessage{});
-                            fsm->receive(SendMessage{fsm->buffer.at(line % JobFsm::MAX_BUF)});
-                        } else {
-                            fsm->receive(CompleteMessage{true});
-                        }
+                        fsm->currentLineNum = line;
+                        fsm->receive(ContinueMessage{});
                         break;
                     }
                     case DeviceStatus::BUSY:

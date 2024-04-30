@@ -5,7 +5,7 @@
 
 #include "etl/fsm.h"
 #include "etl/message.h"
-#include "etl/array.h"
+#include "constants.h"
 
 #include "WString.h"
 
@@ -17,7 +17,7 @@ struct StateId {
         FINISH,
         ERROR,
         READY,
-        WAIT_RESP,
+        WAIT,
         PAUSED,
         NUMBER_OF_STATES
     };
@@ -50,10 +50,8 @@ struct PauseMessage : public etl::message<EventId::PAUSE> {
 struct ResumeMessage : public etl::message<EventId::RESUME> {
 };
 struct SendMessage : public etl::message<EventId::SEND> {
-    String& cmd;
-    explicit SendMessage(String& s): cmd(s) {};
 };
-struct AckMessage : public etl::message<EventId::ACK> {
+struct ContinueMessage : public etl::message<EventId::ACK> {
 };
 
 #include <Arduino.h>
@@ -83,7 +81,7 @@ public:
     }
 
     static constexpr size_t MAX_LINE_LEN = 100;
-    static constexpr size_t MAX_BUF = 15;
+    static constexpr size_t MAX_READ_CHUNK = 4;
 
     File gcodeFile;
     GCodeDevice* dev;
@@ -97,10 +95,10 @@ public:
     bool pause = false;
 
     char curLine[MAX_LINE_LEN + 1];
-    size_t curLinePos;
-    size_t curLineNum;
+    String* buffer[JOB_BUFFER_SIZE] = {nullptr};
 
-    etl::array<String, MAX_BUF> buffer;
+    size_t readLineNum = 0 ;
+    size_t currentLineNum = 0 ;
 
     bool readCommandsToBuffer();
 

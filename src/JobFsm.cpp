@@ -1,69 +1,85 @@
 #include "JobFsm.h"
 #include "WString.h"
+#include "constants.h"
 
 bool JobFsm::readCommandsToBuffer() {
-    if (filePos >= fileSize){
+    if (filePos >= fileSize) {
         return false;
     }
-    //usually gcode has no long empty regions
-    for (size_t gard = 10; gard > 0; --gard) { // loop gard
-        bool got_comment = false;
-        while (gcodeFile.available() > 0) {
-            int readChar = gcodeFile.read();
-            filePos++;
-            if (';' == readChar || '(' == readChar) {
-                got_comment = true;
-                continue;
-            }
-            if ('\n' == readChar || '\r' == readChar) {
-                got_comment = false;
-                if (curLinePos != 0)
-                    break; // if it's an empty string or LF after last CR, just continue reading
-            } else {
-                if (curLinePos < MAX_LINE_LEN && !got_comment) {
-                    curLine[curLinePos++] = readChar;
+    for (size_t i = MAX_READ_CHUNK; i != 0; i--) {
+        size_t curLinePos = 0;
+        if (readLineNum - currentLineNum > MAX_READ_CHUNK - 1) {
+            break;
+        }
+        //usually gcode has no long empty regions
+        for (size_t gard = 10; gard > 0; --gard) { // loop gard
+            bool got_comment = false;
+            while (gcodeFile.available() > 0) {
+                int readChar = gcodeFile.read();
+                filePos++;
+                if (';' == readChar || '(' == readChar) {
+                    got_comment = true;
+                    continue;
+                }
+                if ('\n' == readChar || '\r' == readChar) {
+                    got_comment = false;
+                    if (curLinePos != 0)
+                        break; // if it's an empty string or LF after last CR, just continue reading
+                } else {
+                    if (curLinePos < MAX_LINE_LEN && !got_comment) {
+                        curLine[curLinePos++] = readChar;
+                    }
                 }
             }
+            curLine[curLinePos] = 0;
+            bool empty = true;
+            for (size_t i = 0; i < curLinePos; i++) {
+                if (!isspace(curLine[i])) {
+                    empty = false;
+                }
+            }
+            if (curLinePos == 0 || empty) {
+                JOB_LOGLN("Empty line");
+                curLinePos = 0;
+            } else
+                break;
         }
-        curLine[curLinePos] = 0;
-        JOB_LOGLN("Got new line");
-
-        bool empty = true;
-        for (size_t i = 0; i < curLinePos; i++) {
-            if (!isspace(curLine[i])) {
-                empty = false;
+        if (curLinePos == 0) {
+            JOB_LOGLN("end of file");
+            return true;
+        }
+        String* l = new String(curLine);
+        {
+            String& line = (*l);
+            if (addLineN) {
+                // line number and checksum
+                line = "N";
+                line += String(readLineNum);
+                line += " ";
+                line += curLine;
+                line.trim();
+                uint8_t checksum = 0, count = line.length();
+                const char* out = line.c_str();
+                while (count)
+                    checksum ^= out[--count];
+                line += '*';
+                line += String(checksum);
+            } else {
+                line = curLine;
             }
         }
 
-        if (curLinePos == 0 || empty)
-           curLinePos = 0;
-        else 
-            break;
+        int j = readLineNum % JOB_BUFFER_SIZE;
+        JOB_LOGF("put [%s] at %d \n", l->c_str(), j);
+        String* string = buffer[j];
+        if (string != nullptr)
+            string->~String();
+
+        buffer[j]= l;
+        ++readLineNum;
     }
-    JOB_LOGLN("put line to buf");
-    String line(curLinePos + (addLineN ? 10 : 0), '\0');
-    if (addLineN) {
-        // line number and checksum
-        line = "N";
-        line += String(++curLineNum);
-        line += " ";
-        line += curLine;
-        line.trim();
-        uint8_t checksum = 0, count = line.length();
-        const char* out = line.c_str();
-        while (count)
-            checksum ^= out[--count];
-        line += '*';
-        line += String(checksum);
-    } else {
-        line = curLine;
-    }
-    //END line number and checksum
-    buffer.insert_at(curLineNum % MAX_BUF, line);
-    curLinePos = 0;
     return true;
 }
-
 
 void JobFsm::setFile(const char* file) {
     gcodeFile = SD.open(file);
@@ -71,8 +87,13 @@ void JobFsm::setFile(const char* file) {
         fileSize = gcodeFile.size();
     }
     filePos = 0;
-    curLinePos = 0;
-    curLineNum = 0;
+    readLineNum = 0;
+    currentLineNum = 0;
+    for (int i = 0; i < JOB_BUFFER_SIZE; ++i) {
+        if (buffer[i])
+            buffer[i]->~String();
+    }
+
     startTime = 0;
     endTime = 0;
 }
