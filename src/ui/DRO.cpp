@@ -20,9 +20,15 @@ void DRO::step() {
 }
 
 void DRO::begin() {
-    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem&) {
-        if (job.isRunning()) return;
-        display.setScreen(&fileChooser); // this will reset the card
+    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem& m) {
+        if (job.isRunning()) {
+            job.stop();
+            m.text = "Open";
+            display.doDirty();
+        } else {
+            display.setScreen(&fileChooser); // this will reset the card
+            m.text = "Disable job";
+        }
     }));
     menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m) {
         if (job.isRunning()) {
