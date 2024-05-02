@@ -26,7 +26,6 @@ void DRO::begin() {
     }));
     menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m) {
         if (job.isRunning()) {
-            job.setPaused(true);
             m.text = "Resume job";
         } else {
             job.setPaused(false);

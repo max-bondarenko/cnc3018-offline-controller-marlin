@@ -22,9 +22,9 @@ static const char* const RESEND_str = "Resend";
 static const char* const DEBUG_str = "DEBUG";
 
 struct Compat {
-    char auto_temp: 1;
-    char auto_position: 1;
-    char emergency_parser: 1;
+    bool auto_temp: 1;
+    bool auto_position: 1;
+    bool emergency_parser: 1;
 };
 
 extern Job job;
@@ -82,7 +82,7 @@ public:
     /// use this to set value from DRO to see current set value.
     void adjustSpindle(uint32_t val) { spindleVal = val; }
 
-    const Compat& getCompatibilities() const{
+    const Compat& getCompatibilities() const {
         return compatibility;
     }
 
@@ -101,13 +101,13 @@ private:
 
     float e = 0.0;
     float hotendTemp = 0.0,
-            bedTemp = 0.0;
+        bedTemp = 0.0;
     /// set indirectly by Gcode command
     uint32_t hotendRequestedTemp = 0,
     /// set indirectly by Gcode command
     bedRequestedTemp = 0,
-            hotendPower = 0,
-            bedPower = 0;
+        hotendPower = 0,
+        bedPower = 0;
     int16_t minExtrusionTemp = -1;
     bool relative = false;
     int ack = 0;

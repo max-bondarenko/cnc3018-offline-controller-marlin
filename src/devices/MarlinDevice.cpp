@@ -5,7 +5,6 @@
 
 #include "constants.h"
 #include "MarlinDevice.h"
-#include "Job.h"
 #include "util.h"
 #include "debug.h"
 #include "etl/string_view.h"
@@ -33,9 +32,9 @@ MarlinDevice::MarlinDevice() : GCodeDevice() {
     canTimeout = false;
     useLineNumber = true;
     config.spindle = etl::vector<u_int16_t, 10>{0, 1, 64, 255};
-    compatibility.auto_temp = 0;
-    compatibility.auto_position = 0;
-    compatibility.emergency_parser = 0;
+    compatibility.auto_temp = false;
+    compatibility.auto_position = false;
+    compatibility.emergency_parser = false;
 }
 
 bool MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
@@ -88,12 +87,12 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
                 // OPTIMIZATION
                 if (_s.indexOf("AUTOREPORT_") != -1) {
                     if (_s.indexOf("TEMP", 11) != -1 && _s.indexOf(":1", 11) != -1) {
-                        this->compatibility.auto_temp = 1;
+                        this->compatibility.auto_temp = true;
                     } else if (_s.indexOf("POS", 11) != -1 && _s.indexOf(":1", 11) != -1) {
-                        this->compatibility.auto_position = 1;
+                        this->compatibility.auto_position = true;
                     }
                 } else if (_s.indexOf("EMERGENCY_PARSER") != -1 && _s.indexOf(":1", 16) != -1) {
-                    this->compatibility.emergency_parser = 1;
+                    this->compatibility.emergency_parser = true;
                 }
             } else {
                 i /= 2;
@@ -108,11 +107,11 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
     msg[5] = 'S';
     msg[6] = '1';
     msg[7] = 0;
-    if (compatibility.auto_position > 0) {
+    if (compatibility.auto_position) {
         memcpy(msg, M154_AUTO_REPORT_POSITION, 4);
         scheduleCommand(msg, 9);
     }
-    if (compatibility.auto_temp > 0) {
+    if (compatibility.auto_temp) {
         memcpy(msg, M155_AUTO_REPORT_TEMP, 4);
         scheduleCommand(msg, 9);
     }

@@ -20,7 +20,7 @@ void MarlinDRO::begin() {
         dev.toggleRelative();
         m.text = dev.isRelative() ? "to Abs" : "to Relative";
     }));
-    if (dev.getCompatibilities().emergency_parser > 0) {
+    if (dev.getCompatibilities().emergency_parser) {
         menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&) {
             dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
         }));

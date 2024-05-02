@@ -11,6 +11,7 @@
 // TODO list
 // TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
 // TODO  refactor buffers
+// TODO fix Pause
 
 typedef etl::observer<JobStatusEvent> JobObserver;
 
