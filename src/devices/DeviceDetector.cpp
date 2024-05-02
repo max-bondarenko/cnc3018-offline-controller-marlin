@@ -2,9 +2,6 @@
 #include "debug.h"
 
 void DeviceDetector::loop() {
-    if (cResult != 0)
-        return;
-
     if (int32_t(millis() - nextProbeTime) > 0) {
         sendNextProbe();
         nextProbeTime = millis() + PROBE_INTERVAL;
@@ -66,8 +63,7 @@ void DeviceDetector::collectResponse() {
             if (ret) {
                 DETECTOR_LOGF("> Got ");
                 DETECTOR_LOGLN(deviceName);
-                callback(deviceName, printerSerial);
-                cResult = 1;
+                callback(deviceName);
                 return;
             }
             respLen = 0;

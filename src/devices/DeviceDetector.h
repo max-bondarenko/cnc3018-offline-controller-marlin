@@ -14,7 +14,7 @@ constexpr static uint32_t N_SERIAL_BAUDS = sizeof(serialBauds) / sizeof(serialBa
 
 class DeviceDetector {
 public:
-    typedef void* (DeviceCallback)(const char* const, WatchedSerial&);
+    typedef void* (DeviceCallback)(const char* const);
 
     static constexpr size_t MAX_LINE = 200; // M115 is far longer than 100
 private:

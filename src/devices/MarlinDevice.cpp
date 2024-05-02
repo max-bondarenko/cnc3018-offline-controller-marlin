@@ -15,6 +15,8 @@
 #define LOG_EXTRA_INFO(a) a;
 #endif
 
+extern WatchedSerial serialCNC;
+
 void MarlinDevice::sendProbe(Stream& serial) {
     serial.print("\n");
     serial.print(M115_GET_FIRMWARE_VER);
@@ -27,7 +29,7 @@ bool MarlinDevice::checkProbeResponse(const char* const input) {
     return i.find("Marlin") != etl::string_view::npos;
 }
 
-MarlinDevice::MarlinDevice(WatchedSerial& _printerSerial, Job& _job) : GCodeDevice(_printerSerial, _job) {
+MarlinDevice::MarlinDevice() : GCodeDevice() {
     canTimeout = false;
     useLineNumber = true;
     config.spindle = etl::vector<u_int16_t, 10>{0, 1, 64, 255};
@@ -48,13 +50,13 @@ void MarlinDevice::trySendCommand() {
     if (lastStatus >= DeviceStatus::WAIT) {
         return;
     }
-    while (ack < 6 && printerSerial.availableForWrite() && !outQueue.empty()) {
+    while (ack < outQueue.max_size() && serialCNC.availableForWrite() && !outQueue.empty()) {
         String& front = outQueue.front();
         const char* cmd = front.c_str();
         auto size = (size_t) front.length();
         IO_LOGF("> [%s]\n", cmd);
-        printerSerial.write((const unsigned char*) cmd, size);
-        printerSerial.write('\n');
+        serialCNC.write((const unsigned char*) cmd, size);
+        serialCNC.write('\n');
         outQueue.pop_front();
         ack++;
     }

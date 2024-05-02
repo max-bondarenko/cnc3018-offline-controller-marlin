@@ -9,6 +9,8 @@
 
 class Job;
 
+extern WatchedSerial serialCNC;
+
 #include "util.h"
 #include "debug.h"
 
@@ -56,15 +58,15 @@ public:
     constexpr static uint8_t MAX_GCODE_LINE = 96;
     constexpr static uint8_t BUFFER_LEN = 255;
     constexpr static uint8_t SHORT_BUFFER_LEN = 100;
-    const char* name = nullptr;
-    // default
     struct Config {
         etl::vector<u_int16_t, 10> spindle{0, 1, 10, 100, 1000};
         etl::vector<u_int16_t, 10> feed{50, 100, 500, 1000, 2000};
         etl::vector<float, 10> dist{0.1, 0.5, 1, 5, 10, 50, 150};
     };
-
-    GCodeDevice(WatchedSerial& _printerSerial, Job& _job) : printerSerial(_printerSerial), job(_job) {
+    const char* name = nullptr;
+    Config config;
+    // default
+    GCodeDevice() {
     }
 
     virtual ~GCodeDevice() { clear_observers(); }
@@ -116,10 +118,6 @@ public:
     const Config& getConfig() const { return config; }
 
 protected:
-    WatchedSerial& printerSerial;
-    Job& job;
-    Config config;
-
     bool canTimeout,
         xoff,
         xoffEnabled = false,
@@ -156,8 +154,6 @@ protected:
     void readLockedStatus();
 
 private:
-    static int configHandler(void* store, const char* section, const char* name, const char* value);
-
     void extendRxTimeout();
 
     void disarmRxTimeout();

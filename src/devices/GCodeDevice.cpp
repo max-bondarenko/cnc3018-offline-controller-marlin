@@ -2,7 +2,7 @@
 #include "constants.h"
 #include "util.h"
 #include "GCodeDevice.h"
-#include "ini.h"
+
 #include "WString.h"
 #include "math.h"
 
@@ -48,79 +48,19 @@ void GCodeDevice::step() {
     notify_observers(DeviceStatusEvent{lastStatus, lastStatusStr, lastResponse});
 }
 
-auto spindleSetF = [](const char* token, GCodeDevice::Config& conf) {
-    auto val = (uint16_t) strtoul(token, nullptr, STRTOLL_BASE);
-    conf.spindle.push_back(val);
-};
-auto feedSetF = [](const char* token, GCodeDevice::Config& conf) {
-    auto val = (uint16_t) strtoul(token, nullptr, STRTOLL_BASE);
-
-    conf.feed.push_back(val);
-};
-auto distanceSetF = [](const char* token, GCodeDevice::Config& conf) {
-    auto val = (float) atof(token);
-    conf.dist.push_back(abs(val));
-};
-
-int GCodeDevice::configHandler(void* store, const char* section, const char* name, const char* value) {
-    auto* device = static_cast<GCodeDevice*>(store);
-    if (strcmp(section, device->name) == 0) {
-        void (* pFunction)(const char*, GCodeDevice::Config&);
-        if (strcmp(name, "s") == 0) {
-            device->config.spindle.clear();
-            device->config.spindle.push_back(0);
-            pFunction = spindleSetF;
-        } else if (strcmp(name, "f") == 0) {
-            device->config.feed.clear();
-            pFunction = feedSetF;
-        } else if (strcmp(name, "d") == 0) {
-            device->config.dist.clear();
-            pFunction = distanceSetF;
-        } else
-            return 1;
-        size_t len = strlen(value);
-        char buf[len + 1];
-        buf[len] = 0;
-        memcpy(buf, value, len);
-        char* t = strtok(buf, ",");
-        while (t != nullptr) {
-            pFunction(t, device->config);
-            t = strtok(nullptr, ",");
-        }
-        return 0;
-    }
-    return 1;   /* unknown section/name, error */
-}
-
 void GCodeDevice::begin(SetupFN* const onBegin) {
     if (onBegin != nullptr) {
-        (*onBegin)(printerSerial);
+        (*onBegin)(serialCNC);
     }
     // in case onBegin did not consume all data in stream
-    while (printerSerial.available() > 0) {
-        printerSerial.read();
+    while (serialCNC.available() > 0) {
+        serialCNC.read();
     }
     readLockedStatus();
-    if (SD.begin(PIN_CD)) {
-        File file = SD.open(PRESET_FILES);
-        if (file.available()) {
-            //ignore output
-            ini_parse_stream([](char* str, int num, void* stream_) -> char* {
-                auto stream = *(File*) stream_; //always present
-                size_t i = stream.readBytesUntil('\n', str, num);
-                if (i > 0) {
-                    str[i] = 0;
-                    return str;
-                } else
-                    return nullptr;
-            }, &file, (ini_handler) (configHandler), this);
-        }
-        file.close();
-    }
 }
 
 void GCodeDevice::readLockedStatus() {
-    if (printerSerial.isLocked(true))
+    if (serialCNC.isLocked(true))
         lastStatus = DeviceStatus::LOCKED;
 }
 
@@ -160,8 +100,8 @@ void GCodeDevice::receiveResponses() {
     static char resp[MAX_LINE + 1];
     static size_t respLen;
 
-    while (printerSerial.available()) {
-        char ch = (char) printerSerial.read();
+    while (serialCNC.available()) {
+        char ch = (char) serialCNC.read();
         switch (ch) {
             case '\n':
             case '\r':

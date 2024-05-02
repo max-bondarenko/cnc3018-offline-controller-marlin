@@ -3,6 +3,8 @@
 #include "GCodeDevice.h"
 #include <etl/vector.h>
 
+extern WatchedSerial serialCNC;
+
 class GrblDevice : public GCodeDevice {
 public:
 
@@ -10,7 +12,7 @@ public:
         Idle, Run, Hold, Jog, Alarm, Door, Check, Home, Sleep
     };
 
-    GrblDevice(WatchedSerial& _printerSerial, Job& _job) : GCodeDevice(_printerSerial, _job) {
+    GrblDevice() : GCodeDevice() {
         canTimeout = true;
         serialRxTimeout = 1;
     };
@@ -47,7 +49,7 @@ public:
             len = strlen(cmd);
         }
         if (isCmdRealtime(cmd, len)) {
-            printerSerial.write((const uint8_t*) cmd, len);
+            serialCNC.write((const uint8_t*) cmd, len);
             return true;
         } else {
             return GCodeDevice::schedulePriorityCommand(cmd, len);

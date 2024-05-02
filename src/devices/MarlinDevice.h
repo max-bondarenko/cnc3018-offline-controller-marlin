@@ -27,6 +27,8 @@ struct Compat {
     char emergency_parser: 1;
 };
 
+extern Job job;
+
 class MarlinDevice : public GCodeDevice {
 public:
     const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 64, 128, 255};
@@ -36,7 +38,7 @@ public:
     static bool checkProbeResponse(const char* input);
 
     //// CONSTRUCTORS
-    MarlinDevice(WatchedSerial& _printerSerial, Job& _job);
+    MarlinDevice();
 
     virtual ~MarlinDevice() {}
 

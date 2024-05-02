@@ -1,8 +1,10 @@
 #include "util.h"
 #include "constants.h"
 #include "GrblDevice.h"
-#include "Job.h"
 #include "etl/string_view.h"
+
+
+extern WatchedSerial serialCNC;
 
 void GrblDevice::sendProbe(Stream& serial) {
     serial.print("\n$I\n");
@@ -55,10 +57,10 @@ void GrblDevice::trySendCommand() {
     char* cmd = curUnsentPriorityCmdLen != 0 ? &curUnsentPriorityCmd[0] : &curUnsentCmd[0];
     cmd[len] = 0;
     LOGLN("Try send");
-    if (printerSerial.availableForWrite()) {
+    if (serialCNC.availableForWrite()) {
         LOGLN("> send");
-        printerSerial.write((const uint8_t*) cmd, len);
-        printerSerial.write('\n');
+        serialCNC.write((const uint8_t*) cmd, len);
+        serialCNC.write('\n');
         len = 0;
     }
 }

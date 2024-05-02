@@ -10,6 +10,8 @@ class Screen {
 public:
     Screen() {}
 
+    virtual ~Screen()= default;
+
     inline void doDirty() {
         display.doDirty();
     }
@@ -20,9 +22,7 @@ public:
 
 protected:
     bool hasMenu = false;
-
     friend class Display;
-
     using Evt = Display::ButtonEvent;
 
     virtual void drawContents() = 0;

@@ -11,6 +11,7 @@
 #include "ui/Display.h"
 
 #include "etl/deque.h"
+#include "devices/Config.h"
 #include "devices/DeviceDetector.h"
 #include "devices/GrblDevice.h"
 #include "devices/MarlinDevice.h"
@@ -37,19 +38,18 @@ DRO* dro;
 DeviceDetector* detector;
 DetectorScreen* detectorScreen;
 
-void createDevice(const char* const devName, WatchedSerial& s) {
-    if (dev != nullptr) return;
-    delay(300);
+void createDevice(const char* const devName) {
     if (devName == DEVICE_NAMES[DeviceName::GRBL]) {
-        auto device = new GrblDevice(s, job);
+        auto device = new GrblDevice();
         dro = new GrblDRO(*device);
         dev = device;
     } else {
-        auto device = new MarlinDevice(s, job);
+        auto device = new MarlinDevice();
         dro = new MarlinDRO(*device);
         dev = device;
     }
     dev->name = devName;
+    readConfig(dev);
     job.setDevice(dev);
     display.setScreen(dro);
     dev->begin(nullptr);
@@ -58,6 +58,7 @@ void createDevice(const char* const devName, WatchedSerial& s) {
     dro->enableRefresh();
     delete detectorScreen;
     detectorScreen = nullptr;
+    detector = nullptr;
     LOGLN("Created");
 }
 

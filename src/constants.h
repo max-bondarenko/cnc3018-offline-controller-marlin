@@ -59,7 +59,7 @@ constexpr size_t REFRESH_INTL = 400;
 constexpr size_t KEEPALIVE_INTERVAL = 5000;    // Marlin defaults to 2 seconds, get a little of margin
 constexpr uint8_t JOB_BUFFER_SIZE = 20;
 
-#define PRESET_FILES "presets.ini"
+#define PRESETS_FILE "presets.ini"
 
 
 #endif //CNC_3018_CONSTANTS_H
