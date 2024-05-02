@@ -17,25 +17,25 @@
 
 #include "Job.h"
 
-U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI u8g2(
-        U8G2_R0,
-        PIN_LCD_CLK,
-        PIN_LCD_MOSI,
-        PIN_LCD_CS,
-        PIN_LCD_DC,
-        PIN_LCD_RST
+U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI _u8g2(
+    U8G2_R0,
+    PIN_LCD_CLK,
+    PIN_LCD_MOSI,
+    PIN_LCD_CS,
+    PIN_LCD_DC,
+    PIN_LCD_RST
 );
 
+U8G2& Display::u8g2 = _u8g2;
 WatchedSerial serialCNC{Serial1, PIN_DET};
 Job job;
-Display display{job, u8g2};
+Display display;
 FileChooser fileChooser;
 
 GCodeDevice* dev;
 DRO* dro;
-void createDevice(const char* const , WatchedSerial&);
-using Detector = DeviceDetector<WatchedSerial, serialCNC, createDevice>;
-DetectorScreen<Detector>* detUI;
+DeviceDetector* detector;
+DetectorScreen* detectorScreen;
 
 void createDevice(const char* const devName, WatchedSerial& s) {
     if (dev != nullptr) return;
@@ -56,22 +56,23 @@ void createDevice(const char* const devName, WatchedSerial& s) {
     dev->add_observer(display);
     dro->begin();
     dro->enableRefresh();
-    delete detUI;
-    detUI = nullptr;
+    delete detectorScreen;
+    detectorScreen = nullptr;
     LOGLN("Created");
 }
 
 void setup() {
     SerialUSB.begin(115200);
 
-    u8g2.begin();
-    u8g2.setFontPosTop();
-    u8g2.setFontMode(1);
-    u8g2.setDrawColor(1);
+    _u8g2.begin();
+    _u8g2.setFontPosTop();
+    _u8g2.setFontMode(1);
+    _u8g2.setDrawColor(1);
 
     display.begin();
-    detUI = new DetectorScreen<Detector>;
-    display.setScreen(detUI);
+    detector = new DeviceDetector(serialCNC, (DeviceDetector::DeviceCallback*) createDevice);
+    detectorScreen = new DetectorScreen(detector);
+    display.setScreen(detectorScreen);
     fileChooser.setCallback([](bool res, const char* path) {
         if (res) {
             LOGF("Starting job %s\n", path);
@@ -85,7 +86,6 @@ void setup() {
     for (auto pin: buttPins) {
         pinMode(pin, INPUT_PULLUP);
     }
-    Detector::init();
 }
 
 void loop() {
@@ -105,7 +105,7 @@ void loop() {
         job.step();
         dev->step();
     } else {
-        Detector::loop();
+        detector->loop();
     }
 
 #ifdef USB_TO_SERIAL

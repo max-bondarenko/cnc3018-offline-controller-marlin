@@ -9,21 +9,9 @@
 #include "devices/GCodeDevice.h"
 #include "Job.h"
 
+class DRO;
 
 class Screen;
-
-struct MenuItem {
-    int16_t id;
-    String text;
-    bool togglable;
-    bool on;
-    uint8_t* font;
-    std::function<void(MenuItem&)> cmd;
-
-    static MenuItem simpleItem(int16_t id, const char* text, std::function<void(MenuItem&)> func) {
-        return MenuItem{id, text, false, false, nullptr, func};
-    }
-};
 
 /// Display abstraction
 /// N.B. Display drives device updates (call request status)
@@ -47,14 +35,14 @@ public:
         //
         N_BUTTONS
     };
-
+    static U8G2& u8g2;
     static uint16_t buttStates;
 
     enum class ButtonEvent {
         UP, DOWN, HOLD
     };
 
-    Display(Job& _job, U8G2& _u8g2);
+    Display();
 
     ~Display() final {}
 
@@ -71,10 +59,6 @@ public:
         doDirty();
     }
 
-    U8G2& getU8G2() const {
-        return u8g2;
-    }
-
     void begin();
 
     ///
@@ -84,14 +68,12 @@ public:
 
     void draw();
 
-    void setScreen(Screen* screen);
+    void setScreen(Screen* _screen);
 
     void processInput();
 
 private:
-    U8G2& u8g2;
-    Job& job;
-    Screen* cScreen;
+    Screen* screen;
     bool dirty;
     uint8_t selMenuItem = 0;
     bool menuShown;
@@ -110,6 +92,6 @@ private:
 
     void drawMenu();
 
-    void ensureSelMenuVisible();
+    void ensureSelMenuVisible(DRO& pMenu);
 
 };

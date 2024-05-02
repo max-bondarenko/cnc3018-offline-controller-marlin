@@ -20,11 +20,11 @@ void DRO::step() {
 }
 
 void DRO::begin() {
-    menuItems.push_back(MenuItem::simpleItem(0, "Open", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem&) {
         if (job.isRunning()) return;
-        display->setScreen(&fileChooser); // this will reset the card
+        display.setScreen(&fileChooser); // this will reset the card
     }));
-    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [this](MenuItem& m) {
+    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m) {
         if (job.isRunning()) {
             job.setPaused(true);
             m.text = "Resume job";
@@ -32,12 +32,12 @@ void DRO::begin() {
             job.setPaused(false);
             m.text = "Pause job";
         }
-        doDirty();
+        display.doDirty();
     }));
 }
 
 void DRO::drawContents() {
-    U8G2& u8g2 = display->getU8G2();
+    U8G2& u8g2 = Display::u8g2;
     u8g2.setFont(u8g2_font_7x13B_tr);
     u8g2.setDrawColor(1);
 
@@ -196,7 +196,7 @@ void DRO::onButtonShift(int bt, Evt evt) {
             break;
         case Display::BT_UP:
             if (evt == Evt::HOLD)
-                cFeed =  n_feed_val;
+                cFeed = n_feed_val;
             else if (cFeed < n_feed_val)
                 cFeed++;
             break;
@@ -212,9 +212,9 @@ void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) const {
     drawAxis(AXIS[2], dev.getZ(), sx, sy + lineHeight * 2);
 }
 
-void DRO::drawAxis(char axis, float value, int x, int y) const{
+void DRO::drawAxis(char axis, float value, int x, int y) const {
     static const int LEN = 13;
     static char buffer[LEN];
     snprintf(buffer, LEN, "%c% *.*f", axis, 5 + defaultAxisPrecision, defaultAxisPrecision, value);
-    display->getU8G2().drawStr(x, y, buffer);
+    Display::u8g2.drawStr(x, y, buffer);
 }

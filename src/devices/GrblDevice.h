@@ -65,7 +65,7 @@ public:
 
     static void sendProbe(Stream& serial);
 
-    static bool checkProbeResponse(const String& input);
+    static bool checkProbeResponse(const char* input);
 
 protected:
     void trySendCommand() override;
@@ -77,13 +77,12 @@ private:
 
     //WPos = MPos - WCO
     float ofsX = 0.0,
-            ofsY = 0.0,
-            ofsZ = 0.0;
+        ofsY = 0.0,
+        ofsZ = 0.0;
 
     void parseStatus(char* input);
 
     void setStatus(const char* s);
 
     static bool isCmdRealtime(const char* data, size_t len);
-
 };

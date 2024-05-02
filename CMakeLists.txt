@@ -214,10 +214,9 @@ target_include_directories(U8g2 PRIVATE ${u8g2_path}/src)
 target_link_libraries(U8g2 PUBLIC SPI Wire)
 
 file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
-list(FILTER SRC_LIST EXCLUDE REGEX "src/main.cpp")
-list(FILTER SRC_LIST EXCLUDE REGEX "src/ui/Display.cpp")
-list(FILTER SRC_LIST EXCLUDE REGEX "src/Job*")
-list(FILTER SRC_LIST EXCLUDE REGEX "src/devices/MarlinDevice.cpp")
+list(REMOVE_ITEM SRC_LIST "src/main.cpp")
+list(FILTER SRC_LIST EXCLUDE REGEX "src/ui/*")
+
 
 add_library(controller ${SRC_LIST})
 set(main_include src src/ui src/gcode src/devices)
@@ -232,9 +231,13 @@ target_compile_options(controller PRIVATE ${OPT_FLAG})
 add_compile_definitions(LOG_TIME LOG_JOB)
 add_library(for_debug
         src/ui/Display.cpp
-        src/Job.cpp
-        src/JobFsm.cpp
-        src/devices/MarlinDevice.cpp
+        src/ui/DRO.cpp
+        src/ui/MarlinDRO.cpp
+        src/ui/GrblDRO.cpp
+        src/ui/Screen.cpp
+        src/ui/HasMenu.cpp
+        src/ui/FileChooser.cpp
+
         )
 target_include_directories(for_debug PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH} ${u8g2_path}/src)
 target_compile_options(for_debug PRIVATE ${DEBUG_OPT_FLAG})

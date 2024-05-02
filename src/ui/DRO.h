@@ -3,18 +3,19 @@
 #include "utils.h"
 #include "constants.h"
 #include "Screen.h"
+#include "HasMenu.h"
 #include "FileChooser.h"
 #include "devices/GCodeDevice.h"
-
 
 extern FileChooser fileChooser;
 extern Job job;
 
-
-class DRO : public Screen {
+class DRO : public HasMenu, public Screen {
 public:
 
-    explicit DRO(GCodeDevice& d) : dev(d), cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {}
+    explicit DRO(GCodeDevice& d) : dev(d), cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {
+        Screen::hasMenu = true;
+    }
 
     virtual ~DRO() {}
 
@@ -27,6 +28,7 @@ public:
     bool isRefreshEnabled() const { return nextRefresh != 0; }
 
 protected:
+    using Evt = Display::ButtonEvent;
     enum class Mode : uint8_t {
         // 0    1      2
         AXES, SPINDLE, TEMP, N_VALS

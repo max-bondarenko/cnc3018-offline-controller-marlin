@@ -35,7 +35,8 @@ bool FileChooser::isGCode(const String& s) {
 }
 
 void FileChooser::loadDirContents(File newDir, int startingIndex) {
-    if (!newDir) return;
+    if (!newDir)
+        return;
     LOGF("load dir %s\n", newDir.name());
     if (!cDir || strcmp(cDir.name(), newDir.name()) != 0) {
         cDir = newDir;
@@ -71,7 +72,7 @@ void FileChooser::loadDirContents(File newDir, int startingIndex) {
 }
 
 void FileChooser::drawContents() {
-    U8G2& u8g2 = display->getU8G2();
+    U8G2& u8g2 = Display::u8g2;
     u8g2.setDrawColor(1);
     u8g2.setFont(u8g2_font_nokiafc22_tr);
 

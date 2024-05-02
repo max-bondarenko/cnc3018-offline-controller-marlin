@@ -2,17 +2,15 @@
 #include "constants.h"
 #include "GrblDevice.h"
 #include "Job.h"
+#include "etl/string_view.h"
 
 void GrblDevice::sendProbe(Stream& serial) {
     serial.print("\n$I\n");
 }
 
-bool GrblDevice::checkProbeResponse(const String& input) {
-    if (input.indexOf("[VER:") != -1) {
-        LOGLN(">> Detected Grbl device <<");
-        return true;
-    }
-    return false;
+bool GrblDevice::checkProbeResponse(const char* const input) {
+    etl::string_view i{input};
+    return i.find("[VER:") != etl::string_view::npos;
 }
 
 bool GrblDevice::jog(uint8_t axis, float dist, uint16_t feed) {

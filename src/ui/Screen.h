@@ -4,32 +4,26 @@
 #include <etl/vector.h>
 #include "Display.h"
 
+extern Display display;
 
 class Screen {
 public:
-    Screen() : firstDisplayedMenuItem{0} {}
+    Screen() {}
 
-    virtual ~Screen() {}
-
-    void doDirty() {
-        display->doDirty();
+    inline void doDirty() {
+        display.doDirty();
     }
 
     virtual void begin() { doDirty(); }
 
     virtual void step() {};
 
-    void setDisplay(Display* _display) {
-        display = _display;
-    }
-
 protected:
+    bool hasMenu = false;
+
     friend class Display;
 
     using Evt = Display::ButtonEvent;
-
-    Display* display;
-    etl::vector<MenuItem, 10> menuItems;
 
     virtual void drawContents() = 0;
 
@@ -38,6 +32,4 @@ protected:
     virtual void onShow() {};
 
     virtual void onHide() {};
-private:
-    uint8_t firstDisplayedMenuItem;
 };

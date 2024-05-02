@@ -8,6 +8,7 @@
 #include "Job.h"
 #include "util.h"
 #include "debug.h"
+#include "etl/string_view.h"
 
 #define LOG_EXTRA_INFO(a) //noop
 #ifdef LOG_DEBUG
@@ -21,16 +22,9 @@ void MarlinDevice::sendProbe(Stream& serial) {
 }
 
 /// FIRMWARE_NAME:Marlin
-///   In Marlin first 3 numbers is the position for the planner.
-///   The other positions are the positions from the stepper function.
-///   This helps for debugging a previous stepper function bug.
-/// Compatibility example
-bool MarlinDevice::checkProbeResponse(const String& input) {
-    if (input.indexOf("Marlin") != -1) {
-        LOGLN(">> Detected Marlin device <<");
-        return true;
-    }
-    return false;
+bool MarlinDevice::checkProbeResponse(const char* const input) {
+    etl::string_view i{input};
+    return i.find("Marlin") != etl::string_view::npos;
 }
 
 MarlinDevice::MarlinDevice(WatchedSerial& _printerSerial, Job& _job) : GCodeDevice(_printerSerial, _job) {
@@ -54,7 +48,7 @@ void MarlinDevice::trySendCommand() {
     if (lastStatus >= DeviceStatus::WAIT) {
         return;
     }
-    while (ack < 6 &&  printerSerial.availableForWrite() && !outQueue.empty()) {
+    while (ack < 6 && printerSerial.availableForWrite() && !outQueue.empty()) {
         String& front = outQueue.front();
         const char* cmd = front.c_str();
         auto size = (size_t) front.length();
@@ -62,7 +56,7 @@ void MarlinDevice::trySendCommand() {
         printerSerial.write((const unsigned char*) cmd, size);
         printerSerial.write('\n');
         outQueue.pop_front();
-        ack ++;
+        ack++;
     }
     lastResponse = nullptr;
 }
@@ -183,7 +177,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
             parseOk(resp + 2, len - 2);
             LOG_EXTRA_INFO(lastResponse = resp + 2;)
         }
-        if (lastStatus == DeviceStatus::RESEND && resendLine > -1 ){
+        if (lastStatus == DeviceStatus::RESEND && resendLine > -1) {
             ack = 0;
             return;
         }

@@ -42,7 +42,7 @@ void MarlinDRO::begin() {
 void MarlinDRO::drawContents() {
     const uint8_t LEN = 20;
     char str[LEN];
-    U8G2& u8g2 = display->getU8G2();
+    U8G2& u8g2 = Display::u8g2;
     u8g2.setFont(u8g2_font_7x13B_tr);
     const uint8_t lineWidth = u8g2.getMaxCharWidth();
     const uint8_t lineHeight = u8g2.getMaxCharHeight();
@@ -125,7 +125,7 @@ void MarlinDRO::drawContents() {
 }
 
 void MarlinDRO::drawAxisIcons(uint8_t sx, uint8_t sy, const uint8_t lineHeight) const {
-    U8G2& u8g2 = display->getU8G2();
+    U8G2& u8g2 = Display::u8g2;
     constexpr uint8_t ICONS_WIDTH = 9;
     // arrow lr 4 pixel less than rest icons
     constexpr uint8_t ICON_TOP_PADDING = 4;
@@ -241,7 +241,7 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
 
 
 void MarlinDRO::drawPower(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint16_t val) const {
-    U8G2& u8g2 = display->getU8G2();
+    U8G2& u8g2 = Display::u8g2;
     val = val >= 127 ? lineHeight - 2 :
           val >= 64 ? lineHeight - 4 :
           val > 0 ? 2 : 0;
@@ -260,7 +260,7 @@ void MarlinDRO::drawPower(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint16_t
 }
 
 void MarlinDRO::drawTemp(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint8_t lineWidth) const {
-    U8G2& u8g2 = display->getU8G2();
+    U8G2& u8g2 = Display::u8g2;
     char buffer[13];
     buffer[1] = 0;
     buffer[0] = PRINTER[1] /*B*/;

@@ -33,7 +33,7 @@ public:
 
     static void sendProbe(Stream& serial);
 
-    static bool checkProbeResponse(const String& input);
+    static bool checkProbeResponse(const char* input);
 
     //// CONSTRUCTORS
     MarlinDevice(WatchedSerial& _printerSerial, Job& _job);
