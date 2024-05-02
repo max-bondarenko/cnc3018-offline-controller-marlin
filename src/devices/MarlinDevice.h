@@ -108,6 +108,7 @@ private:
             bedPower = 0;
     int16_t minExtrusionTemp = -1;
     bool relative = false;
+    int ack = 0;
 
     void parseOk(const char* input, size_t len);
 };

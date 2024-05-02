@@ -7,7 +7,8 @@
 #include "etl/message.h"
 #include "constants.h"
 
-#include "WString.h"
+#include "etl/string.h"
+#include "etl/vector.h"
 
 const etl::message_router_id_t JOB_BUS_NUMBER = 1;
 
@@ -39,10 +40,13 @@ struct EventId {
 struct SetFileMessage : public etl::message<EventId::FILE> {
     const char* fileName;
 };
+
 struct CompleteMessage : public etl::message<EventId::COMPLETE> {
     bool byError;
-    explicit CompleteMessage(bool byErr): byError(byErr){};
+
+    explicit CompleteMessage(bool byErr) : byError(byErr) {};
 };
+
 struct StartMessage : public etl::message<EventId::START> {
 };
 struct PauseMessage : public etl::message<EventId::PAUSE> {
@@ -80,7 +84,7 @@ public:
         closeFile();
     }
 
-    static constexpr size_t MAX_LINE_LEN = 100;
+    static constexpr size_t MAX_LINE_LEN = 101;
     static constexpr size_t MAX_READ_CHUNK = 4;
 
     File gcodeFile;
@@ -93,12 +97,12 @@ public:
     // add LineNumber and CRC to command
     bool addLineN = false;
     bool pause = false;
+    char buffer[JOB_BUFFER_SIZE][MAX_LINE_LEN];
 
-    char curLine[MAX_LINE_LEN + 1];
-    String* buffer[JOB_BUFFER_SIZE] = {nullptr};
+    size_t readLineNum = 0;
+    size_t currentLineNum = 0;
+    size_t tailNum = 0;
 
-    size_t readLineNum = 0 ;
-    size_t currentLineNum = 0 ;
 
     bool readCommandsToBuffer();
 
@@ -108,6 +112,7 @@ public:
 
     uint32_t getPrintDuration() const;
 
+    uint8_t calculateChecksum(const char* out, uint8_t count) const;
 };
 
 #endif //CNC_3018_JOBFSM_H

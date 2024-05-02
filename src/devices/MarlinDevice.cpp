@@ -54,7 +54,7 @@ void MarlinDevice::trySendCommand() {
     if (lastStatus >= DeviceStatus::WAIT) {
         return;
     }
-    if (printerSerial.availableForWrite() && !outQueue.empty()) {
+    while (ack < 6 &&  printerSerial.availableForWrite() && !outQueue.empty()) {
         String& front = outQueue.front();
         const char* cmd = front.c_str();
         auto size = (size_t) front.length();
@@ -62,6 +62,7 @@ void MarlinDevice::trySendCommand() {
         printerSerial.write((const unsigned char*) cmd, size);
         printerSerial.write('\n');
         outQueue.pop_front();
+        ack ++;
     }
     lastResponse = nullptr;
 }
@@ -174,6 +175,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
                len == ((sizeof(START_str)) / (sizeof(START_str[0]))) + 1) { // START_str.len + 1
         //restart everything on marlin hard reset
         job.stop();
+        ack = 0;
         reset();
         return;
     } else if (startsWith(resp, OK_str)) {
@@ -181,16 +183,12 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
             parseOk(resp + 2, len - 2);
             LOG_EXTRA_INFO(lastResponse = resp + 2;)
         }
-        if (lastStatus == DeviceStatus::RESEND) {
-            if (outQueue.empty()) {
-                // in resend state, job did not fill buffer yet
-                return;
-            }
-        }
-        if (resendLine > 0) { // Ack first command after RESEND
-            resendLine = -1;
+        if (lastStatus == DeviceStatus::RESEND && resendLine > -1 ){
+            ack = 0;
+            return;
         }
         lr = const_cast<char* >(OK_str);
+        ack--;
         lastStatus = DeviceStatus::OK;
     } else if ((str = strstr(resp, BUSY_str)) != nullptr) {
         // "echo:busy: processing"

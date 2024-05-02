@@ -29,8 +29,8 @@ def line_number(str):
         global N
         N += 1
         print("\t\t N++")
-        if N == 3000:
-            resp.append("Resend:3 _123456789_123456789\r\n")
+        if N == 4:
+            resp.append("Error: Resend Last Line:123\nResend:3\nok\n")
             stack.append(expect_line)
             return
         # if N == 5:
@@ -75,20 +75,16 @@ def marlin_repeater(str):
         resp.append("ok\n")
     elif str.startswith("M110N0"):
         resp.append("ok\r\n")
-        stack.append(marlin_repeater)
+
         global N
         N = 0
-        # stack.append(line_number)
+        stack.append(line_number)
     elif str.startswith("M302"):
         resp.append("echo: min temp 150C\n")
         stack.append(marlin_repeater)
     elif str.startswith("M"):
         resp.append("ok\n")
         stack.append(marlin_repeater)
-
-
-
-
 
 
 def last_state(str):
@@ -151,8 +147,8 @@ def main():
             #  ==================================================
             attr[tty.CFLAG] = attr[tty.CFLAG] | termios.CLOCAL
 
-            attr[tty.ISPEED] = termios.B9600
-            attr[tty.OSPEED] = termios.B9600
+            attr[tty.ISPEED] = termios.B115200
+            attr[tty.OSPEED] = termios.B115200
             termios.tcsetattr(fd, termios.TCSADRAIN, attr)
             print('>>o_flag:{:b}'.format(attr[tty.OFLAG]))
             print(

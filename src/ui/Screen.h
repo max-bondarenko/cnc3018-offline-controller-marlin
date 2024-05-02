@@ -25,6 +25,7 @@ public:
 
 protected:
     friend class Display;
+
     using Evt = Display::ButtonEvent;
 
     Display* display;

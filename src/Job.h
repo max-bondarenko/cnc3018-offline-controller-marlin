@@ -5,8 +5,7 @@
 #include "debug.h"
 #include "constants.h"
 #include "devices/MarlinDevice.h"
-
-
+#include "WString.h"
 
 
 // TODO list
@@ -84,10 +83,10 @@ public:
         int rightLimit = fsm.readLineNum % JOB_BUFFER_SIZE;
         int i1 = (JOB_BUFFER_SIZE + rightLimit - dif) % JOB_BUFFER_SIZE;
         for (int i = i1; i != rightLimit;) {
-            String* cmd = fsm.buffer[i];
-            JOB_LOGF("sched [%s]\n", cmd->c_str());
-            if (!fsm.dev->scheduleCommand(cmd->c_str(), cmd->length()))
+            char* cmd = fsm.buffer[i];
+            if (!fsm.dev->scheduleCommand(cmd, strlen(cmd)))
                 break;
+            JOB_LOGF("scheduled [%s]\n", cmd);
             fsm.currentLineNum++;
             ++i;
             i %= JOB_BUFFER_SIZE;
@@ -230,7 +229,9 @@ public:
                 } else {
                     fsm->receive(CompleteMessage{false});
                 }
-                notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
+                if (fsm->readLineNum % 200 ){
+                    notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
+                }
                 break;
             case StateId::WAIT:
                 switch (fsm->dev->getLastStatus()) {
@@ -242,7 +243,10 @@ public:
                         break;
                     case DeviceStatus::RESEND: {
                         int32_t line = fsm->dev->getResendLine();
-                        fsm->currentLineNum = line;
+                        if (line >= 0) { // TODO hack
+                            fsm->currentLineNum = line;
+                            fsm->dev->ackResend();
+                        }
                         fsm->receive(ContinueMessage{});
                         break;
                     }

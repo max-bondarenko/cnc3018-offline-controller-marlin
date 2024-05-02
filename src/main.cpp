@@ -33,6 +33,9 @@ FileChooser fileChooser;
 
 GCodeDevice* dev;
 DRO* dro;
+void createDevice(const char* const , WatchedSerial&);
+using Detector = DeviceDetector<WatchedSerial, serialCNC, createDevice>;
+DetectorScreen<Detector>* detUI;
 
 void createDevice(const char* const devName, WatchedSerial& s) {
     if (dev != nullptr) return;
@@ -53,11 +56,10 @@ void createDevice(const char* const devName, WatchedSerial& s) {
     dev->add_observer(display);
     dro->begin();
     dro->enableRefresh();
+    delete detUI;
+    detUI = nullptr;
     LOGLN("Created");
 }
-
-using Detector = DeviceDetector<WatchedSerial, serialCNC, createDevice>;
-DetectorScreen<Detector> detUI;
 
 void setup() {
     SerialUSB.begin(115200);
@@ -68,7 +70,8 @@ void setup() {
     u8g2.setDrawColor(1);
 
     display.begin();
-    display.setScreen(&detUI);
+    detUI = new DetectorScreen<Detector>;
+    display.setScreen(detUI);
     fileChooser.setCallback([](bool res, const char* path) {
         if (res) {
             LOGF("Starting job %s\n", path);

@@ -1,8 +1,9 @@
 #include "JobFsm.h"
-#include "WString.h"
+#include "etl/string_utilities.h"
 #include "constants.h"
 
 bool JobFsm::readCommandsToBuffer() {
+    char curLine[MAX_LINE_LEN];
     if (filePos >= fileSize) {
         return false;
     }
@@ -48,37 +49,33 @@ bool JobFsm::readCommandsToBuffer() {
             JOB_LOGLN("end of file");
             return true;
         }
-        String* l = new String(curLine);
-        {
-            String& line = (*l);
-            if (addLineN) {
-                // line number and checksum
-                line = "N";
-                line += String(readLineNum);
-                line += " ";
-                line += curLine;
-                line.trim();
-                uint8_t checksum = 0, count = line.length();
-                const char* out = line.c_str();
-                while (count)
-                    checksum ^= out[--count];
-                line += '*';
-                line += String(checksum);
-            } else {
-                line = curLine;
-            }
-        }
-
         int j = readLineNum % JOB_BUFFER_SIZE;
-        JOB_LOGF("put [%s] at %d \n", l->c_str(), j);
-        String* string = buffer[j];
-        if (string != nullptr)
-            string->~String();
-
-        buffer[j]= l;
+        String line;
+        if (addLineN) {
+            // line number and checksum
+            line = "N";
+            line += String(readLineNum);
+            line += " ";
+            line += curLine;
+            line.trim();
+            uint8_t checksum = calculateChecksum(line.c_str(), line.length());
+            line += '*';
+            line += StringSumHelper(checksum);
+        } else {
+            line = curLine;
+        }
+        memcpy(buffer[j], line.c_str(), line.length()+1);
+        buffer[j][line.length()+1] = 0;
         ++readLineNum;
     }
     return true;
+}
+
+uint8_t JobFsm::calculateChecksum(const char* out, uint8_t count) const {
+    uint8_t checksum = 0;
+    while (count)
+        checksum ^= out[--count];
+    return checksum;
 }
 
 void JobFsm::setFile(const char* file) {
@@ -89,10 +86,6 @@ void JobFsm::setFile(const char* file) {
     filePos = 0;
     readLineNum = 0;
     currentLineNum = 0;
-    for (int i = 0; i < JOB_BUFFER_SIZE; ++i) {
-        if (buffer[i])
-            buffer[i]->~String();
-    }
 
     startTime = 0;
     endTime = 0;

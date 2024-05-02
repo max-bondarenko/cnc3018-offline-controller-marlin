@@ -12,7 +12,13 @@ void FileChooser::onShow() {
         LOGF("SD failed\n");
         return;
     }
+    files = new etl::vector<String, 50>();
     loadDirContents(SD.open("/"), 0);
+}
+
+void FileChooser::onHide() {
+    delete files;
+    files = nullptr;
 }
 
 bool FileChooser::isGCode(const String& s) {
@@ -37,7 +43,7 @@ void FileChooser::loadDirContents(File newDir, int startingIndex) {
     topLine = 0;
     selLine = 0;
     File file;
-    files.clear();
+    files->clear();
     cDir.rewindDirectory();
     int i = 0;
     while ((file = cDir.openNextFile())) {
@@ -49,9 +55,9 @@ void FileChooser::loadDirContents(File newDir, int startingIndex) {
 
             if (file.isDirectory()) {
                 name += "/";
-                files.push_back(name);
+                files->push_back(name);
             } else {
-                if (isGCode(name)) { files.push_back(name); }
+                if (isGCode(name)) { files->push_back(name); }
             }
             if (i == MAX_FILES)
                 break;
@@ -81,7 +87,7 @@ void FileChooser::drawContents() {
     }
     const char* t = cDir.name();
     u8g2.drawStr(2, y0, t);
-    const int visibleLines = min(VISIBLE_FILES, files.size() - topLine);
+    const int visibleLines = min(VISIBLE_FILES, files->size() - topLine);
     for (int i = 0; i < visibleLines; i++) {
         if (i + topLine == selLine) {
             u8g2.setDrawColor(1);
@@ -90,7 +96,7 @@ void FileChooser::drawContents() {
         } else
             u8g2.setDrawColor(1);
 
-        u8g2.drawStr(2, y, files[topLine + i].c_str());
+        u8g2.drawStr(2, y, files->at(topLine + i).c_str());
         y += h;
     }
 }
@@ -120,7 +126,7 @@ void FileChooser::onButton(int bt, Evt evt) {
             }
             break;
         case Display::BT_DOWN:
-            if (selLine < files.size() - 1) {
+            if (selLine < files->size() - 1) {
                 selLine++;
                 if (selLine >= topLine + VISIBLE_FILES) topLine += VISIBLE_FILES - 1;
                 doDirty();
@@ -142,7 +148,7 @@ void FileChooser::onButton(int bt, Evt evt) {
         }
         case Display::BT_R:
         case Display::BT_CENTER: {
-            String file = files[selLine];
+            String& file = files->at(selLine);
             LOGF("onButtonPressed(BT1): cDir='%s'  file='%s'\n", cDir.name(), file.c_str());
             bool isDir = file.charAt(file.length() - 1) == '/';
             if (isDir) {

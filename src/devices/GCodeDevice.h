@@ -87,6 +87,8 @@ public:
 
     virtual void reset() = 0;
 
+    void ackResend() { resendLine = -1; };
+
     virtual void requestStatusUpdate() = 0;
 
     virtual void step();

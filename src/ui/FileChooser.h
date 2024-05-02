@@ -16,6 +16,8 @@ public:
 
     void onShow() override;
 
+    void onHide() override;
+
     void setCallback(const CallbackFn& cb) {
         returnCallback = cb;
     }
@@ -34,7 +36,7 @@ private:
     size_t selLine;
     size_t topLine;
     File cDir;
-    etl::vector<String, MAX_FILES> files;
+    etl::ivector<String>* files;
     etl::vector<String, 5> trail;
 
     void loadDirContents(File newDir, int startingIndex);
