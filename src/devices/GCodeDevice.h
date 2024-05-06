@@ -13,6 +13,7 @@ extern WatchedSerial serialCNC;
 
 #include "util.h"
 #include "debug.h"
+#include "Buffer.h"
 
 
 // todo  1 switch to states from flags for protocol state
@@ -65,9 +66,12 @@ public:
     };
     const char* name = nullptr;
     Config config;
+
     // default
-    GCodeDevice() {
-    }
+    GCodeDevice() {}
+
+    typedef Buffer<JOB_BUFFER_SIZE * 100> DevBuffer;
+    DevBuffer buffer; //todo make protected
 
     virtual ~GCodeDevice() { clear_observers(); }
 

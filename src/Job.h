@@ -79,22 +79,8 @@ public:
     }
 
     etl::fsm_state_id_t on_event(const SendMessage& event) {
-        JobFsm& fsm = get_fsm_context();
-        int dif = fsm.readLineNum - fsm.currentLineNum;
-        int rightLimit = fsm.readLineNum % JOB_BUFFER_SIZE;
-        int i1 = (JOB_BUFFER_SIZE + rightLimit - dif) % JOB_BUFFER_SIZE;
-        for (int i = i1; i != rightLimit;) {
-            char* cmd = fsm.buffer[i];
-            if (!fsm.dev->scheduleCommand(cmd, strlen(cmd)))
-                break;
-            JOB_LOGF("scheduled [%s]\n", cmd);
-            fsm.currentLineNum++;
-            ++i;
-            i %= JOB_BUFFER_SIZE;
-        }
         return StateId::WAIT;
     }
-
 
     etl::fsm_state_id_t on_event(const PauseMessage& event) {
         get_fsm_context().endTime = millis() - get_fsm_context().startTime;
@@ -230,9 +216,9 @@ public:
                 } else {
                     fsm->receive(CompleteMessage{false});
                 }
-                if (fsm->readLineNum % 200 ){
-                    notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
-                }
+//                if (fsm->readLineNum % 200) {
+//                    notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
+//                }
                 break;
             case StateId::WAIT:
                 switch (fsm->dev->getLastStatus()) {
@@ -245,7 +231,7 @@ public:
                     case DeviceStatus::RESEND: {
                         int32_t line = fsm->dev->getResendLine();
                         if (line >= 0) { // TODO hack
-                            fsm->currentLineNum = line;
+                            fsm->resendLineNum = line;
                             fsm->dev->ackResend();
                         }
                         fsm->receive(ContinueMessage{});

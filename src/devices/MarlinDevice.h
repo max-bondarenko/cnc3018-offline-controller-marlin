@@ -27,6 +27,11 @@ struct Compat {
     bool emergency_parser: 1;
 };
 
+struct HoldS {
+    uint8_t len;
+    char str[99];
+};
+
 extern Job job;
 
 class MarlinDevice : public GCodeDevice {
@@ -96,7 +101,6 @@ protected:
     void tryParseResponse(char* cmd, size_t len) override;
 
 private:
-    etl::deque<String, 10> outQueue;
     Compat compatibility;
 
     float e = 0.0;

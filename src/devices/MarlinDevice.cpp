@@ -29,7 +29,7 @@ bool MarlinDevice::checkProbeResponse(const char* const input) {
 }
 
 MarlinDevice::MarlinDevice() : GCodeDevice() {
-    canTimeout = false;
+    canTimeout =  false; //todo switch it on after
     useLineNumber = true;
     config.spindle = etl::vector<u_int16_t, 10>{0, 1, 64, 255};
     compatibility.auto_temp = false;
@@ -49,25 +49,27 @@ void MarlinDevice::trySendCommand() {
     if (lastStatus >= DeviceStatus::WAIT) {
         return;
     }
-    while (ack < outQueue.max_size() && serialCNC.availableForWrite() && !outQueue.empty()) {
-        String& front = outQueue.front();
-        const char* cmd = front.c_str();
-        auto size = (size_t) front.length();
-        IO_LOGF("> [%s]\n", cmd);
-        serialCNC.write((const unsigned char*) cmd, size);
-        serialCNC.write('\n');
-        outQueue.pop_front();
-        ack++;
+    if (!buffer.empty()) {
+        for (auto i = buffer.readEnd<HoldS>(),
+                 end = buffer.end<HoldS>(); i != end && serialCNC.availableForWrite(); ++i) {
+            HoldS cmd = *i;
+            uint8_t len = cmd.len;
+            IO_LOGF("> [%s]\n", cmd.str);
+            serialCNC.write((const unsigned char*) cmd.str, len);
+            serialCNC.write('\n');
+            --buffer;
+        }
+        lastResponse = nullptr;
     }
-    lastResponse = nullptr;
 }
 
 bool MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
-    if (!outQueue.full()) {
-        outQueue.push_back(String(cmd));
-        return true;
-    }
-    return false;
+    HoldS a;
+    a.len = len;
+    memcpy(a.str, cmd, len);
+    a.str[len] = 0;
+
+    return buffer.push(a);
 }
 
 bool MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len) {
@@ -129,7 +131,7 @@ void MarlinDevice::requestStatusUpdate() {
 }
 
 void MarlinDevice::reset() {
-    outQueue.clear();
+    buffer.clear();
     lastStatus = DeviceStatus::OK;
     resendLine = -1;
     lastResponse = nullptr;
@@ -157,7 +159,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
             JOB_LOGF("d> %s", lastResponse);
             lastStatus = DeviceStatus::WAIT;
         } else {
-            outQueue.clear();
+            buffer.clear();
             lastStatus = DeviceStatus::DEV_ERROR;
         }
     } else if (startsWith(resp, ERROR_EXCLAMATION_str)) {
@@ -165,7 +167,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lr[2] = 0;
         lastResponse = resp + 3;
         lastStatus = DeviceStatus::DEV_ERROR;
-        outQueue.clear();
+        buffer.clear();
     } else if (startsWith(resp, START_str) &&
                len == ((sizeof(START_str)) / (sizeof(START_str[0]))) + 1) { // START_str.len + 1
         //restart everything on marlin hard reset
@@ -183,7 +185,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
             return;
         }
         lr = const_cast<char* >(OK_str);
-        ack--;
+        ack > 0 ? ack-- : 0;
         lastStatus = DeviceStatus::OK;
     } else if ((str = strstr(resp, BUSY_str)) != nullptr) {
         // "echo:busy: processing"
@@ -196,14 +198,14 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lr[4] = 0;
         lastResponse = resp + 5;// has space after ':'
         //echo:Cold extrudes are enabled (min temp 170C)
-        if (!outQueue.empty() && outQueue.front().indexOf(M302_COLD_EXTRUDER_STATUS) != -1) {
-            if (strstr(lastResponse, "disabled") != nullptr) {
-                char* string = strstr(lastResponse, "min temp ");
-                if (string != nullptr) {
-                    minExtrusionTemp = strtol(string + 9, nullptr, STRTOLL_BASE);
-                }
-            }
-        }
+//        if (!buffer.empty() && outQueue.front().indexOf(M302_COLD_EXTRUDER_STATUS) != -1) {
+//            if (strstr(lastResponse, "disabled") != nullptr) {
+//                char* string = strstr(lastResponse, "min temp ");
+//                if (string != nullptr) {
+//                    minExtrusionTemp = strtol(string + 9, nullptr, STRTOLL_BASE);
+//                }
+//            }
+//        }
         if (strstr(lastResponse, "cold extrusion prevented") != nullptr) {
             lastStatus = DeviceStatus::BUSY;
             return;
@@ -220,7 +222,7 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         LOG_EXTRA_INFO(lastResponse = resp + 7)
         lastResponse = resp + 7;
         resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
-        outQueue.clear();
+        buffer.clear();
         lastStatus = DeviceStatus::RESEND;
     } else if (startsWith(resp, DEBUG_str)) {
         lr = resp;

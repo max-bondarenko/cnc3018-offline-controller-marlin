@@ -5,7 +5,7 @@ import threading
 import tty
 from collections import deque
 
-N = 0
+N = -1
 x: float = 0.0
 y: float = 0.0
 z: float = 10.01
@@ -28,25 +28,23 @@ def line_number(str):
     if str.startswith("N"):
         global N
         N += 1
-        print("\t\t N++")
-        if N == 4:
-            resp.append("Error: Resend Last Line:123\nResend:3\nok\n")
-            stack.append(expect_line)
+        if N == 55:
+            resp.append("Error: Resend Last Line:123\nResend:50\nok\n")
+            # stack.append(expect_line)
             return
-        # if N == 5:
-        #     resp.append("Error: some text\r\n")
-        #     return
+        if N == 50:
+            resp.append("Error: Resend Last Line:123\nResend:49\nok\n")
+
+            return
         else:
             global x
-            global e
             global P
-            e += 10.4
-            T = random.randint(10,250)
-            P = random.randint(1,128)
+            T = random.randint(10, 250)
+            P = random.randint(1, 128)
 
             x += 1.03
             resp.append(
-                "ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} T:{4} /123 @:{5} B:103\n".format(x, y, z, e, T, P))
+                "ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} T:{4} /123 @:{5} B:103\n".format(x, y, z, N, T, P))
     else:
         resp.append("ok\r\n")
     stack.append(line_number)
@@ -168,12 +166,12 @@ def main():
                     print('')
                     while stack.__len__() > 0:
                         print("> " + a)
-                        pop = stack[stack.__len__() -1]
+                        pop = stack[stack.__len__() - 1]
                         pop(a)
                         if resp.__len__() > 0:
                             resp_pop = resp.pop()
                             if stack.__len__() > 1:
-                                stack.pop() # do not remove last state
+                                stack.pop()  # do not remove last state
                             print("<  " + resp_pop)
                             fw.writelines([resp_pop])
                         break

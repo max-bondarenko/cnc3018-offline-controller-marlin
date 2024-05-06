@@ -75,6 +75,12 @@ enum JobStatus {
     REFRESH_SIG
 };
 
+struct CmdInFile {
+    size_t position;
+    uint16_t length;
+    size_t line_num;
+};
+
 class JobFsm : public etl::fsm {
 
 public:
@@ -84,8 +90,8 @@ public:
         closeFile();
     }
 
-    static constexpr size_t MAX_LINE_LEN = 101;
-    static constexpr size_t MAX_READ_CHUNK = 4;
+    static constexpr size_t MAX_LINE_LEN = 100;
+    Buffer<100 * 2, CmdInFile> cmdBuffer;
 
     File gcodeFile;
     GCodeDevice* dev;
@@ -97,12 +103,8 @@ public:
     // add LineNumber and CRC to command
     bool addLineN = false;
     bool pause = false;
-    char buffer[JOB_BUFFER_SIZE][MAX_LINE_LEN];
-
     size_t readLineNum = 0;
-    size_t currentLineNum = 0;
-    size_t tailNum = 0;
-
+    size_t resendLineNum = 0xFF;
 
     bool readCommandsToBuffer();
 
@@ -113,6 +115,8 @@ public:
     uint32_t getPrintDuration() const;
 
     uint8_t calculateChecksum(const char* out, uint8_t count) const;
+
+    void getString(String& line,const char* curLine , size_t lineNumber);
 };
 
 #endif //CNC_3018_JOBFSM_H

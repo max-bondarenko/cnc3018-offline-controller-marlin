@@ -3,15 +3,39 @@
 #include "constants.h"
 
 bool JobFsm::readCommandsToBuffer() {
+    GCodeDevice& _dev = *dev;
+
     char curLine[MAX_LINE_LEN];
     if (filePos >= fileSize) {
         return false;
     }
-    for (size_t i = MAX_READ_CHUNK; i != 0; i--) {
-        size_t curLinePos = 0;
-        if (readLineNum - currentLineNum > MAX_READ_CHUNK - 1) {
-            break;
+
+    if (resendLineNum != 0xFF) {
+        auto tail = cmdBuffer.tail((uint8_t) (readLineNum - resendLineNum ));
+        auto end = cmdBuffer.end();
+
+        while (!_dev.buffer.full()) {
+            if (tail != end) {
+                const CmdInFile& cmd = *tail;
+                gcodeFile.seek(cmd.position);
+                gcodeFile.read(curLine, cmd.length);
+                String line;
+                getString(line, curLine, resendLineNum);
+                if (!_dev.scheduleCommand(line.c_str(), line.length())) {
+                    break;
+                }
+                resendLineNum++;
+                ++tail;
+            } else {
+                resendLineNum = 0xFF;
+                break;
+            }
         }
+
+    } else {
+        uint16_t curLinePos = 0;
+        size_t begin = filePos;
+
         //usually gcode has no long empty regions
         for (size_t gard = 10; gard > 0; --gard) { // loop gard
             bool got_comment = false;
@@ -49,26 +73,38 @@ bool JobFsm::readCommandsToBuffer() {
             JOB_LOGLN("end of file");
             return true;
         }
-        int j = readLineNum % JOB_BUFFER_SIZE;
-        String line;
-        if (addLineN) {
-            // line number and checksum
-            line = "N";
-            line += String(readLineNum);
-            line += " ";
-            line += curLine;
-            line.trim();
-            uint8_t checksum = calculateChecksum(line.c_str(), line.length());
-            line += '*';
-            line += StringSumHelper(checksum);
-        } else {
-            line = curLine;
+
+        char* end = curLine + curLinePos - 1;
+        while (isspace(*end) && end >= curLine) {
+            end--;
+            *end = 0;
         }
-        memcpy(buffer[j], line.c_str(), line.length()+1);
-        buffer[j][line.length()+1] = 0;
-        ++readLineNum;
+        String line;
+        getString(line, curLine, readLineNum);
+        _dev.scheduleCommand(line.c_str(), line.length());
+        cmdBuffer.push(CmdInFile{begin, curLinePos, readLineNum});
+        readLineNum++;
+        --cmdBuffer;
     }
+
+
     return true;
+}
+
+void JobFsm::getString(String& line, const char* curLine, size_t lineNumber) {
+    if (addLineN) {
+        // line number and checksum
+        line = "N";
+        line += String(lineNumber);
+        line += " ";
+        line += curLine;
+        line.trim();
+        uint8_t checksum = calculateChecksum(line.c_str(), line.length());
+        line += '*';
+        line += StringSumHelper(checksum);
+    } else {
+        line = curLine;
+    }
 }
 
 uint8_t JobFsm::calculateChecksum(const char* out, uint8_t count) const {
@@ -85,8 +121,7 @@ void JobFsm::setFile(const char* file) {
     }
     filePos = 0;
     readLineNum = 0;
-    currentLineNum = 0;
-
+    cmdBuffer.clear();
     startTime = 0;
     endTime = 0;
 }
