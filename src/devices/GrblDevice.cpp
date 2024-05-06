@@ -103,8 +103,8 @@ void GrblDevice::parseStatus(char* input) {
     //                                      v          v-- feed, rapids, and spindle speed. ignored
     //<Idle|MPos:9.800,0.000,0.000|FS:0,0|Bf:15,128|Ov:100,100,100>
     bool mpos = false;
-    char cpy[BUFFER_LEN];
-    strncpy(cpy, input, BUFFER_LEN);
+    char cpy[MAX_LINE_LEN * 2];
+    strncpy(cpy, input, MAX_LINE_LEN * 2);
     // status
     char* fromGrbl = strtok(cpy, "|");
     if (fromGrbl == nullptr)

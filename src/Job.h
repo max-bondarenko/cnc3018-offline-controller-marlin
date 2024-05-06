@@ -10,7 +10,7 @@
 
 // TODO list
 // TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
-// TODO  refactor buffers
+// TODO done refactor buffers
 // TODO fix Pause
 
 typedef etl::observer<JobStatusEvent> JobObserver;
@@ -38,6 +38,8 @@ public:
     etl::fsm_state_id_t on_event(const SetFileMessage& event) {
         get_fsm_context().closeFile();
         get_fsm_context().setFile(event.fileName);
+        get_fsm_context().cmdBuffer.clear();
+        get_fsm_context().dev->reset();
         get_fsm_context().dev->scheduleCommand(RESET_LINE_NUMBER, 8);
         return StateId::READY;
     }
@@ -216,12 +218,9 @@ public:
                 } else {
                     fsm->receive(CompleteMessage{false});
                 }
-//                if (fsm->readLineNum % 200) {
-//                    notify_observers(JobStatusEvent{JobStatus::REFRESH_SIG});
-//                }
                 break;
             case StateId::WAIT:
-                switch (fsm->dev->getLastStatus()) {
+                switch (fsm->dev->lastStatus) {
                     case DeviceStatus::OK:
                         fsm->receive(ContinueMessage{});
                         break;

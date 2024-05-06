@@ -6,6 +6,7 @@
 constexpr uint8_t VISIBLE_MENUS = 5;
 
 extern Job job;
+extern GCodeDevice* dev;
 
 uint16_t Display::buttStates;
 
@@ -120,13 +121,12 @@ void Display::draw() {
 
 #include "../assets/locked.XBM"
 #include "../assets/connected.XBM"
-#include "DRO.h"
 
 void Display::drawStatusBar() {
     constexpr int MAX_LEN = 22;
     constexpr int MAX_STATUS_LEN = 12;
-
     char str[MAX_LEN];
+    GCodeDevice& _dev = *dev;
 
     u8g2.setFont(u8g2_font_nokiafc22_tr);
     u8g2.setDrawColor(1);
@@ -134,7 +134,7 @@ void Display::drawStatusBar() {
     constexpr int fH = 8; // 8x8
     int x = 2, y = -1;
 
-    switch (devStatus) {
+    switch (_dev.lastStatus) {
         case DeviceStatus::NONE:
             break;
         case DeviceStatus::DISCONNECTED :
@@ -146,10 +146,10 @@ void Display::drawStatusBar() {
         default:
             u8g2.drawXBM(x, 0, connected_width, connected_height, (const uint8_t*) connected_bits);
     }
-    memcpy(str, devStatusString.c_str(), MAX_STATUS_LEN);
+    memcpy(str, _dev.lastStatusStr, MAX_STATUS_LEN);
     str[MAX_STATUS_LEN] = 0;
     u8g2.drawStr(10, y, str);
-    memcpy(str, devLastResponse.c_str(), MAX_LEN);
+    memcpy(str, _dev.lastResponse, MAX_LEN);
     str[MAX_LEN - 1] = 0;
     u8g2.drawStr(2, y + fH, str);
     //job status

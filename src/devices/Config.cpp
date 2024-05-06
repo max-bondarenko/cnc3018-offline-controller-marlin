@@ -49,7 +49,7 @@ void readConfig(GCodeDevice* dev) {
     if (SD.begin(PIN_CD)) {
         File file = SD.open(PRESETS_FILE);
         if (file.available()) {
-//ignore output
+            //ignore output
             ini_parse_stream([](char* str, int num, void* stream_) -> char* {
                 auto stream = *(File*) stream_; //always present
                 size_t i = stream.readBytesUntil('\n', str, num);

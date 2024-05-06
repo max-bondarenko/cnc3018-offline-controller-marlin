@@ -5,13 +5,13 @@
 
 
 // TODO done list
-// todo done  1 extruder state (extrusion allowed temp)
+// todo done 1 extruder state (extrusion allowed temp)
 // todo done 2 show temp & extruder on main DRO while running job
 class MarlinDRO : public DRO {
 public:
     constexpr static uint8_t MAX_TEMP = 250;
 
-    MarlinDRO(MarlinDevice& d) : DRO(d), dev(d) {
+    MarlinDRO(MarlinDevice& d) : DRO(), dev(d) {
         defaultAxisPrecision = 2;
     }
 
@@ -37,5 +37,5 @@ private:
 
     void inline drawTemp(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint8_t lineWidth) const;
 
-    void inline drawPower(uint16_t sx,uint16_t sy, uint8_t lineHeight, uint16_t val) const;
+    void inline drawPower(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint16_t val) const;
 };

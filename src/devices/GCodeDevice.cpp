@@ -1,8 +1,5 @@
-#include "SD.h"
 #include "constants.h"
-#include "util.h"
 #include "GCodeDevice.h"
-
 #include "WString.h"
 #include "math.h"
 
@@ -36,7 +33,7 @@ bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
 
 void GCodeDevice::step() {
     readLockedStatus();
-    if (lastStatus == DeviceStatus::ALARM) {
+    if (lastStatus >= DeviceStatus::ALARM) {
         cleanupQueue();
     } else if ((!xoffEnabled || !xoff)
                && lastStatus != DeviceStatus::LOCKED) {
@@ -45,7 +42,10 @@ void GCodeDevice::step() {
     // how locked and disconnected should work together ??
     receiveResponses();
     checkTimeout();
-    notify_observers(DeviceStatusEvent{lastStatus, lastStatusStr, lastResponse});
+    if (wantUpdate) {
+        wantUpdate = false;
+        notify_observers(DeviceRefreshEvent{});
+    }
 }
 
 void GCodeDevice::begin(SetupFN* const onBegin) {
@@ -96,10 +96,6 @@ bool GCodeDevice::isRxTimeoutEnabled() const {
 }
 
 void GCodeDevice::receiveResponses() {
-    constexpr size_t MAX_LINE = 200; // M115 is far longer than 100
-    static char resp[MAX_LINE + 1];
-    static size_t respLen;
-
     while (serialCNC.available()) {
         char ch = (char) serialCNC.read();
         switch (ch) {
@@ -117,13 +113,14 @@ void GCodeDevice::receiveResponses() {
                     break;
                 }
             default:
-                if (respLen < MAX_LINE) resp[respLen++] = ch;
+                if (responseLen < MAX_LINE_LEN)
+                    responseBuffer[responseLen++] = ch;
         }
         if (ch == '\n') {
-            resp[respLen] = 0;
-            IO_LOGLN(resp);
-            tryParseResponse(resp, respLen);
-            respLen = 0;
+            responseBuffer[responseLen] = 0;
+            IO_LOGLN(responseBuffer);
+            tryParseResponse(responseBuffer, responseLen);
+            responseLen = 0;
             extendRxTimeout();
         }
     }

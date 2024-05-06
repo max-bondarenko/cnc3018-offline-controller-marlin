@@ -44,21 +44,15 @@ struct DeviceStatus {
         DEV_ERROR,
     };
 };
-struct DeviceStatusEvent {
-    size_t status;
-    String statusStr;
-    String lastResponse;
+struct DeviceRefreshEvent {
 };
 
-using DeviceObserver = etl::observer<const DeviceStatusEvent&>;
+using DeviceObserver = etl::observer<const DeviceRefreshEvent&>;
 
 typedef std::function<void(WatchedSerial&)> SetupFN;
 
 class GCodeDevice : public etl::observable<DeviceObserver, 2> {
 public:
-    constexpr static uint8_t MAX_GCODE_LINE = 96;
-    constexpr static uint8_t BUFFER_LEN = 255;
-    constexpr static uint8_t SHORT_BUFFER_LEN = 100;
     struct Config {
         etl::vector<u_int16_t, 10> spindle{0, 1, 10, 100, 1000};
         etl::vector<u_int16_t, 10> feed{50, 100, 500, 1000, 2000};
@@ -66,11 +60,14 @@ public:
     };
     const char* name = nullptr;
     Config config;
+    const char* lastResponse = nullptr;
+    const char* lastStatusStr = nullptr;
+    size_t lastStatus = DeviceStatus::NONE;
 
     // default
     GCodeDevice() {}
 
-    typedef Buffer<JOB_BUFFER_SIZE * 100> DevBuffer;
+    typedef Buffer<JOB_BUFFER_SIZE * MAX_LINE_LEN> DevBuffer;
     DevBuffer buffer; //todo make protected
 
     virtual ~GCodeDevice() { clear_observers(); }
@@ -115,8 +112,6 @@ public:
 
     float getFeed() const { return feed; }
 
-    size_t getLastStatus() const { return lastStatus; }
-
     int32_t getResendLine() const { return resendLine; }
 
     const Config& getConfig() const { return config; }
@@ -127,15 +122,14 @@ protected:
         xoffEnabled = false,
         useLineNumber = false;
 
-    char curUnsentCmd[MAX_GCODE_LINE + 1], curUnsentPriorityCmd[MAX_GCODE_LINE + 1];
+    bool wantUpdate = false;
+    size_t responseLen = 0;
+    char responseBuffer[MAX_LINE_LEN * 2];
+    char curUnsentCmd[MAX_LINE_LEN + 1],
+        curUnsentPriorityCmd[MAX_LINE_LEN + 1];
 
     size_t curUnsentCmdLen = 0,
         curUnsentPriorityCmdLen = 0;
-
-    size_t lastStatus = DeviceStatus::NONE;
-
-    const char* lastResponse = nullptr;
-    const char* lastStatusStr = nullptr;
 
     float x = 0.0,
         y = 0.0,

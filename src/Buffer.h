@@ -43,7 +43,7 @@ public:
 
     };
 
-    explicit Buffer() : _writeIndex{0}, size{0}, tailIndex{0} {}
+    explicit Buffer() : _writeIndex{0}, size{0}, _tailIndex{0} {}
 
     template<typename G, size_t MAX_SIZE = SIZE / sizeof(G)>
     bool push(G value) {
@@ -54,7 +54,7 @@ public:
             ++_writeIndex;
             _writeIndex = _writeIndex % MS;
             size++;
-            tailIndex = tailIndex < MAX_SIZE ? ++tailIndex : tailIndex;
+            _tailIndex = _tailIndex < MAX_SIZE ? ++_tailIndex : _tailIndex;
             return true;
         }
         return false;
@@ -64,16 +64,19 @@ public:
         size = size <= 0 ? 0 : --size;
     }
 
-    bool full() const {
-        return size >= MAX_SIZE;
+    template<typename G = Storage_Type>
+    inline bool full() const {
+        return size >= (MAX_SIZE / sizeof(G));
     }
 
-    bool empty() const {
+    inline bool empty() const {
         return size == 0;
     }
 
     void clear() {
         size = 0;
+        _writeIndex = 0;
+        _tailIndex = 0;
     }
 
     template<typename Iter_Access_Type=Storage_Type>
@@ -94,12 +97,12 @@ public:
 
 private:
     inline int8_t tailSize() const {
-        return tailIndex % (MAX_SIZE + 1);
+        return _tailIndex % (MAX_SIZE + 1);
     }
 
     value_type buffer[SIZE];
 
-    size_t _writeIndex, size, tailIndex;
+    size_t _writeIndex, size, _tailIndex;
 };
 
 #endif //CNC_3018_BUFFER_H

@@ -29,7 +29,7 @@ bool MarlinDevice::checkProbeResponse(const char* const input) {
 }
 
 MarlinDevice::MarlinDevice() : GCodeDevice() {
-    canTimeout =  false; //todo switch it on after
+    canTimeout = false; //todo switch it on after
     useLineNumber = true;
     config.spindle = etl::vector<u_int16_t, 10>{0, 1, 64, 255};
     compatibility.auto_temp = false;
@@ -51,13 +51,14 @@ void MarlinDevice::trySendCommand() {
     }
     if (!buffer.empty()) {
         for (auto i = buffer.readEnd<HoldS>(),
-                 end = buffer.end<HoldS>(); i != end && serialCNC.availableForWrite(); ++i) {
-            HoldS cmd = *i;
+                 end = buffer.end<HoldS>(); ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite(); ++i) {
+            const HoldS& cmd = *i;
             uint8_t len = cmd.len;
             IO_LOGF("> [%s]\n", cmd.str);
             serialCNC.write((const unsigned char*) cmd.str, len);
             serialCNC.write('\n');
             --buffer;
+            ack++;
         }
         lastResponse = nullptr;
     }
@@ -128,13 +129,15 @@ void MarlinDevice::requestStatusUpdate() {
     if (compatibility.auto_temp == 0) {
         scheduleCommand(M105_GET_EXTRUDER_1_TEMP, 8);
     }
+    wantUpdate = true;
 }
 
 void MarlinDevice::reset() {
     buffer.clear();
+    ack = 0;
     lastStatus = DeviceStatus::OK;
-    resendLine = -1;
     lastResponse = nullptr;
+    resendLine = -1;
     // will not read compatibilities. reset should not change it
     begin(nullptr);
 }
@@ -152,8 +155,8 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lr = resp;
         lr[5] = 0;
         lastResponse = resp + 6;
-        char cpy[SHORT_BUFFER_LEN];
-        strncpy(cpy, lastResponse, SHORT_BUFFER_LEN);
+        char cpy[MAX_LINE_LEN];
+        strncpy(cpy, lastResponse, MAX_LINE_LEN);
         if (char* s = strstr(cpy, "Last Line:")) {
             // next is resend number
             JOB_LOGF("d> %s", lastResponse);
@@ -198,14 +201,12 @@ void MarlinDevice::tryParseResponse(char* resp, size_t len) {
         lr[4] = 0;
         lastResponse = resp + 5;// has space after ':'
         //echo:Cold extrudes are enabled (min temp 170C)
-//        if (!buffer.empty() && outQueue.front().indexOf(M302_COLD_EXTRUDER_STATUS) != -1) {
-//            if (strstr(lastResponse, "disabled") != nullptr) {
-//                char* string = strstr(lastResponse, "min temp ");
-//                if (string != nullptr) {
-//                    minExtrusionTemp = strtol(string + 9, nullptr, STRTOLL_BASE);
-//                }
-//            }
-//        }
+        if (strstr(lastResponse, "disabled") != nullptr) {
+            char* minTemp = strstr(lastResponse, "min temp ");
+            if (minTemp != nullptr) {
+                minExtrusionTemp = strtol(minTemp + 9, nullptr, STRTOLL_BASE);
+            }
+        }
         if (strstr(lastResponse, "cold extrusion prevented") != nullptr) {
             lastStatus = DeviceStatus::BUSY;
             return;
@@ -264,9 +265,9 @@ bool MarlinDevice::canJog() {
 /// \param input
 /// \param len
 void MarlinDevice::parseOk(const char* input, size_t len) {
-    char cpy[BUFFER_LEN];
-    strncpy(cpy, input, MIN(len, BUFFER_LEN));
-    cpy[MIN(len, BUFFER_LEN)] = 0;
+    char cpy[MAX_LINE_LEN * 2];
+    strncpy(cpy, input, MIN(len, MAX_LINE_LEN * 2));
+    cpy[MIN(len, MAX_LINE_LEN * 2)] = 0;
 
     bool nextTemp = false,
         nextBedTemp = false;

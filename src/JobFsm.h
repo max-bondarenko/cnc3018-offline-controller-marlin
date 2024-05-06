@@ -77,8 +77,8 @@ enum JobStatus {
 
 struct CmdInFile {
     size_t position;
-    uint16_t length;
-    size_t line_num;
+    // source command no longer 96, usually 40~50  add #: +6, add checksum: +4~5
+    uint8_t length;
 };
 
 class JobFsm : public etl::fsm {
@@ -90,9 +90,7 @@ public:
         closeFile();
     }
 
-    static constexpr size_t MAX_LINE_LEN = 100;
-    Buffer<100 * 2, CmdInFile> cmdBuffer;
-
+    Buffer<sizeof(CmdInFile) * 100, CmdInFile> cmdBuffer;
     File gcodeFile;
     GCodeDevice* dev;
     //file size + file pos used as % of done
@@ -104,7 +102,7 @@ public:
     bool addLineN = false;
     bool pause = false;
     size_t readLineNum = 0;
-    size_t resendLineNum = 0xFF;
+    size_t resendLineNum = 0xFFFF;
 
     bool readCommandsToBuffer();
 
@@ -114,9 +112,11 @@ public:
 
     uint32_t getPrintDuration() const;
 
-    uint8_t calculateChecksum(const char* out, uint8_t count) const;
 
-    void getString(String& line,const char* curLine , size_t lineNumber);
+private:
+    static inline uint8_t calculateChecksum(const char* out, uint8_t count);
+
+    static inline void buildCommand(String& line, const char* curLine, size_t lineNumber, bool addLineN);
 };
 
 #endif //CNC_3018_JOBFSM_H

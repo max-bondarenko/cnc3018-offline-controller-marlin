@@ -12,10 +12,12 @@
 #include "../assets/spindle.XBM"
 #include "Screen.h"
 
+extern GCodeDevice* dev;
+
 void DRO::step() {
     if (nextRefresh != 0 && millis() > nextRefresh) {
         nextRefresh = millis() + REFRESH_INTL + 9;
-        dev.requestStatusUpdate();
+        dev->requestStatusUpdate();
     }
 }
 
@@ -47,12 +49,12 @@ void DRO::drawContents() {
     u8g2.setDrawColor(1);
 
     constexpr char LEN = 20;
-    char str[LEN];
+    char buffer[LEN];
     int sx = 2;
     int sy = Display::STATUS_BAR_HEIGHT + 3, sx2 = 73;
     constexpr uint8_t lh = Display::LINE_HEIGHT;
 
-    if (dev.canJog()) {
+    if (dev->canJog()) {
         /// =============== draw frame =============
         if (cMode == Mode::AXES) {
             u8g2.drawFrame(sx - 2, sy - 3, sx2, lh * 3 + 6);
@@ -77,18 +79,18 @@ void DRO::drawContents() {
     u8g2.drawXBM(sx2, sy + lh + 3, feed_width, feed_height, (uint8_t*) feed_bits);
     u8g2.drawXBM(sx2, sy + lh * 2 + 3, dist_width, dist_height, (uint8_t*) dist_bits);
     sx2 += 10;
-    snprintf(str, LEN, "%ld", dev.getSpindleVal());
-    u8g2.drawStr(sx2, sy, str);
-    snprintf(str, LEN, "%u", dev.getConfig().feed.at(cFeed));
-    u8g2.drawStr(sx2, sy + lh, str);
-    float jd = dev.getConfig().dist.at(cDist);
-    snprintf(str, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
-    u8g2.drawStr(sx2, sy + lh * 2, str);
+    snprintf(buffer, LEN, "%ld", dev->getSpindleVal());
+    u8g2.drawStr(sx2, sy, buffer);
+    snprintf(buffer, LEN, "%u", dev->getConfig().feed.at(cFeed));
+    u8g2.drawStr(sx2, sy + lh, buffer);
+    float jd = dev->getConfig().dist.at(cDist);
+    snprintf(buffer, LEN, "%.*f", jd < 1.0 ? 1 : 0, jd);
+    u8g2.drawStr(sx2, sy + lh * 2, buffer);
 }
 
 void DRO::onButton(int bt, Display::ButtonEvent evt) {
     LOGF("onButton(%d,%d)\n", bt, (int) evt);
-    if (!dev.canJog()) return;
+    if (!dev->canJog()) return;
     if (bt == Display::BT_CENTER) {
         switch (evt) {
             case Evt::DOWN:
@@ -120,8 +122,8 @@ void DRO::onButton(int bt, Display::ButtonEvent evt) {
 void DRO::onButtonAxes(int bt, Evt evt) {
     if (evt == Evt::DOWN || evt == Evt::HOLD) {
         int axis = -1;
-        float d = dev.getConfig().dist.at(cDist);
-        uint16_t f = dev.getConfig().feed.at(cFeed);
+        float d = dev->getConfig().dist.at(cDist);
+        uint16_t f = dev->getConfig().feed.at(cFeed);
         switch (bt) {
             case Display::BT_L:
                 axis = 0;
@@ -148,7 +150,7 @@ void DRO::onButtonAxes(int bt, Evt evt) {
                 break;
         }
         if (axis != -1) {
-            dev.jog(axis, d, f);
+            dev->jog(axis, d, f);
             doDirty();
         }
     }
@@ -158,9 +160,9 @@ void DRO::onButtonShift(int bt, Evt evt) {
     if (!(evt == Evt::DOWN || evt == Evt::HOLD))
         return;
 
-    size_t n_spindle_val = dev.getConfig().spindle.size() - 1;
-    size_t n_dist_val = dev.getConfig().dist.size() - 1;
-    size_t n_feed_val = dev.getConfig().feed.size() - 1;
+    size_t n_spindle_val = dev->getConfig().spindle.size() - 1;
+    size_t n_dist_val = dev->getConfig().dist.size() - 1;
+    size_t n_feed_val = dev->getConfig().feed.size() - 1;
 
     switch (bt) {
         case Display::BT_R:
@@ -183,13 +185,13 @@ void DRO::onButtonShift(int bt, Evt evt) {
                 if (evt == Evt::HOLD) cSpindleVal = 0;
                 else if (cSpindleVal > 0) cSpindleVal--;
             }
-            uint16_t speed = dev.getConfig().spindle.at(cSpindleVal);
+            uint16_t speed = dev->getConfig().spindle.at(cSpindleVal);
             if (speed != 0) {
                 char t[15];
                 int l = snprintf(t, 15, "M3 S%d", speed);
-                dev.scheduleCommand(t, l);
+                dev->scheduleCommand(t, l);
             } else {
-                dev.scheduleCommand("M5", 2);
+                dev->scheduleCommand("M5", 2);
             }
             break;
         }
@@ -212,9 +214,9 @@ void DRO::onButtonShift(int bt, Evt evt) {
 }
 
 void DRO::drawAxisCoords(int sx, int sy, uint8_t lineHeight) const {
-    drawAxis(AXIS[0], dev.getX(), sx, sy);
-    drawAxis(AXIS[1], dev.getY(), sx, sy + lineHeight);
-    drawAxis(AXIS[2], dev.getZ(), sx, sy + lineHeight * 2);
+    drawAxis(AXIS[0], dev->getX(), sx, sy);
+    drawAxis(AXIS[1], dev->getY(), sx, sy + lineHeight);
+    drawAxis(AXIS[2], dev->getZ(), sx, sy + lineHeight * 2);
 }
 
 void DRO::drawAxis(char axis, float value, int x, int y) const {

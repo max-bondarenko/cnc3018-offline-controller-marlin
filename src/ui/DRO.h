@@ -13,7 +13,7 @@ extern Job job;
 class DRO : public HasMenu, public Screen {
 public:
 
-    explicit DRO(GCodeDevice& d) : dev(d), cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {
+    explicit DRO() : cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {
         Screen::hasMenu = true;
     }
 
@@ -34,7 +34,6 @@ protected:
         AXES, SPINDLE, TEMP, N_VALS
     };
 
-    GCodeDevice& dev;
     Mode cMode;
 
     uint32_t nextRefresh;

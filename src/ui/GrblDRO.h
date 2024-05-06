@@ -8,7 +8,7 @@
 
 class GrblDRO : public DRO {
 public:
-    GrblDRO(GrblDevice& d) : DRO(d), dev(d), useWCS(false) {
+    GrblDRO(GrblDevice& d) : DRO(), dev(d), useWCS(false) {
         defaultAxisPrecision = 3;
     }
 

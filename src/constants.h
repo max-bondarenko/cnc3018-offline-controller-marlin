@@ -56,9 +56,11 @@ constexpr uint32_t buttPins[N_BUTT] = {
 
 constexpr size_t PROBE_INTERVAL = 303;
 constexpr size_t REFRESH_INTL = 400;
+constexpr size_t BUTTON_INTL = 19;
 constexpr size_t KEEPALIVE_INTERVAL = 5000;    // Marlin defaults to 2 seconds, get a little of margin
-constexpr uint8_t JOB_BUFFER_SIZE = 20;
-constexpr uint8_t MAX_READ_CHUNK = 10;
+constexpr uint8_t JOB_BUFFER_SIZE = 10;
+constexpr uint8_t MAX_LINE_LEN = 100;
+
 
 #define PRESETS_FILE "presets.ini"
 

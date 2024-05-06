@@ -102,7 +102,6 @@ protected:
 
 private:
     Compat compatibility;
-
     float e = 0.0;
     float hotendTemp = 0.0,
         bedTemp = 0.0;

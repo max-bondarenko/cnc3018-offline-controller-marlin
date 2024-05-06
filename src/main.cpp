@@ -38,7 +38,7 @@ DRO* dro;
 DeviceDetector* detector;
 DetectorScreen* detectorScreen;
 
-void createDevice(const char* const devName) {
+DeviceCallback createDevice = [](const char* const devName) {
     if (devName == DEVICE_NAMES[DeviceName::GRBL]) {
         auto device = new GrblDevice();
         dro = new GrblDRO(*device);
@@ -60,7 +60,7 @@ void createDevice(const char* const devName) {
     detectorScreen = nullptr;
     detector = nullptr;
     LOGLN("Created");
-}
+};
 
 void setup() {
     SerialUSB.begin(115200);
@@ -71,7 +71,7 @@ void setup() {
     _u8g2.setDrawColor(1);
 
     display.begin();
-    detector = new DeviceDetector(serialCNC, (DeviceDetector::DeviceCallback*) createDevice);
+    detector = new DeviceDetector(serialCNC, createDevice);
     detectorScreen = new DetectorScreen(detector);
     display.setScreen(detectorScreen);
     fileChooser.setCallback([](bool res, const char* path) {
@@ -97,10 +97,9 @@ void loop() {
             bitWrite(display.buttStates, i, (digitalRead(buttPins[i]) == 0 ? 1 : 0));
         }
         display.processInput();
-        nextRead = millis() + 19;
+        nextRead = millis() + BUTTON_INTL;
     }
     //END poll buttons
-
     display.step();
     if (dev != nullptr) {
         job.step();

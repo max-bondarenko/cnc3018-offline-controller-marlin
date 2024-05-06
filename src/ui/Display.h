@@ -48,10 +48,7 @@ public:
 
     void doDirty() { dirty = true; }
 
-    void notification(const DeviceStatusEvent& e) override {
-        devStatus = e.status;
-        devStatusString = e.statusStr;
-        devLastResponse = e.lastResponse;
+    void notification(const DeviceRefreshEvent& e) override {
         doDirty();
     }
 
@@ -78,9 +75,6 @@ private:
     uint8_t selMenuItem = 0;
     bool menuShown;
     bool menuShownWhenDown;
-    String devStatusString;
-    String devLastResponse;
-    size_t devStatus;
 
     decltype(buttStates) prevStates;
 

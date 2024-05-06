@@ -12,14 +12,14 @@ constexpr uint8_t N_ATTEMPTS = 3;
 constexpr static uint32_t serialBauds[] = {57600, 115200, 9600, 250000};
 constexpr static uint32_t N_SERIAL_BAUDS = sizeof(serialBauds) / sizeof(serialBauds[0]);
 
+typedef std::function<void(const char* const)> DeviceCallback;
+
 class DeviceDetector {
 public:
-    typedef void* (DeviceCallback)(const char* const);
-
     static constexpr size_t MAX_LINE = 200; // M115 is far longer than 100
 private:
     WatchedSerial& printerSerial;
-    DeviceCallback* callback;
+    DeviceCallback& callback;
     uint32_t nextProbeTime;
     uint8_t cSpeed;
     uint8_t cDev;
@@ -31,7 +31,7 @@ private:
     void collectResponse();
 
 public:
-    DeviceDetector(WatchedSerial& _serial, DeviceCallback _callback) :
+    DeviceDetector(WatchedSerial& _serial, DeviceCallback& _callback) :
         printerSerial{_serial},
         callback{_callback},
         nextProbeTime{0},
