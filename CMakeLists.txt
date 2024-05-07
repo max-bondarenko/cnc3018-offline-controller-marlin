@@ -240,7 +240,7 @@ if (DEBUG_LIST)
     target_include_directories(for_debug PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH} ${u8g2_path}/src)
     target_compile_options(for_debug PRIVATE ${DEBUG_OPT_FLAG})
     target_compile_definitions(for_debug PRIVATE LOG_IO)
-    target_link_libraries(for_debug PUBLIC U8g2)
+    target_link_libraries(for_debug PUBLIC ini U8g2)
 endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")

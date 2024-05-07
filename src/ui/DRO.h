@@ -23,7 +23,7 @@ public:
 
     void step() override;
 
-    void enableRefresh(bool r = true) { nextRefresh = r ? millis() : 0; }
+    void enableRefresh(bool enable = true) { nextRefresh = (true == enable) ? millis() : 0; }
 
     bool isRefreshEnabled() const { return nextRefresh != 0; }
 
@@ -39,12 +39,12 @@ protected:
     uint32_t nextRefresh;
 
     uint32_t cDist,
-            cFeed,
-            cSpindleVal = 0;
+        cFeed,
+        cSpindleVal = 0;
 
     bool buttonWasPressedWithShift;
 
-    uint8_t defaultAxisPrecision ;
+    uint8_t defaultAxisPrecision;
 
     void drawAxis(char axis, float value, int x, int y) const;
 

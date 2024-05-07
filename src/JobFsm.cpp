@@ -15,6 +15,7 @@ bool JobFsm::readCommandsToBuffer() {
                 gcodeFile.seek(cmd.position);
                 gcodeFile.read(curLine, cmd.length);
                 curLine[cmd.length] = 0;
+                JOB_LOGF(">replace #%d_[%s] pos:%d l:%d\n", resendLineNum, curLine, cmd.position, cmd.length);
                 String line;
                 buildCommand(line, curLine, resendLineNum, addLineN);
                 _dev.scheduleCommand(line.c_str(), line.length());
@@ -22,7 +23,7 @@ bool JobFsm::readCommandsToBuffer() {
                 ++tail;
             } else {
                 resendLineNum = 0xFFFF;
-                gcodeFile.seek(filePos - 1);
+                gcodeFile.seek(filePos);
                 break;
             }
         }
@@ -37,7 +38,7 @@ bool JobFsm::readCommandsToBuffer() {
                 char readChar = gcodeFile.read();
                 filePos++;
                 end++;
-                if (readChar == '\n') {
+                if (readChar == '\n' || readChar == '\r') {
                     break;
                 }
                 if (comment)
@@ -70,7 +71,8 @@ bool JobFsm::readCommandsToBuffer() {
                 curLinePos--;
                 _end--;
             }
-            JOB_LOGF(">place #%d_[%s] at:%d l:%d, fpos:%d\n", readLineNum, curLine, begin, curLinePos, filePos);
+            JOB_LOGF(">place #%d_[%s] at:%d l:%d, fpos:%d real:%ld\n", readLineNum, curLine, begin, curLinePos, filePos,
+                     gcodeFile.position());
             String line;
             buildCommand(line, curLine, readLineNum, addLineN);
             cmdBuffer.push(CmdInFile{begin, (uint8_t) curLinePos});

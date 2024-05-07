@@ -3,10 +3,6 @@
 #include "JobFsm.h"
 #include "gcode/gcode.h"
 #include "debug.h"
-#include "constants.h"
-#include "devices/MarlinDevice.h"
-#include "WString.h"
-
 
 // TODO list
 // TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
@@ -32,6 +28,8 @@ class FinishState : public etl::fsm_state<JobFsm, FinishState, StateId::FINISH, 
 public:
     etl::fsm_state_id_t on_enter_state() {
         get_fsm_context().endTime = millis();
+        get_fsm_context().dev->reset();
+//        dro->enableRefresh(true);
         return STATE_ID;
     }
 
@@ -52,6 +50,8 @@ class ErrorState : public etl::fsm_state<JobFsm, ErrorState, StateId::ERROR, Set
 public:
     etl::fsm_state_id_t on_enter_state() {
         get_fsm_context().endTime = millis();
+        get_fsm_context().dev->reset();
+//        dro->enableRefresh(true);
         return STATE_ID;
     }
 
@@ -88,7 +88,6 @@ public:
     }
 
     etl::fsm_state_id_t on_event(const CompleteMessage& event) {
-        get_fsm_context().dev->reset();
         return event.byError ? StateId::ERROR : StateId::FINISH;
     }
 
@@ -100,7 +99,13 @@ public:
 
 class PauseState : public etl::fsm_state<JobFsm, PauseState, StateId::PAUSED, ResumeMessage, CompleteMessage> {
 public:
+    etl::fsm_state_id_t on_enter_state() {
+//        dro->enableRefresh(true);
+        return STATE_ID;
+    }
+
     etl::fsm_state_id_t on_event(const ResumeMessage& event) {
+//        dro->enableRefresh(false);
         return StateId::READY;
     }
 
@@ -173,6 +178,7 @@ public:
 
     void start() {
         fsm->receive(StartMessage{});
+//        dro->enableRefresh(false);
     }
 
     void stop() {

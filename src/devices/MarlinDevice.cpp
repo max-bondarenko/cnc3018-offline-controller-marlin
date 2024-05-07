@@ -153,9 +153,7 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
     if (resp.starts_with(ERR_str)) {
         lastStatusStr = ERR_str;
         lastResponse = _resp + 6;
-        char cpy[MAX_LINE_LEN];
-        strncpy(cpy, lastResponse, MAX_LINE_LEN);
-        if (char* s = strstr(cpy, "Last Line:")) {
+        if (resp.find("Last Line:", 6) != etl::string_view::npos) {
             // next is resend number
             JOB_LOGF("d> %s", lastResponse);
             lastStatus = DeviceStatus::WAIT;
@@ -190,7 +188,7 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
     } else if (resp.find(BUSY_str) != etl::string_view::npos) {
         // "echo:busy: processing"
         lastStatusStr = BUSY_str;
-        lastResponse = str + 6;
+        lastResponse = _resp + 6;
         lastStatus = DeviceStatus::BUSY;
     } else if (resp.starts_with(ECHO_str)) {
         // echo: busy must be before this
@@ -214,8 +212,7 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
         //ok
         lastStatusStr = RESEND_str;
         // MAY have "Resend:Error
-        LOG_EXTRA_INFO(lastResponse = resp + 7)
-        resendLine = strtol(lastResponse, nullptr, STRTOLL_BASE);
+        resendLine = strtol(_resp + 7, nullptr, STRTOLL_BASE);
         buffer.clear();
         lastStatus = DeviceStatus::RESEND;
     } else if (resp.starts_with(DEBUG_str)) {

@@ -1,4 +1,5 @@
 import random
+import re
 import sys
 import termios
 import threading
@@ -11,6 +12,8 @@ y: float = 0.0
 z: float = 10.01
 e: float = 0.01
 P: int = 1
+
+pass50 = -1
 
 stack = deque()
 resp = deque()
@@ -25,26 +28,27 @@ def expect_line(str):
 
 
 def line_number(str):
+    global pass50
+    global N
     if str.startswith("N"):
-        global N
+        n = -1
+        split = re.split(r"[GM]", str[1:])
+        if split.__len__() > 1:
+            n = int(split[0])
         N += 1
-        if N == 55:
-            resp.append("Error: Resend Last Line:123\nResend:50\nok\n")
+        if pass50 != n and n % 15 == 1:
+            pass50 = n
+            resp.append("Error: Resend Last Line:{0}\nResend:{0}\nok\n".format(n - 1, n))
             # stack.append(expect_line)
-            return
-        if N == 50:
-            resp.append("Error: Resend Last Line:123\nResend:49\nok\n")
-
             return
         else:
             global x
             global P
             T = random.randint(10, 250)
             P = random.randint(1, 128)
-
-            x += 1.03
+            x += 0.03
             resp.append(
-                "ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} T:{4} /123 @:{5} B:103\n".format(x, y, z, N, T, P))
+                "ok C: X:{0:2.2f} Y:{1:2.2f} Z:{2:2.2f} E:{3:2.2f} T:{4} /123 @:{5} B:103\n".format(n, y, z, N, T, P))
     else:
         resp.append("ok\r\n")
     stack.append(line_number)
@@ -75,7 +79,7 @@ def marlin_repeater(str):
         resp.append("ok\r\n")
 
         global N
-        N = 0
+        N = -1
         stack.append(line_number)
     elif str.startswith("M302"):
         resp.append("echo: min temp 150C\n")
@@ -131,9 +135,17 @@ def main():
             attr = termios.tcgetattr(fd)
 
             termios.tcdrain(fd)
-            print('o_flag:{:b}'.format(attr[tty.OFLAG]))
-            attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.ISTRIP
+            print('>>before')
+            print('i:{0:b}\no:{1:b}\nc:{2:b}\nl:{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG],
+                                                              attr[tty.LFLAG]))
 
+            # attr[tty.IFLAG] = int('1010111000000', 2)
+            # attr[tty.OFLAG] = int('110101', 2)
+            # attr[tty.CFLAG] = int('110010111101', 2)
+            # attr[tty.LFLAG] = int('1000101000111011', 2)
+
+            attr[tty.IFLAG] = attr[tty.IFLAG] & ~termios.ISTRIP
+            #
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IXOFF
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.IXON
             attr[tty.IFLAG] = attr[tty.IFLAG] | termios.CSTOPB
@@ -148,9 +160,9 @@ def main():
             attr[tty.ISPEED] = termios.B115200
             attr[tty.OSPEED] = termios.B115200
             termios.tcsetattr(fd, termios.TCSADRAIN, attr)
-            print('>>o_flag:{:b}'.format(attr[tty.OFLAG]))
-            print(
-                '{0:b}\n{1:b}\n{2:b}\n{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG], attr[tty.LFLAG]))
+            print('>>after}')
+            print('i:{0:b}\no:{1:b}\nc:{2:b}\nl:{3:b}'.format(attr[tty.IFLAG], attr[tty.OFLAG], attr[tty.CFLAG],
+                                                              attr[tty.LFLAG]))
             a = ""
 
             fw.writelines(["ok\n"])
