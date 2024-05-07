@@ -3,6 +3,10 @@
 #ifndef GCODE__
 #define GCODE__
 
+#define GRBL_INFO                        "$I"
+#define GRBL_RESET                       "\x18"
+#define GRBL_STATUS                      "?"
+
 #define G28_START_HOMING                 "G28"
 #define G53_USE_MACHINE_COORD            "G53"
 #define G54_USE_COORD_SYSTEM_1           "G54"

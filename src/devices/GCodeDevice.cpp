@@ -2,32 +2,28 @@
 #include "GCodeDevice.h"
 #include "WString.h"
 
-bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
+void GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
     if (lastStatus >= DeviceStatus::ALARM)
-        return false;
+        return;
     if (len == 0)
         len = strlen(cmd);
     if (len == 0)
-        return false;
+        return;
     if (curUnsentCmdLen != 0)
-        return false;
-    DEV_LOGF("< '%s'\n", cmd);
+        return;
     memcpy(curUnsentCmd, cmd, len);
     curUnsentCmdLen = len;
-    return true;
 }
 
-bool GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
+void GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
     if (len == 0)
         len = strlen(cmd);
     if (len == 0)
-        return false;
+        return;
     if (curUnsentPriorityCmdLen != 0)
-        return false;
-    DEV_LOGF("<p '%s'\n", cmd);
+        return;
     memcpy(curUnsentPriorityCmd, cmd, len);
     curUnsentPriorityCmdLen = len;
-    return true;
 }
 
 void GCodeDevice::step() {

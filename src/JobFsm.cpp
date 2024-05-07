@@ -1,7 +1,6 @@
 #include "JobFsm.h"
-#include "etl/string_utilities.h"
 #include "constants.h"
-#include "MarlinDevice.h"
+#include "WString.h"
 
 bool JobFsm::readCommandsToBuffer() {
     GCodeDevice& _dev = *dev;
@@ -10,7 +9,7 @@ bool JobFsm::readCommandsToBuffer() {
         auto tail = cmdBuffer.tail((uint8_t) (readLineNum - resendLineNum));
         auto end = cmdBuffer.end();
 
-        while (!_dev.buffer.full()) {
+        while (dev->canSchedule()) {
             if (tail != end) {
                 const CmdInFile& cmd = *tail;
                 gcodeFile.seek(cmd.position);
@@ -18,9 +17,7 @@ bool JobFsm::readCommandsToBuffer() {
                 curLine[cmd.length] = 0;
                 String line;
                 buildCommand(line, curLine, resendLineNum, addLineN);
-                if (!_dev.scheduleCommand(line.c_str(), line.length())) {
-                    break;
-                }
+                _dev.scheduleCommand(line.c_str(), line.length());
                 resendLineNum++;
                 ++tail;
             } else {
@@ -30,15 +27,10 @@ bool JobFsm::readCommandsToBuffer() {
             }
         }
     } else {
-        if (dev->buffer.full<Command>()) {
-            return true; // skip read
-        }
-        uint16_t curLinePos;
-        size_t begin;
-        size_t end;
-        while (true) { //till success or end of file.
-            curLinePos = 0;
-            end = 0;
+        while (dev->canSchedule()) {
+            uint16_t curLinePos = 0;
+            size_t begin;
+            size_t end = 0;
             bool comment = false;
             int av;
             while ((av = gcodeFile.available()) > 0) {
@@ -61,30 +53,31 @@ bool JobFsm::readCommandsToBuffer() {
             }
             curLine[curLinePos] = 0;
             begin = filePos - end;
-            bool empty = true;
-            for (size_t j = 0; j < curLinePos; j++) {
-                if (!isspace(curLine[j])) {
-                    empty = false;
+            {
+                bool empty = true;
+                for (size_t j = 0; j < curLinePos; j++) {
+                    if (!isspace(curLine[j])) {
+                        empty = false;
+                    }
+                }
+                if (curLinePos == 0 || empty) {
+                    continue;
                 }
             }
-            if (curLinePos == 0 || empty) {
-                continue;
+            char* _end = curLine + curLinePos - 1;
+            while (isspace(*_end) && _end >= curLine) {
+                *_end = 0;
+                curLinePos--;
+                _end--;
             }
-            break;
+            JOB_LOGF(">place #%d_[%s] at:%d l:%d, fpos:%d\n", readLineNum, curLine, begin, curLinePos, filePos);
+            String line;
+            buildCommand(line, curLine, readLineNum, addLineN);
+            cmdBuffer.push(CmdInFile{begin, (uint8_t) curLinePos});
+            readLineNum++;
+            _dev.scheduleCommand(line.c_str(), line.length());
+            --cmdBuffer;
         }
-        char* _end = curLine + curLinePos - 1;
-        while (isspace(*_end) && _end >= curLine) {
-            *_end = 0;
-            curLinePos--;
-            _end--;
-        }
-        JOB_LOGF(">place #%d_[%s] at:%d l:%d, fpos:%d\n", readLineNum, curLine, begin, curLinePos, filePos);
-        String line;
-        buildCommand(line, curLine, readLineNum, addLineN);
-        cmdBuffer.push(CmdInFile{begin, (uint8_t) curLinePos});
-        readLineNum++;
-        _dev.scheduleCommand(line.c_str(), line.length());
-        --cmdBuffer;
     }
     return true;
 }

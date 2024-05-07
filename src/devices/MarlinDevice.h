@@ -3,8 +3,7 @@
 #include "Job.h"
 #include "GCodeDevice.h"
 #include "gcode/gcode.h"
-#include "etl/deque.h"
-#include "WString.h"
+#include "etl/string_view.h"
 
 // TODO list
 // TODO done 1 marlin features check
@@ -21,21 +20,18 @@ static const char* const ECHO_str = "echo";
 static const char* const RESEND_str = "Resend";
 static const char* const DEBUG_str = "DEBUG";
 
-struct Compatibility {
-    bool auto_temp: 1;
-    bool auto_position: 1;
-    bool emergency_parser: 1;
-};
-
-struct Command {
-    uint8_t len;
-    char str[99];
-};
-
 extern Job job;
 
 class MarlinDevice : public GCodeDevice {
 public:
+    struct Compatibility {
+        bool auto_temp: 1;
+        bool auto_position: 1;
+        bool emergency_parser: 1;
+
+        explicit Compatibility() : auto_temp{false}, auto_position{false}, emergency_parser{false} {};
+    };
+
     const etl::vector<u_int16_t, 5> SPINDLE_VALS{0, 1, 64, 128, 255};
 
     static void sendProbe(Stream& serial);
@@ -47,7 +43,7 @@ public:
 
     virtual ~MarlinDevice() {}
 
-    bool jog(uint8_t axis, float dist, uint16_t feed) override;
+    void jog(uint8_t axis, float dist, uint16_t feed) override;
 
     bool canJog() override;
 
@@ -57,15 +53,17 @@ public:
 
     void requestStatusUpdate() override;
 
-    bool schedulePriorityCommand(const char* cmd, size_t len) override;
+    void schedulePriorityCommand(const char* cmd, size_t len) override;
 
-    bool scheduleCommand(const char* cmd, size_t len) override;
+    bool canSchedule() const override;
+
+    void scheduleCommand(const char* cmd, size_t len) override;
 
     void toggleRelative();
 
-    bool tempChange(uint8_t temp);
+    void tempChange(uint8_t temp);
 
-    bool bedTempChange(uint8_t temp);
+    void bedTempChange(uint8_t temp);
 
     bool isRelative() const { return relative; }
 
@@ -103,6 +101,10 @@ protected:
     void tryParseResponse(char* cmd, size_t len) override;
 
 private:
+    struct Command {
+        uint8_t len;
+        uint8_t str[99];
+    };
     Compatibility compatibility;
     float e = 0.0;
     float hotendTemp = 0.0,

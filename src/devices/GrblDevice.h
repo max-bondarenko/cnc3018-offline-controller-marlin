@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GCodeDevice.h"
-#include <etl/vector.h>
 
 extern WatchedSerial serialCNC;
 
@@ -19,13 +18,13 @@ public:
 
     ~GrblDevice() override = default;
 
-    bool jog(uint8_t axis, float dist, uint16_t feed) override;
+    void jog(uint8_t axis, float dist, uint16_t feed) override;
 
     bool canJog() override;
 
     void begin() override {
         GCodeDevice::begin();
-        schedulePriorityCommand("$I", 2);
+        schedulePriorityCommand(GRBL_INFO, strlen(GRBL_INFO));
         requestStatusUpdate();
     }
 
@@ -33,26 +32,22 @@ public:
         lastStatus = DeviceStatus::OK;
         GCodeDevice::cleanupQueue();
         // ^x, reset
-        schedulePriorityCommand("\x18", 1);
+        schedulePriorityCommand(GRBL_RESET, 1);
     }
 
     void requestStatusUpdate() override {
         if (lastStatus == DeviceStatus::ALARM)
             return; // grbl does not respond in panic anyway
-        schedulePriorityCommand("?", 1);
+        schedulePriorityCommand(GRBL_STATUS, 1);
     }
 
-    bool schedulePriorityCommand(const char* cmd, size_t len) override {
-        if (lastStatus == DeviceStatus::LOCKED)
-            return false;
-        if (len == 0) {
-            len = strlen(cmd);
-        }
-        if (isCmdRealtime(cmd, len)) {
-            serialCNC.write((const uint8_t*) cmd, len);
-            return true;
-        } else {
-            return GCodeDevice::schedulePriorityCommand(cmd, len);
+    void schedulePriorityCommand(const char* cmd, size_t _len) override {
+        if (lastStatus != DeviceStatus::LOCKED) {
+            size_t len = _len == 0 ? strlen(cmd) : _len;
+            if (isCmdRealtime(cmd, len))
+                serialCNC.write((const uint8_t*) cmd, len);
+            else
+                schedulePriorityCommand(cmd, len);
         }
     }
 

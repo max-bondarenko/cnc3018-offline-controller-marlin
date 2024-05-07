@@ -46,18 +46,16 @@ public:
     explicit Buffer() : _writeIndex{0}, size{0}, _tailIndex{0} {}
 
     template<typename G, size_t MAX_SIZE = SIZE / sizeof(G)>
-    bool push(G value) {
-        const size_t MS = MAX_SIZE;
+    void push(const G& value) {
+        assert_param(size < MAX_SIZE);
         if (size < MAX_SIZE) {
             value_type* p = ((value_type*) buffer) + _writeIndex * sizeof(G);
             memcpy(p, &value, sizeof(G));
             ++_writeIndex;
-            _writeIndex = _writeIndex % MS;
+            _writeIndex = _writeIndex % MAX_SIZE;
             size++;
             _tailIndex = _tailIndex < MAX_SIZE ? ++_tailIndex : _tailIndex;
-            return true;
         }
-        return false;
     }
 
     void operator--() {

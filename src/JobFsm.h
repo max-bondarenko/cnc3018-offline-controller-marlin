@@ -7,10 +7,7 @@
 #include "etl/message.h"
 #include "constants.h"
 
-#include "etl/string.h"
-#include "etl/vector.h"
-
-const etl::message_router_id_t JOB_BUS_NUMBER = 1;
+const etl::message_router_id_t JOB_FSM_NUMBER = 1;
 
 struct StateId {
     enum {
@@ -82,7 +79,7 @@ struct CmdInFile {
 class JobFsm : public etl::fsm {
 
 public:
-    JobFsm() : etl::fsm(JOB_BUS_NUMBER) {}
+    JobFsm() : etl::fsm(JOB_FSM_NUMBER) {}
 
     ~JobFsm() {
         closeFile();
@@ -91,7 +88,7 @@ public:
     Buffer<sizeof(CmdInFile) * 100, CmdInFile> cmdBuffer;
     File gcodeFile;
     GCodeDevice* dev;
-    //file size + file pos used as % of done
+    //fileSize + filePos used as % of done
     uint32_t fileSize;
     uint32_t filePos;
     uint32_t startTime;

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <etl/vector.h>
 #include <etl/observer.h>
 #include "WatchedSerial.h"
+#include "gcode/gcode.h"
 
 class Job;
 
@@ -12,13 +12,8 @@ extern WatchedSerial serialCNC;
 #include "debug.h"
 #include "Buffer.h"
 
-
-// todo  1 switch to states from flags for protocol state
-// TODO done 2 make observable events meaningful
-// TODO done 3 check RxTimeout , make it work as heartbeat
-// todo done 4  add full presets(spindle, dist , feed) from ini file (section is device name)
-// todo 5 move read preset out of begin()
-
+// todo done switch to states from flags for protocol state
+// todo done 5 move read preset out of begin()
 
 /// Device abstraction statuses.
 /// Real Device can have different statuses,
@@ -60,18 +55,17 @@ public:
     Config config;
     const char* lastResponse = nullptr;
     const char* lastStatusStr = nullptr;
-    size_t lastStatus = DeviceStatus::NONE;
+    size_t lastStatus;
 
-    // default
-    GCodeDevice() {}
-
-    DevBuffer buffer; //todo make protected
+    GCodeDevice() : lastStatus{DeviceStatus::NONE} {}
 
     virtual ~GCodeDevice() { clear_observers(); }
 
     virtual void begin();
 
-    virtual bool scheduleCommand(const char* cmd, size_t len);
+    virtual bool canSchedule() const { return true; }
+
+    virtual void scheduleCommand(const char* cmd, size_t len);
 
     /// Schedule just put it to command var. sendCommands() do work for send.
     ///
@@ -81,9 +75,9 @@ public:
     /// \param cmd
     /// \param len
     /// \return false if fail to schedule.
-    virtual bool schedulePriorityCommand(const char* cmd, size_t len);
+    virtual void schedulePriorityCommand(const char* cmd, size_t len);
 
-    virtual bool jog(uint8_t axis, float dist, uint16_t feed) = 0;
+    virtual void jog(uint8_t axis, float dist, uint16_t feed) = 0;
 
     virtual void reset() = 0;
 
@@ -114,6 +108,7 @@ public:
     const Config& getConfig() const { return config; }
 
 protected:
+    DevBuffer buffer;
     bool canTimeout,
         xoff,
         xoffEnabled = false,

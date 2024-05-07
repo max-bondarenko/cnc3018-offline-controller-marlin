@@ -7,7 +7,8 @@
 extern WatchedSerial serialCNC;
 
 void GrblDevice::sendProbe(Stream& serial) {
-    serial.print("\n$I\n");
+    serial.println();
+    serial.println(GRBL_INFO);
 }
 
 bool GrblDevice::checkProbeResponse(const char* const input) {
@@ -15,13 +16,13 @@ bool GrblDevice::checkProbeResponse(const char* const input) {
     return i.find("[VER:") != etl::string_view::npos;
 }
 
-bool GrblDevice::jog(uint8_t axis, float dist, uint16_t feed) {
+void GrblDevice::jog(uint8_t axis, float dist, uint16_t feed) {
     constexpr size_t LN = 25;
     char msg[LN];
     // "$J=G91 G20 X0.5" will move +0.5 inches (12.7mm) to X=22.7mm (WPos).
     // Note that G91 and G20 are only applied to this jog command
     int l = snprintf(msg, LN, "$J=G91 F%d %c %.3f", feed, AXIS[axis], dist);
-    return scheduleCommand(msg, l);
+    scheduleCommand(msg, l);
 }
 
 bool GrblDevice::canJog() {
