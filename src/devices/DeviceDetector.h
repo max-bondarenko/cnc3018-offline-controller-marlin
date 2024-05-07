@@ -39,13 +39,13 @@ public:
         cDev{0},
         serialBaud{serialBauds[cSpeed]},
         cAttempt{0},
-        cResult{0},
+        found{false},
         deviceName{DEVICE_NAMES[cDev]} {}
 
     void loop();
 
     uint32_t serialBaud;
     uint8_t cAttempt;
-    uint8_t cResult;
+    bool found;
     const char* deviceName;
 };

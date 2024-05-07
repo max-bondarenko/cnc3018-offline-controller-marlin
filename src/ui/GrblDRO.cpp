@@ -3,21 +3,17 @@
 
 void GrblDRO::begin() {
     DRO::begin();
-    menuItems.push_back(MenuItem::simpleItem(2, "Unlock ($X)", [this](MenuItem&) {
-        dev.schedulePriorityCommand("$X" ,3);
+    uint8_t indx = 2U;
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Unlock", [this](MenuItem&) {
+        dev.schedulePriorityCommand("$X", 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(3, "Reset (Ctrl-X)", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Reset", [this](MenuItem&) {
         dev.reset();
     }));
-    menuItems.push_back(MenuItem::simpleItem(4, "Stop refresh", [this](MenuItem& m) {
-        enableRefresh(!isRefreshEnabled());
-        m.text = this->isRefreshEnabled() ? "Stop refresh" : "Start refresh";
-        doDirty();
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&) {
+        dev.schedulePriorityCommand("$H", 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(5, "Home ($H)", [this](MenuItem&) {
-        dev.schedulePriorityCommand("$H",3);
-    }));
-    menuItems.push_back(MenuItem::simpleItem(5, "Set XYZ to 0", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "XYZ=0", [this](MenuItem&) {
         // <G10 L2 P.. X.. Y.. Z..> L2 tells the G10 we’re setting standard work offsets
         //      P0 = Active coordinate system
         //      P1..6  = G54..59
@@ -27,10 +23,10 @@ void GrblDRO::begin() {
         //  <G10 L20 P.. X.. Y.. Z..> P can be used to select G54.1 P1..G54.1 P48
         dev.scheduleCommand("G10 L20 P1 X0Y0Z0", 18);
     }));
-    menuItems.push_back(MenuItem::simpleItem(7, "Goto XY=0", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Goto XY=0", [this](MenuItem&) {
         dev.scheduleCommand("G0 X0Y0", 8);
     }));
-    menuItems.push_back(MenuItem::simpleItem(8, "Machine/Work", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Machine/Work", [this](MenuItem&) {
         useWCS = !useWCS;
 //        dev.scheduleCommand(useWCS ? G54_USE_COORD_SYSTEM_1 : G53_USE_MACHINE_COORD, 4);
     }));

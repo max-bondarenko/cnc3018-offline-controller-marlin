@@ -13,7 +13,7 @@
 // TODO done refactor buffers
 // TODO fix Pause
 
-typedef etl::observer<JobStatusEvent> JobObserver;
+typedef etl::observer<JobEvent> JobObserver;
 
 class InitState : public etl::fsm_state<JobFsm, InitState, StateId::INIT, SetFileMessage> {
 public:
@@ -142,7 +142,7 @@ public:
 /// Represents gcode program read from SD card.
 /// Shim class abstracting FSM as method calls.
 ///
-class Job : public etl::observable<JobObserver, 3> {
+class Job : public etl::observable<JobObserver, 2> {
     JobFsm* fsm;
     InitState initState;
     FinishState finishState;

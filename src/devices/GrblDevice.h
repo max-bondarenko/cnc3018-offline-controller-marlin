@@ -23,8 +23,8 @@ public:
 
     bool canJog() override;
 
-    void begin(SetupFN* const onBegin) override {
-        GCodeDevice::begin(nullptr);
+    void begin() override {
+        GCodeDevice::begin();
         schedulePriorityCommand("$I", 2);
         requestStatusUpdate();
     }

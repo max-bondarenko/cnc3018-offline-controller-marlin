@@ -21,13 +21,13 @@ static const char* const ECHO_str = "echo";
 static const char* const RESEND_str = "Resend";
 static const char* const DEBUG_str = "DEBUG";
 
-struct Compat {
+struct Compatibility {
     bool auto_temp: 1;
     bool auto_position: 1;
     bool emergency_parser: 1;
 };
 
-struct HoldS {
+struct Command {
     uint8_t len;
     char str[99];
 };
@@ -51,7 +51,7 @@ public:
 
     bool canJog() override;
 
-    void begin(SetupFN* const onBegin) override;
+    void begin() override;
 
     void reset() override;
 
@@ -87,7 +87,9 @@ public:
     /// use this to set value from DRO to see current set value.
     void adjustSpindle(uint32_t val) { spindleVal = val; }
 
-    const Compat& getCompatibilities() const {
+    void setup();
+
+    const Compatibility& getCompatibilities() const {
         return compatibility;
     }
 
@@ -101,7 +103,7 @@ protected:
     void tryParseResponse(char* cmd, size_t len) override;
 
 private:
-    Compat compatibility;
+    Compatibility compatibility;
     float e = 0.0;
     float hotendTemp = 0.0,
         bedTemp = 0.0;

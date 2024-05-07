@@ -48,11 +48,11 @@ public:
 
     void doDirty() { dirty = true; }
 
-    void notification(const DeviceRefreshEvent& e) override {
+    void notification(DeviceEvent e) override {
         doDirty();
     }
 
-    void notification(const JobStatusEvent e) override {
+    void notification(JobEvent e) override {
         doDirty();
     }
 

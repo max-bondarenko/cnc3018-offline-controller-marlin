@@ -16,7 +16,7 @@ public:
         display.doDirty();
     }
 
-    virtual void begin() { doDirty(); }
+    virtual void begin() { display.doDirty(); }
 
     virtual void step() {};
 

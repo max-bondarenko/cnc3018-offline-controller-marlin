@@ -69,10 +69,8 @@ class Job;
 
 #include "devices/GCodeDevice.h"
 
-typedef int JobStatusEvent;
-
-enum JobStatus {
-    REFRESH_SIG
+enum class JobEvent {
+    REFRESH
 };
 
 struct CmdInFile {

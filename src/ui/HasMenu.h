@@ -6,14 +6,14 @@ class Display;
 extern Display display;
 
 struct MenuItem {
-    int8_t id;
+    uint8_t id;
     const char* text;
     uint8_t* font;
     bool togglable;
     bool on;
     std::function<void(MenuItem&)> cmd;
 
-    static MenuItem simpleItem(int8_t id, const char* text, std::function<void(MenuItem&)> func) {
+    static MenuItem simpleItem(uint8_t id, const char* text, std::function<void(MenuItem&)> func) {
         return MenuItem{id, text, nullptr, false, false, func};
     }
 };

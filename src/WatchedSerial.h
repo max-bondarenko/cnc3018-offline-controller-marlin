@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 #include <HardwareSerial.h>
-#include "debug.h"
 
 class WatchedSerial : public Stream {
 private:

@@ -109,9 +109,10 @@ void Display::processMenuButton(uint8_t bt, ButtonEvent evt) {
 
 void Display::draw() {
     u8g2.clearBuffer();
+    if (dev != nullptr)
+        drawStatusBar();
     if (screen != nullptr) {
         screen->drawContents();
-        drawStatusBar();
         if (menuShown)
             drawMenu();
     }

@@ -30,7 +30,7 @@ bool JobFsm::readCommandsToBuffer() {
             }
         }
     } else {
-        if (dev->buffer.full<HoldS>()) {
+        if (dev->buffer.full<Command>()) {
             return true; // skip read
         }
         uint16_t curLinePos;

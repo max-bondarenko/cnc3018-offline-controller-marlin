@@ -9,9 +9,10 @@
 #include "debug.h"
 #include "etl/string_view.h"
 
-#define LOG_EXTRA_INFO(a) //noop
 #ifdef LOG_DEBUG
-#define LOG_EXTRA_INFO(a) a;
+    #define LOG_EXTRA_INFO(a) a;
+#else
+    #define LOG_EXTRA_INFO(a) //noop
 #endif
 
 extern WatchedSerial serialCNC;
@@ -50,9 +51,9 @@ void MarlinDevice::trySendCommand() {
         return;
     }
     if (!buffer.empty()) {
-        for (auto i = buffer.readEnd<HoldS>(),
-                 end = buffer.end<HoldS>(); ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite(); ++i) {
-            const HoldS& cmd = *i;
+        for (auto i = buffer.readEnd<Command>(),
+                 end = buffer.end<Command>(); ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite(); ++i) {
+            const Command& cmd = *i;
             uint8_t len = cmd.len;
             IO_LOGF("> [%s]\n", cmd.str);
             serialCNC.write((const unsigned char*) cmd.str, len);
@@ -65,7 +66,7 @@ void MarlinDevice::trySendCommand() {
 }
 
 bool MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
-    HoldS a;
+    Command a;
     a.len = len;
     memcpy(a.str, cmd, len);
     a.str[len] = 0;
@@ -77,32 +78,8 @@ bool MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len) {
     return scheduleCommand(cmd, len);
 }
 
-void MarlinDevice::begin(SetupFN* const onBegin) {
-    SetupFN fn = [this](WatchedSerial& s) {
-        char buffer[101]; // assume not longer then 100B
-        buffer[100] = 0;
-        // do not check readBytesUntil. return value!!, let it read
-        for (int i = 50; i > 0 && s.readBytesUntil('\n', buffer, 100) != -1; i--) {
-            IO_LOGLN(buffer);
-            if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
-                buffer[0] = 0;
-                String _s(buffer + 4);
-                // OPTIMIZATION
-                if (_s.indexOf("AUTOREPORT_") != -1) {
-                    if (_s.indexOf("TEMP", 11) != -1 && _s.indexOf(":1", 11) != -1) {
-                        this->compatibility.auto_temp = true;
-                    } else if (_s.indexOf("POS", 11) != -1 && _s.indexOf(":1", 11) != -1) {
-                        this->compatibility.auto_position = true;
-                    }
-                } else if (_s.indexOf("EMERGENCY_PARSER") != -1 && _s.indexOf(":1", 16) != -1) {
-                    this->compatibility.emergency_parser = true;
-                }
-            } else {
-                i /= 2;
-            }
-        }
-    };
-    GCodeDevice::begin(&fn);
+void MarlinDevice::begin() {
+    GCodeDevice::begin();
     constexpr size_t LN = 8;
     char msg[LN];
     // OPTIMIZATION
@@ -122,6 +99,34 @@ void MarlinDevice::begin(SetupFN* const onBegin) {
     scheduleCommand(M302_COLD_EXTRUDER_STATUS, 5);
 }
 
+void MarlinDevice::setup() {
+    WatchedSerial& s = serialCNC;
+    char buffer[101]; // assume not longer then 100B
+    // do not check readBytesUntil. return value!!, let it read
+    for (int i = 50; i > 0; i--) {
+        size_t read = s.readBytesUntil('\n', buffer, 100);
+        if (read > 0) {
+            buffer[read] = 0;
+            IO_LOGLN(buffer);
+            if (buffer[0] == 'C' && buffer[1] == 'a' && buffer[2] == 'p') {
+                buffer[0] = 0;
+                String _s(buffer + 4);
+                if (_s.indexOf("AUTOREPORT_") != -1) {
+                    if (_s.indexOf("TEMP", 11) != -1 && _s.indexOf(":1", 11) != -1) {
+                        this->compatibility.auto_temp = true;
+                    } else if (_s.indexOf("POS", 11) != -1 && _s.indexOf(":1", 11) != -1) {
+                        this->compatibility.auto_position = true;
+                    }
+                } else if (_s.indexOf("EMERGENCY_PARSER") != -1 && _s.indexOf(":1", 16) != -1) {
+                    this->compatibility.emergency_parser = true;
+                }
+            }
+        } else {
+            i /= 2;
+        }
+    }
+}
+
 void MarlinDevice::requestStatusUpdate() {
     if (compatibility.auto_position == 0) {
         scheduleCommand(M114_GET_CURRENT_POS, 5);
@@ -139,7 +144,7 @@ void MarlinDevice::reset() {
     lastResponse = nullptr;
     resendLine = -1;
     // will not read compatibilities. reset should not change it
-    begin(nullptr);
+    begin();
 }
 
 void MarlinDevice::toggleRelative() {

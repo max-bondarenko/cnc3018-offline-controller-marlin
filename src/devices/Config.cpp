@@ -62,5 +62,4 @@ void readConfig(GCodeDevice* dev) {
         }
         file.close();
     }
-
 }

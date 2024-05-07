@@ -63,6 +63,7 @@ void DeviceDetector::collectResponse() {
             if (ret) {
                 DETECTOR_LOGF("> Got ");
                 DETECTOR_LOGLN(deviceName);
+                found = true;
                 callback(deviceName);
                 return;
             }

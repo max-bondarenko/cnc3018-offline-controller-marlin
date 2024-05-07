@@ -37,7 +37,6 @@
 #endif
 
 #ifdef LOG_IO
-    #define USB_TO_SERIAL
     #define IO_LOGF(...)   do{SerialUSB.printf(__VA_ARGS__);}while(0)
     #define IO_LOGLN(...)  do{SerialUSB.println(__VA_ARGS__);}while(0)
 #else

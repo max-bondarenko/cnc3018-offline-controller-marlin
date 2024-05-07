@@ -1,7 +1,6 @@
 #include "constants.h"
 #include "GCodeDevice.h"
 #include "WString.h"
-#include "math.h"
 
 bool GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
     if (lastStatus >= DeviceStatus::ALARM)
@@ -44,14 +43,11 @@ void GCodeDevice::step() {
     checkTimeout();
     if (wantUpdate) {
         wantUpdate = false;
-        notify_observers(DeviceRefreshEvent{});
+        notify_observers(DeviceEvent::REFRESH);
     }
 }
 
-void GCodeDevice::begin(SetupFN* const onBegin) {
-    if (onBegin != nullptr) {
-        (*onBegin)(serialCNC);
-    }
+void GCodeDevice::begin() {
     // in case onBegin did not consume all data in stream
     while (serialCNC.available() > 0) {
         serialCNC.read();

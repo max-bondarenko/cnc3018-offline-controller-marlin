@@ -1,10 +1,7 @@
 #pragma once
 
-#include <Arduino.h>
-#include <functional>
 #include <etl/vector.h>
 #include <etl/observer.h>
-#include "WString.h"
 #include "WatchedSerial.h"
 
 class Job;
@@ -23,7 +20,6 @@ extern WatchedSerial serialCNC;
 // todo 5 move read preset out of begin()
 
 
-///
 /// Device abstraction statuses.
 /// Real Device can have different statuses,
 /// but they can be mapped to this.
@@ -44,15 +40,17 @@ struct DeviceStatus {
         DEV_ERROR,
     };
 };
-struct DeviceRefreshEvent {
+
+enum class DeviceEvent {
+    REFRESH
 };
 
-using DeviceObserver = etl::observer<const DeviceRefreshEvent&>;
-
-typedef std::function<void(WatchedSerial&)> SetupFN;
+using DeviceObserver = etl::observer<DeviceEvent>;
 
 class GCodeDevice : public etl::observable<DeviceObserver, 2> {
 public:
+    typedef Buffer<JOB_BUFFER_SIZE * MAX_LINE_LEN> DevBuffer;
+
     struct Config {
         etl::vector<u_int16_t, 10> spindle{0, 1, 10, 100, 1000};
         etl::vector<u_int16_t, 10> feed{50, 100, 500, 1000, 2000};
@@ -67,12 +65,11 @@ public:
     // default
     GCodeDevice() {}
 
-    typedef Buffer<JOB_BUFFER_SIZE * MAX_LINE_LEN> DevBuffer;
     DevBuffer buffer; //todo make protected
 
     virtual ~GCodeDevice() { clear_observers(); }
 
-    virtual void begin(SetupFN* onBegin);
+    virtual void begin();
 
     virtual bool scheduleCommand(const char* cmd, size_t len);
 

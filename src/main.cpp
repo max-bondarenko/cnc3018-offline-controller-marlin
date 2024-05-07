@@ -39,6 +39,7 @@ DeviceDetector* detector;
 DetectorScreen* detectorScreen;
 
 DeviceCallback createDevice = [](const char* const devName) {
+    display.draw();
     if (devName == DEVICE_NAMES[DeviceName::GRBL]) {
         auto device = new GrblDevice();
         dro = new GrblDRO(*device);
@@ -52,10 +53,13 @@ DeviceCallback createDevice = [](const char* const devName) {
     readConfig(dev);
     job.setDevice(dev);
     display.setScreen(dro);
-    dev->begin(nullptr);
     dev->add_observer(display);
     dro->begin();
     dro->enableRefresh();
+    if (devName == DEVICE_NAMES[DeviceName::MARLIN]) {
+        static_cast<MarlinDevice*>(dev)->setup();
+    }
+    dev->begin();
     delete detectorScreen;
     detectorScreen = nullptr;
     detector = nullptr;
@@ -108,7 +112,7 @@ void loop() {
         detector->loop();
     }
 
-#ifdef USB_TO_SERIAL
+#ifdef LOG_IO
     //send all data from pc to device
     if (SerialUSB.available()) {
         while (SerialUSB.available()) {
