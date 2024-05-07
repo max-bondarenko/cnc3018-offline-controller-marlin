@@ -139,7 +139,6 @@ void MarlinDevice::reset() {
     lastStatus = DeviceStatus::OK;
     lastResponse = nullptr;
     resendLine = -1;
-    begin();
 }
 
 void MarlinDevice::toggleRelative() {
@@ -174,6 +173,7 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
         job.stop();
         ack = 0;
         reset();
+        begin();
         return;
     } else if (resp.starts_with(OK_str)) {
         if (len > 2) {
