@@ -3,18 +3,20 @@
 #include <etl/vector.h>
 
 class Display;
+
 extern Display display;
 
+
+
 struct MenuItem {
+    typedef std::function<void(MenuItem&, int8_t inc)> Cmd;
+
     uint8_t id;
     const char* text;
-    uint8_t* font;
-    bool togglable;
-    bool on;
-    std::function<void(MenuItem&)> cmd;
+    Cmd cmd;
 
-    static MenuItem simpleItem(uint8_t id, const char* text, std::function<void(MenuItem&)> func) {
-        return MenuItem{id, text, nullptr, false, false, func};
+    static MenuItem simpleItem(uint8_t id, const char* text, Cmd&& func) {
+        return MenuItem{id, text, func};
     }
 };
 

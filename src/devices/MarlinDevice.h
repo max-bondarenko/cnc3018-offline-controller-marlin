@@ -95,6 +95,9 @@ public:
         return minExtrusionTemp <= (int16_t) floor(hotendTemp);
     }
 
+    uint8_t feedrate = 100,
+        flowrate = 100;
+
 protected:
     void trySendCommand() override;
 

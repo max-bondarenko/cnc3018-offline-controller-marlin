@@ -4,19 +4,18 @@
 #include "constants.h"
 #include "WatchedSerial.h"
 
+#include "Job.h"
+
+#include "ui/Display.h"
 #include "ui/DetectorScreen.h"
 #include "ui/GrblDRO.h"
 #include "ui/MarlinDRO.h"
 #include "ui/FileChooser.h"
-#include "ui/Display.h"
 
-#include "etl/deque.h"
 #include "devices/Config.h"
 #include "devices/DeviceDetector.h"
 #include "devices/GrblDevice.h"
 #include "devices/MarlinDevice.h"
-
-#include "Job.h"
 
 U8G2_SSD1306_128X64_NONAME_F_4W_SW_SPI _u8g2(
     U8G2_R0,
@@ -52,6 +51,7 @@ DeviceCallback createDevice = [](const char* const devName) {
     dev->name = devName;
     readConfig(dev);
     job.setDevice(dev);
+    job.add_observer(*dro);
     display.setScreen(dro);
     dev->add_observer(display);
     dro->begin();
@@ -87,7 +87,6 @@ void setup() {
         display.setScreen(dro);
     });
     fileChooser.begin();
-    job.add_observer(display);
     for (auto pin: buttPins) {
         pinMode(pin, INPUT_PULLUP);
     }

@@ -10,7 +10,7 @@
 extern FileChooser fileChooser;
 extern Job job;
 
-class DRO : public HasMenu, public Screen {
+class DRO : public HasMenu, public Screen, public JobObserver {
 public:
 
     explicit DRO() : cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {
@@ -26,6 +26,8 @@ public:
     void enableRefresh(bool enable = true) { nextRefresh = (true == enable) ? millis() : 0; }
 
     bool isRefreshEnabled() const { return nextRefresh != 0; }
+
+    void notification(JobEvent e) override;
 
 protected:
     using Evt = Display::ButtonEvent;

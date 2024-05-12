@@ -88,20 +88,25 @@ void Display::processMenuButton(uint8_t bt, ButtonEvent evt) {
             if (bt == BT_UP) {
                 selMenuItem = selMenuItem > 0 ? selMenuItem - 1 : menuLen - 1;
                 ensureSelMenuVisible(pMenu);
-                doDirty();
             }
             if (bt == BT_DOWN) {
                 selMenuItem = (selMenuItem + 1) % menuLen;
                 ensureSelMenuVisible(pMenu);
-                doDirty();
             }
             if (bt == BT_CENTER) {
                 MenuItem& item = pMenu.menuItems[selMenuItem];
-                if (!item.togglable) { item.on = !item.on; }
-                item.cmd(item);
+                item.cmd(item, 0);
                 menuShown = false;
-                doDirty();
             }
+            if (bt == BT_L) {
+                MenuItem& item = pMenu.menuItems[selMenuItem];
+                item.cmd(item, -1);
+            }
+            if (bt == BT_R) {
+                MenuItem& item = pMenu.menuItems[selMenuItem];
+                item.cmd(item, 1);
+            }
+            doDirty();
         }
     }
 
@@ -200,8 +205,6 @@ void Display::drawMenu() {
             u8g2.drawBox(x, y + i * lh, w, lh);
         }
         MenuItem& item = pMenu.menuItems[idx];
-        if (item.font != nullptr)
-            u8g2.setFont(item.font);
         u8g2.setDrawColor(2);
         u8g2.drawStr(x + 2, y + i * lh - 1, item.text);
     }

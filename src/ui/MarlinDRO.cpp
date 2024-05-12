@@ -11,31 +11,51 @@
 #include "../assets/feed.XBM"
 #include "../assets/spindle.XBM"
 
-
 void MarlinDRO::begin() {
     DRO::begin();
     uint8_t indx = 2U;
-    menuItems.push_back(MenuItem::simpleItem(indx++, "to Relative", [this](MenuItem& m) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "to Relative", [this](MenuItem& m, int8_t) {
         dev.scheduleCommand(dev.isRelative() ? G90_SET_ABS_COORDINATES : G91_SET_RELATIVE_COORDINATES, 3);
         dev.toggleRelative();
         m.text = dev.isRelative() ? "to Abs" : "to Relative";
     }));
     if (dev.getCompatibilities().emergency_parser) {
-        menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&) {
+        menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&, int8_t) {
             dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
         }));
-        menuItems.push_back(MenuItem::simpleItem(indx++, "Continue", [this](MenuItem&) {
+        menuItems.push_back(MenuItem::simpleItem(indx++, "Continue", [this](MenuItem&, int8_t) {
             dev.scheduleCommand(M108_CONTINUE, 4);
         }));
+    } else {
+        // TODO dynamic menus
+        menuItems.push_back(MenuItem::simpleItem(indx++, "F:100(100)", [this](MenuItem& m, int8_t inc) {
+            static char buf[11];
+            if (inc == 0) {
+                dev.feedrate = 100;
+            } else if (inc > 0) {
+                dev.feedrate = (dev.feedrate > 144) ? 150 : dev.feedrate + 5;
+            } else {
+                dev.feedrate = (dev.feedrate < 56) ? 50 : dev.feedrate - 5;
+            }
+            int l = snprintf(buf, 10, "%sS%d", M220_FEEDRATE_ADJUST, dev.feedrate);
+            dev.scheduleCommand(buf, 9);
+            buf[l] = 0;
+            l = snprintf(buf, 11, "F:100(%d)", dev.feedrate);
+            buf[l] = 0;
+            m.text = buf;
+        }));
     }
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&) {
-        dev.scheduleCommand(G28_START_HOMING, 3);
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&, int8_t i) {
+        if (i == 0)
+            dev.scheduleCommand(G28_START_HOMING, 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Set XY to 0", [this](MenuItem&) {
-        dev.scheduleCommand("G92 X0Y0", 8);
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Set XY to 0", [this](MenuItem&, int8_t i) {
+        if (i == 0)
+            dev.scheduleCommand("G92 X0Y0", 8);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Set Z to 0", [this](MenuItem&) {
-        dev.scheduleCommand("G92 Z0", 6);
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Set Z to 0", [this](MenuItem&, int8_t i) {
+        if (i == 0)
+            dev.scheduleCommand("G92 Z0", 6);
     }));
 }
 
@@ -93,9 +113,11 @@ void MarlinDRO::drawContents() {
         ///  draw right panel ====================
         sx_start_right += 3;
         Display::u8g2.drawXBM(sx_start_right, sy + ICON_TOP_PADDING, dist_width, dist_height, (uint8_t*) dist_bits);
-        Display::u8g2.drawXBM(sx_start_right, sy + lineHeight + ICON_TOP_PADDING, feed_width, feed_height, (uint8_t*) feed_bits);
+        Display::u8g2.drawXBM(sx_start_right, sy + lineHeight + ICON_TOP_PADDING, feed_width, feed_height,
+                              (uint8_t*) feed_bits);
         if (cMode != Mode::TEMP) {
-            Display::u8g2.drawXBM(sx_start_right, sy + lineHeight * 2, spindle_width, spindle_height, (uint8_t*) spindle_bits);
+            Display::u8g2.drawXBM(sx_start_right, sy + lineHeight * 2, spindle_width, spindle_height,
+                                  (uint8_t*) spindle_bits);
         }
         /// distance  ======
         sx_start_right += 10;

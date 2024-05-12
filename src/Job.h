@@ -9,6 +9,10 @@
 // TODO done refactor buffers
 // TODO done fix Pause
 
+enum class JobEvent {
+    REFRESH,
+    DONE
+};
 typedef etl::observer<JobEvent> JobObserver;
 
 class InitState : public etl::fsm_state<JobFsm, InitState, StateId::INIT, SetFileMessage> {

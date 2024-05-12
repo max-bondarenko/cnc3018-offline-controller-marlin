@@ -66,10 +66,6 @@ class Job;
 
 #include "devices/GCodeDevice.h"
 
-enum class JobEvent {
-    REFRESH
-};
-
 struct CmdInFile {
     size_t position;
     // source command no longer 96, usually 40~50  add #: +6, add checksum: +4~5

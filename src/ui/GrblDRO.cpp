@@ -4,16 +4,16 @@
 void GrblDRO::begin() {
     DRO::begin();
     uint8_t indx = 2U;
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Unlock", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Unlock", [this](MenuItem&, int8_t) {
         dev.schedulePriorityCommand("$X", 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Reset", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Reset", [this](MenuItem&, int8_t) {
         dev.reset();
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&, int8_t) {
         dev.schedulePriorityCommand("$H", 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "XYZ=0", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "XYZ=0", [this](MenuItem&, int8_t) {
         // <G10 L2 P.. X.. Y.. Z..> L2 tells the G10 we’re setting standard work offsets
         //      P0 = Active coordinate system
         //      P1..6  = G54..59
@@ -23,10 +23,10 @@ void GrblDRO::begin() {
         //  <G10 L20 P.. X.. Y.. Z..> P can be used to select G54.1 P1..G54.1 P48
         dev.scheduleCommand("G10 L20 P1 X0Y0Z0", 18);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Goto XY=0", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Goto XY=0", [this](MenuItem&, int8_t) {
         dev.scheduleCommand("G0 X0Y0", 8);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Machine/Work", [this](MenuItem&) {
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Machine/Work", [this](MenuItem&, int8_t) {
         useWCS = !useWCS;
 //        dev.scheduleCommand(useWCS ? G54_USE_COORD_SYSTEM_1 : G53_USE_MACHINE_COORD, 4);
     }));

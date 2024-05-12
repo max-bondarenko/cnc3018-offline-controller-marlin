@@ -17,7 +17,7 @@ class Screen;
 /// N.B. Display drives device updates (call request status)
 /// Device drivers only tries to get and parse response. It is because marlin can
 /// work in auto status mode M154/M155.
-class Display : public JobObserver, public DeviceObserver {
+class Display : public DeviceObserver {
 public:
     static constexpr uint8_t STATUS_BAR_HEIGHT = 16;
     static constexpr uint8_t LINE_HEIGHT = 11;
@@ -49,10 +49,6 @@ public:
     void doDirty() { dirty = true; }
 
     void notification(DeviceEvent e) override {
-        doDirty();
-    }
-
-    void notification(JobEvent e) override {
         doDirty();
     }
 

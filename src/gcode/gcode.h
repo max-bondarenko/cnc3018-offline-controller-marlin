@@ -23,6 +23,8 @@
 #define M302_COLD_EXTRUDER_STATUS        "M302"
 #define RESET_LINE_NUMBER                "M110 N0"
 #define M115_GET_FIRMWARE_VER            "M115"
+#define M220_FEEDRATE_ADJUST             "M220"
+#define M221_FLOW_ADJUST                 "M221"
 /*
 Get the “current position” of the active tool. Stepper values are included. If M114_LEGACY is enabled the planner will
 be synchronized before reporting so that the reported position is not be ahead of the actual planner position. Normally

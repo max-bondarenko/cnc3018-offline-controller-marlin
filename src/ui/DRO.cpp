@@ -22,7 +22,7 @@ void DRO::step() {
 }
 
 void DRO::begin() {
-    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem& m) {
+    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem& m, int8_t) {
         if (job.isRunning()) {
             job.stop();
             m.text = "Open";
@@ -32,7 +32,7 @@ void DRO::begin() {
             m.text = "Disable job";
         }
     }));
-    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m) {
+    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m ,int8_t) {
         if (job.isRunning()) {
             m.text = "Resume job";
             job.setPaused(true);
@@ -42,6 +42,12 @@ void DRO::begin() {
         }
         display.doDirty();
     }));
+}
+
+void DRO::notification(JobEvent e) {
+    if (e == JobEvent::DONE) {
+        menuItems.at(0).text = "Open";
+    }
 }
 
 void DRO::drawContents() {
