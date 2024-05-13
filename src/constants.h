@@ -61,6 +61,10 @@ constexpr size_t KEEPALIVE_INTERVAL = 5000;    // Marlin defaults to 2 seconds, 
 constexpr uint8_t JOB_BUFFER_SIZE = 10;
 constexpr uint8_t MAX_LINE_LEN = 100;
 
+constexpr uint8_t MAX_ADJUST_PERCENT = 250;
+constexpr uint8_t MIN_ADJUST_PERCENT = 50;
+constexpr uint8_t ADJUST_PERCENT_STEP = 5;
+
 
 #define PRESETS_FILE "presets.ini"
 

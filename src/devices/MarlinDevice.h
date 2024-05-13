@@ -95,8 +95,10 @@ public:
         return minExtrusionTemp <= (int16_t) floor(hotendTemp);
     }
 
-    uint8_t feedrate = 100,
-        flowrate = 100;
+    // feedrate adjustment percent value
+    uint8_t feedrate = 100;
+    // flowrate adjustment percent value
+    uint8_t flowrate = 100;
 
 protected:
     void trySendCommand() override;
