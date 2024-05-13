@@ -22,24 +22,26 @@ void DRO::step() {
 }
 
 void DRO::begin() {
-    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem& m, int8_t) {
-        if (job.isRunning()) {
-            job.stop();
-            m.text = "Open";
-            display.doDirty();
-        } else {
-            display.setScreen(&fileChooser); // this will reset the card
-            m.text = "Disable job";
-        }
+    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem& m, int8_t dir) {
+        if (dir == 0)
+            if (job.isRunning()) {
+                job.stop();
+                m.text = "Open";
+                display.doDirty();
+            } else {
+                display.setScreen(&fileChooser); // this will reset the card
+                m.text = "Disable job";
+            }
     }));
-    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m ,int8_t) {
-        if (job.isRunning()) {
-            m.text = "Resume job";
-            job.setPaused(true);
-        } else {
-            job.setPaused(false);
-            m.text = "Pause job";
-        }
+    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m, int8_t dir) {
+        if (dir == 0)
+            if (job.isRunning()) {
+                m.text = "Resume job";
+                job.setPaused(true);
+            } else {
+                job.setPaused(false);
+                m.text = "Pause job";
+            }
         display.doDirty();
     }));
 }

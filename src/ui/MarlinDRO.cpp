@@ -14,71 +14,75 @@
 void MarlinDRO::begin() {
     DRO::begin();
     uint8_t indx = 2U;
-    menuItems.push_back(MenuItem::simpleItem(indx++, "to Relative", [this](MenuItem& m, int8_t) {
-        dev.scheduleCommand(dev.isRelative() ? G90_SET_ABS_COORDINATES : G91_SET_RELATIVE_COORDINATES, 3);
-        dev.toggleRelative();
-        m.text = dev.isRelative() ? "to Abs" : "to Relative";
+    menuItems.push_back(MenuItem::simpleItem(indx++, "to Relative", [this](MenuItem& m, int8_t dir) {
+        if (dir == 0) {
+            dev.scheduleCommand(dev.isRelative() ? G90_SET_ABS_COORDINATES : G91_SET_RELATIVE_COORDINATES, 3);
+            dev.toggleRelative();
+            m.text = dev.isRelative() ? "to Abs" : "to Relative";
+        }
     }));
     if (dev.getCompatibilities().emergency_parser) {
-        menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&, int8_t) {
-            dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
+        menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&, int8_t dir) {
+            if (dir == 0)
+                dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
         }));
-        menuItems.push_back(MenuItem::simpleItem(indx++, "Continue", [this](MenuItem&, int8_t) {
-            dev.scheduleCommand(M108_CONTINUE, 4);
-        }));
-    } else {
-        // 14 char line is maximum for menu
-        menuItems.push_back(MenuItem::simpleItem(indx++, "Feed100<100%>", [this](MenuItem& m, int8_t inc) {
-            constexpr uint8_t LABEL_LEN = 14;
-            static char buf[LABEL_LEN];
-            if (inc == 0) {
-                dev.feedrate = 100;
-            } else if (inc > 0) {
-                dev.feedrate = (dev.feedrate >= MAX_ADJUST_PERCENT - ADJUST_PERCENT_STEP) ?
-                               MAX_ADJUST_PERCENT : dev.feedrate + ADJUST_PERCENT_STEP;
-            } else {
-                dev.feedrate = (dev.feedrate <= MIN_ADJUST_PERCENT + ADJUST_PERCENT_STEP) ?
-                               MIN_ADJUST_PERCENT : dev.feedrate - ADJUST_PERCENT_STEP;
-            }
-            int l = snprintf(buf, 10, "%sS%d", M220_FEEDRATE_ADJUST, dev.feedrate);
-            dev.scheduleCommand(buf, 9);
-            buf[l] = 0;
-            l = snprintf(buf, LABEL_LEN, "Feed100<%d%%>", dev.feedrate);
-            buf[l] = 0;
-            m.text = buf;
-        }));
-        menuItems.push_back(MenuItem::simpleItem(indx++, "Flow100<100%>", [this](MenuItem& m, int8_t inc) {
-            constexpr uint8_t LABEL_LEN = 14;
-            static char buf[LABEL_LEN];
-            if (inc == 0) {
-                dev.flowrate = 100;
-            } else if (inc > 0) {
-                dev.flowrate = (dev.flowrate >= MAX_ADJUST_PERCENT - ADJUST_PERCENT_STEP) ?
-                               MAX_ADJUST_PERCENT : dev.flowrate + ADJUST_PERCENT_STEP;
-            } else {
-                dev.flowrate = (dev.flowrate <= MIN_ADJUST_PERCENT + ADJUST_PERCENT_STEP) ?
-                               MIN_ADJUST_PERCENT : dev.flowrate - ADJUST_PERCENT_STEP;
-            }
-            int l = snprintf(buf, 10, "%sS%d", M221_FLOW_ADJUST, dev.flowrate);
-            dev.scheduleCommand(buf, 9);
-            buf[l] = 0;
-            l = snprintf(buf, LABEL_LEN, "Flow100<%d%%>", dev.flowrate);
-            buf[l] = 0;
-            m.text = buf;
+        menuItems.push_back(MenuItem::simpleItem(indx++, "Continue", [this](MenuItem&, int8_t dir) {
+            if (dir == 0)
+                dev.scheduleCommand(M108_CONTINUE, 4);
         }));
     }
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&, int8_t i) {
-        if (i == 0)
+    // 14 char line is maximum for menu
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Feed100<100%>", [this](MenuItem& m, int8_t dir) {
+        constexpr uint8_t LABEL_LEN = 14;
+        static char buf[LABEL_LEN];
+        if (dir == 0) {
+            dev.feedrate = 100;
+        } else if (dir > 0) {
+            dev.feedrate = (dev.feedrate >= MAX_ADJUST_PERCENT - ADJUST_PERCENT_STEP) ?
+                           MAX_ADJUST_PERCENT : dev.feedrate + ADJUST_PERCENT_STEP;
+        } else {
+            dev.feedrate = (dev.feedrate <= MIN_ADJUST_PERCENT + ADJUST_PERCENT_STEP) ?
+                           MIN_ADJUST_PERCENT : dev.feedrate - ADJUST_PERCENT_STEP;
+        }
+        int l = snprintf(buf, 10, "%sS%d", M220_FEEDRATE_ADJUST, dev.feedrate);
+        dev.scheduleCommand(buf, 9);
+        buf[l] = 0;
+        l = snprintf(buf, LABEL_LEN, "Feed100<%d%%>", dev.feedrate);
+        buf[l] = 0;
+        m.text = buf;
+    }));
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Flow100<100%>", [this](MenuItem& m, int8_t dir) {
+        constexpr uint8_t LABEL_LEN = 14;
+        static char buf[LABEL_LEN];
+        if (dir == 0) {
+            dev.flowrate = 100;
+        } else if (dir > 0) {
+            dev.flowrate = (dev.flowrate >= MAX_ADJUST_PERCENT - ADJUST_PERCENT_STEP) ?
+                           MAX_ADJUST_PERCENT : dev.flowrate + ADJUST_PERCENT_STEP;
+        } else {
+            dev.flowrate = (dev.flowrate <= MIN_ADJUST_PERCENT + ADJUST_PERCENT_STEP) ?
+                           MIN_ADJUST_PERCENT : dev.flowrate - ADJUST_PERCENT_STEP;
+        }
+        int l = snprintf(buf, 10, "%sS%d", M221_FLOW_ADJUST, dev.flowrate);
+        dev.scheduleCommand(buf, 9);
+        buf[l] = 0;
+        l = snprintf(buf, LABEL_LEN, "Flow100<%d%%>", dev.flowrate);
+        buf[l] = 0;
+        m.text = buf;
+    }));
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&, int8_t dir) {
+        if (dir == 0)
             dev.scheduleCommand(G28_START_HOMING, 3);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Set XY to 0", [this](MenuItem&, int8_t i) {
-        if (i == 0)
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Set XY to 0", [this](MenuItem&, int8_t dir) {
+        if (dir == 0)
             dev.scheduleCommand("G92 X0Y0", 8);
     }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Set Z to 0", [this](MenuItem&, int8_t i) {
-        if (i == 0)
+    menuItems.push_back(MenuItem::simpleItem(indx++, "Set Z to 0", [this](MenuItem&, int8_t dir) {
+        if (dir == 0)
             dev.scheduleCommand("G92 Z0", 6);
     }));
+    // no more items
 }
 
 void MarlinDRO::drawContents() {
