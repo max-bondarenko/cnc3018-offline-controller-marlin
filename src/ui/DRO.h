@@ -1,9 +1,9 @@
 #pragma once
 
+#include <etl/vector.h>
 #include "utils.h"
 #include "constants.h"
 #include "Screen.h"
-#include "HasMenu.h"
 #include "FileChooser.h"
 #include "devices/GCodeDevice.h"
 
@@ -11,15 +11,13 @@ extern FileChooser fileChooser;
 extern Job job;
 
 // TODO list
-// TODO 1 dynamic allocation for menu
-// TODO 2 and simplify it container
-// TODO 3 check for +- menu items. to avoid every menu check for i = 0
+// TODO done 1 dynamic allocation for menu
+// TODO done 2 and simplify it container
+// TODO  3 check for +- menu items. to avoid every menu check for i = 0
 
-class DRO : public HasMenu, public Screen, public JobObserver {
+class DRO : public Screen, public JobObserver {
 public:
-
     explicit DRO() : cMode{Mode::AXES}, nextRefresh{1}, cDist{0}, cFeed{0}, cSpindleVal{0} {
-        Screen::hasMenu = true;
     }
 
     virtual ~DRO() {}
@@ -47,7 +45,7 @@ protected:
 
     uint32_t cDist,
         cFeed,
-        cSpindleVal = 0;
+        cSpindleVal;
 
     bool buttonWasPressedWithShift;
 

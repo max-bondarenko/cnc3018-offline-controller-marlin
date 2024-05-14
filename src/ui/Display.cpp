@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include "Screen.h"
 #include "Display.h"
-#include "DRO.h"
 
 constexpr uint8_t VISIBLE_MENUS = 5;
 
@@ -33,11 +32,11 @@ void Display::step() {
         draw();
 }
 
-void Display::ensureSelMenuVisible(DRO& pMenu) {
-    if (selMenuItem >= pMenu.firstDisplayedMenuItem + VISIBLE_MENUS)
-        pMenu.firstDisplayedMenuItem = selMenuItem - VISIBLE_MENUS + 1;
-    if (selMenuItem < pMenu.firstDisplayedMenuItem) {
-        pMenu.firstDisplayedMenuItem = selMenuItem;
+void Display::ensureSelMenuVisible() {
+    if (selMenuItem >= screen->firstDisplayedMenuItem + VISIBLE_MENUS)
+        screen->firstDisplayedMenuItem = selMenuItem - VISIBLE_MENUS + 1;
+    if (selMenuItem < screen->firstDisplayedMenuItem) {
+        screen->firstDisplayedMenuItem = selMenuItem;
     }
 }
 
@@ -49,12 +48,13 @@ void Display::processInput() {
     for (int i = 0; i < N_BUTTONS; i++) {
         bool down = bitRead(buttStates, i);
         if (bitRead(changed, i)) {
-            if (i == BT_STEP && down && screen->hasMenu) {
+            if (i == BT_STEP && down && screen->menuItems.size > 0 ) {
                 menuShown = !menuShown;
                 doDirty();
             } else {
                 evt = down ? ButtonEvent::DOWN : ButtonEvent::UP;
-                if (down) menuShownWhenDown = menuShown;
+                if (down)
+                    menuShownWhenDown = menuShown;
                 // don't propagate events to screen if the click was in the menu
                 if (menuShown) {
                     processMenuButton(i, evt);
@@ -81,35 +81,31 @@ void Display::processInput() {
 
 void Display::processMenuButton(uint8_t bt, ButtonEvent evt) {
     if (!(evt == ButtonEvent::DOWN || evt == ButtonEvent::HOLD)) return;
-    if (screen->hasMenu) {
-        DRO& pMenu = *static_cast<DRO*>(screen);
-        size_t menuLen = pMenu.menuItems.size();
-        if (menuLen != 0) {
-            if (bt == BT_UP) {
-                selMenuItem = selMenuItem > 0 ? selMenuItem - 1 : menuLen - 1;
-                ensureSelMenuVisible(pMenu);
-            }
-            if (bt == BT_DOWN) {
-                selMenuItem = (selMenuItem + 1) % menuLen;
-                ensureSelMenuVisible(pMenu);
-            }
-            if (bt == BT_CENTER) {
-                MenuItem& item = pMenu.menuItems[selMenuItem];
-                item.cmd(item, 0);
-                menuShown = false;
-            }
-            if (bt == BT_L) {
-                MenuItem& item = pMenu.menuItems[selMenuItem];
-                item.cmd(item, -1);
-            }
-            if (bt == BT_R) {
-                MenuItem& item = pMenu.menuItems[selMenuItem];
-                item.cmd(item, 1);
-            }
-            doDirty();
+    size_t menuLen = screen->menuItems.size;
+    if (menuLen != 0) {
+        if (bt == BT_UP) {
+            selMenuItem = selMenuItem > 0 ? selMenuItem - 1 : menuLen - 1;
+            ensureSelMenuVisible();
         }
+        if (bt == BT_DOWN) {
+            selMenuItem = (selMenuItem + 1) % menuLen;
+            ensureSelMenuVisible();
+        }
+        if (bt == BT_CENTER) {
+            Screen::MenuItem& item = screen->menuItems[selMenuItem];
+            item.cmd(item, 0);
+            menuShown = false;
+        }
+        if (bt == BT_L) {
+            Screen::MenuItem& item = screen->menuItems[selMenuItem];
+            item.cmd(item, -1);
+        }
+        if (bt == BT_R) {
+            Screen::MenuItem& item = screen->menuItems[selMenuItem];
+            item.cmd(item, 1);
+        }
+        doDirty();
     }
-
 }
 
 void Display::draw() {
@@ -176,12 +172,10 @@ void Display::drawStatusBar() {
 }
 
 void Display::drawMenu() {
-    DRO& pMenu = *static_cast<DRO*>(screen);
     u8g2.setFont(u8g2_font_nokiafc22_tr);
+    const size_t len = screen->menuItems.size;
+    uint8_t onscreenLen = len - screen->firstDisplayedMenuItem;
 
-    const size_t len = pMenu.menuItems.size();
-
-    uint8_t onscreenLen = len - pMenu.firstDisplayedMenuItem;
     if (onscreenLen > VISIBLE_MENUS)
         onscreenLen = VISIBLE_MENUS;
     const int w = 80, x = 20, lh = 8, h = onscreenLen * lh;
@@ -199,12 +193,12 @@ void Display::drawMenu() {
     y = 16;
 
     for (size_t i = 0; i < onscreenLen; i++) {
-        size_t idx = pMenu.firstDisplayedMenuItem + i;
+        size_t idx = screen->firstDisplayedMenuItem + i;
         if (selMenuItem == idx) {
             u8g2.setDrawColor(1);
             u8g2.drawBox(x, y + i * lh, w, lh);
         }
-        MenuItem& item = pMenu.menuItems[idx];
+        Screen::MenuItem& item = screen->menuItems[idx];
         u8g2.setDrawColor(2);
         u8g2.drawStr(x + 2, y + i * lh - 1, item.text);
     }
@@ -216,7 +210,7 @@ void Display::drawMenu() {
     u8g2.drawFrame(xx, y, 5, h);
     if (len > VISIBLE_MENUS) {
         const uint hh = (h - 2) * VISIBLE_MENUS / len;
-        const uint sy = (h - hh) * pMenu.firstDisplayedMenuItem / (len - VISIBLE_MENUS);
+        const uint sy = (h - hh) * screen->firstDisplayedMenuItem / (len - VISIBLE_MENUS);
         u8g2.drawBox(xx + 1, y + 1 + sy, 3, hh);
     }
 }

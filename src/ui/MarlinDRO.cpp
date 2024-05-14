@@ -12,27 +12,30 @@
 #include "../assets/spindle.XBM"
 
 void MarlinDRO::begin() {
+    menuItems.size = dev.getCompatibilities().emergency_parser ? 2 + 8 : 2 + 6;
+    menuItems.items = new MenuItem* [menuItems.size]; // not going to be deleted
+
     DRO::begin();
     uint8_t indx = 2U;
-    menuItems.push_back(MenuItem::simpleItem(indx++, "to Relative", [this](MenuItem& m, int8_t dir) {
+    menuItems.items[indx++] = MenuItem::simpleItem("to Relative", [this](MenuItem& m, int8_t dir) {
         if (dir == 0) {
             dev.scheduleCommand(dev.isRelative() ? G90_SET_ABS_COORDINATES : G91_SET_RELATIVE_COORDINATES, 3);
             dev.toggleRelative();
             m.text = dev.isRelative() ? "to Abs" : "to Relative";
         }
-    }));
+    });
     if (dev.getCompatibilities().emergency_parser) {
-        menuItems.push_back(MenuItem::simpleItem(indx++, "1 min STOP", [this](MenuItem&, int8_t dir) {
+        menuItems.items[indx++] = MenuItem::simpleItem("1 min STOP", [this](MenuItem&, int8_t dir) {
             if (dir == 0)
                 dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
-        }));
-        menuItems.push_back(MenuItem::simpleItem(indx++, "Continue", [this](MenuItem&, int8_t dir) {
+        });
+        menuItems.items[indx++] = MenuItem::simpleItem("Continue", [this](MenuItem&, int8_t dir) {
             if (dir == 0)
                 dev.scheduleCommand(M108_CONTINUE, 4);
-        }));
+        });
     }
     // 14 char line is maximum for menu
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Feed100<100%>", [this](MenuItem& m, int8_t dir) {
+    menuItems.items[indx++] = MenuItem::simpleItem("Feed100<100%>", [this](MenuItem& m, int8_t dir) {
         constexpr uint8_t LABEL_LEN = 14;
         static char buf[LABEL_LEN];
         if (dir == 0) {
@@ -50,8 +53,8 @@ void MarlinDRO::begin() {
         l = snprintf(buf, LABEL_LEN, "Feed100<%d%%>", dev.feedrate);
         buf[l] = 0;
         m.text = buf;
-    }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Flow100<100%>", [this](MenuItem& m, int8_t dir) {
+    });
+    menuItems.items[indx++] = MenuItem::simpleItem("Flow100<100%>", [this](MenuItem& m, int8_t dir) {
         constexpr uint8_t LABEL_LEN = 14;
         static char buf[LABEL_LEN];
         if (dir == 0) {
@@ -69,20 +72,19 @@ void MarlinDRO::begin() {
         l = snprintf(buf, LABEL_LEN, "Flow100<%d%%>", dev.flowrate);
         buf[l] = 0;
         m.text = buf;
-    }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Home", [this](MenuItem&, int8_t dir) {
+    });
+    menuItems.items[indx++] = MenuItem::simpleItem("Home", [this](MenuItem&, int8_t dir) {
         if (dir == 0)
             dev.scheduleCommand(G28_START_HOMING, 3);
-    }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Set XY to 0", [this](MenuItem&, int8_t dir) {
+    });
+    menuItems.items[indx++] = MenuItem::simpleItem("Set XY to 0", [this](MenuItem&, int8_t dir) {
         if (dir == 0)
             dev.scheduleCommand("G92 X0Y0", 8);
-    }));
-    menuItems.push_back(MenuItem::simpleItem(indx++, "Set Z to 0", [this](MenuItem&, int8_t dir) {
+    });
+    menuItems.items[indx++] = MenuItem::simpleItem("Set Z to 0", [this](MenuItem&, int8_t dir) {
         if (dir == 0)
             dev.scheduleCommand("G92 Z0", 6);
-    }));
-    // no more items
+    });
 }
 
 void MarlinDRO::drawContents() {

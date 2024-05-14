@@ -82,6 +82,5 @@ private:
 
     void drawMenu();
 
-    void ensureSelMenuVisible(DRO& pMenu);
-
+    void ensureSelMenuVisible();
 };

@@ -22,8 +22,9 @@ void DRO::step() {
 }
 
 void DRO::begin() {
-    menuItems.push_back(MenuItem::simpleItem(0, "Open", [](MenuItem& m, int8_t dir) {
-        if (dir == 0)
+    // !!! initialization is in sibling method
+    menuItems.items[0] = MenuItem::simpleItem("Open", [](MenuItem& m, int8_t dir) {
+        if (dir == 0) {
             if (job.isRunning()) {
                 job.stop();
                 m.text = "Open";
@@ -32,9 +33,10 @@ void DRO::begin() {
                 display.setScreen(&fileChooser); // this will reset the card
                 m.text = "Disable job";
             }
-    }));
-    menuItems.push_back(MenuItem::simpleItem(1, "Pause job", [](MenuItem& m, int8_t dir) {
-        if (dir == 0)
+        }
+    });
+    menuItems.items[1] = MenuItem::simpleItem("Pause job", [](MenuItem& m, int8_t dir) {
+        if (dir == 0) {
             if (job.isRunning()) {
                 m.text = "Resume job";
                 job.setPaused(true);
@@ -42,13 +44,14 @@ void DRO::begin() {
                 job.setPaused(false);
                 m.text = "Pause job";
             }
-        display.doDirty();
-    }));
+            display.doDirty();
+        }
+    });
 }
 
 void DRO::notification(JobEvent e) {
     if (e == JobEvent::DONE) {
-        menuItems.at(0).text = "Open";
+        menuItems[0].text = "Open";
     }
 }
 
