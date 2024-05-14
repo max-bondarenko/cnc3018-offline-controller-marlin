@@ -10,10 +10,9 @@
 extern FileChooser fileChooser;
 extern Job job;
 
-// TODO list
 // TODO done 1 dynamic allocation for menu
 // TODO done 2 and simplify it container
-// TODO  3 check for +- menu items. to avoid every menu check for i = 0
+// TODO done 3 check for +- menu items. to avoid every menu check for i = 0
 
 class DRO : public Screen, public JobObserver {
 public:

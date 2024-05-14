@@ -48,7 +48,7 @@ void Display::processInput() {
     for (int i = 0; i < N_BUTTONS; i++) {
         bool down = bitRead(buttStates, i);
         if (bitRead(changed, i)) {
-            if (i == BT_STEP && down && screen->menuItems.size > 0 ) {
+            if (i == BT_STEP && down && screen->menuItems.size > 0) {
                 menuShown = !menuShown;
                 doDirty();
             } else {
@@ -91,18 +91,18 @@ void Display::processMenuButton(uint8_t bt, ButtonEvent evt) {
             selMenuItem = (selMenuItem + 1) % menuLen;
             ensureSelMenuVisible();
         }
+        Screen::MenuItem& item = screen->menuItems[selMenuItem];
         if (bt == BT_CENTER) {
-            Screen::MenuItem& item = screen->menuItems[selMenuItem];
             item.cmd(item, 0);
             menuShown = false;
         }
-        if (bt == BT_L) {
-            Screen::MenuItem& item = screen->menuItems[selMenuItem];
-            item.cmd(item, -1);
-        }
-        if (bt == BT_R) {
-            Screen::MenuItem& item = screen->menuItems[selMenuItem];
-            item.cmd(item, 1);
+        if (item.canChangeValue) {
+            if (bt == BT_L) {
+                item.cmd(item, -1);
+            }
+            if (bt == BT_R) {
+                item.cmd(item, 1);
+            }
         }
         doDirty();
     }

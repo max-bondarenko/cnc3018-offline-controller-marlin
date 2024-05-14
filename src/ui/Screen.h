@@ -13,9 +13,14 @@ public:
 
         const char* text;
         Cmd cmd;
+        bool canChangeValue;
 
         static MenuItem* simpleItem(const char* text, Cmd&& func) {
-            return new MenuItem{text, func};
+            return new MenuItem{text, func, false};
+        }
+
+        static MenuItem* valueItem(const char* text, Cmd&& func) {
+            return new MenuItem{text, func, true};
         }
     };
 
