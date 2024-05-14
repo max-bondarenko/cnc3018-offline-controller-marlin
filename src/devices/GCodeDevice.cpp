@@ -3,16 +3,11 @@
 #include "WString.h"
 
 void GCodeDevice::scheduleCommand(const char* cmd, size_t len) {
-    if (lastStatus >= DeviceStatus::ALARM)
-        return;
     if (len == 0)
         len = strlen(cmd);
     if (len == 0)
         return;
-    if (curUnsentCmdLen != 0)
-        return;
-    memcpy(curUnsentCmd, cmd, len);
-    curUnsentCmdLen = len;
+    buffer.push(Command(len, cmd));
 }
 
 void GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
@@ -20,10 +15,36 @@ void GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
         len = strlen(cmd);
     if (len == 0)
         return;
-    if (curUnsentPriorityCmdLen != 0)
+    if (priorityCmd.len != 0)
         return;
-    memcpy(curUnsentPriorityCmd, cmd, len);
-    curUnsentPriorityCmdLen = len;
+    memcpy(priorityCmd.str, cmd, len);
+    priorityCmd.len = len;
+}
+
+bool GCodeDevice::canSchedule() const {
+    return !buffer.full<Command>();
+}
+
+void GCodeDevice::trySendCommand() {
+    if (priorityCmd.len > 0 && serialCNC.availableForWrite()) {
+        LOGF("> pr:[%s]\n", priorityCmd.str);
+        serialCNC.write((const uint8_t*) (priorityCmd.str), priorityCmd.len);
+        serialCNC.write('\n');
+        priorityCmd.len = 0;
+    } else if (!buffer.empty()) {
+        for (auto i = buffer.readEnd<Command>(), end = buffer.end<Command>();
+             ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite();
+             ++i) {
+            const Command& cmd = *i;
+            uint8_t len = cmd.len;
+            IO_LOGF("> [%s]\n", cmd.str);
+            serialCNC.write(cmd.str, len);
+            serialCNC.write('\n');
+            --buffer;
+            ack++;
+        }
+        lastResponse = nullptr;
+    }
 }
 
 void GCodeDevice::step() {
@@ -31,7 +52,7 @@ void GCodeDevice::step() {
     if (lastStatus >= DeviceStatus::ALARM) {
         cleanupQueue();
     } else if ((!xoffEnabled || !xoff)
-               && lastStatus != DeviceStatus::LOCKED) {
+               && lastStatus < DeviceStatus::WAIT) {
         trySendCommand();
     }
     // how locked and disconnected should work together ??
@@ -57,8 +78,9 @@ void GCodeDevice::readLockedStatus() {
 }
 
 void GCodeDevice::cleanupQueue() {
-    curUnsentCmdLen = 0;
-    curUnsentPriorityCmdLen = 0;
+    priorityCmd.len = 0;
+    buffer.clear();
+    ack = 0;
 }
 
 void GCodeDevice::checkTimeout() {

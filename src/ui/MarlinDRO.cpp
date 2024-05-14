@@ -24,10 +24,10 @@ void MarlinDRO::begin() {
     });
     if (dev.getCompatibilities().emergency_parser) {
         menuItems.items[indx++] = MenuItem::simpleItem("1 min STOP", [this](MenuItem&, int8_t) {
-            dev.scheduleCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
+            dev.schedulePriorityCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
         });
         menuItems.items[indx++] = MenuItem::simpleItem("Continue", [this](MenuItem&, int8_t) {
-            dev.scheduleCommand(M108_CONTINUE, 4);
+            dev.schedulePriorityCommand(M108_CONTINUE, 4);
         });
     }
     // 14 char line is maximum for menu
@@ -44,7 +44,7 @@ void MarlinDRO::begin() {
                            MIN_ADJUST_PERCENT : dev.feedrate - ADJUST_PERCENT_STEP;
         }
         int l = snprintf(buf, 10, "%sS%d", M220_FEEDRATE_ADJUST, dev.feedrate);
-        dev.scheduleCommand(buf, 9);
+        dev.schedulePriorityCommand(buf, 9);
         buf[l] = 0;
         l = snprintf(buf, LABEL_LEN, "Feed100<%d%%>", dev.feedrate);
         buf[l] = 0;
@@ -63,7 +63,7 @@ void MarlinDRO::begin() {
                            MIN_ADJUST_PERCENT : dev.flowrate - ADJUST_PERCENT_STEP;
         }
         int l = snprintf(buf, 10, "%sS%d", M221_FLOW_ADJUST, dev.flowrate);
-        dev.scheduleCommand(buf, 9);
+        dev.schedulePriorityCommand(buf, 9);
         buf[l] = 0;
         l = snprintf(buf, LABEL_LEN, "Flow100<%d%%>", dev.flowrate);
         buf[l] = 0;

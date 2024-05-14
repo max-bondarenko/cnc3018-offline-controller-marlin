@@ -53,12 +53,6 @@ public:
 
     void requestStatusUpdate() override;
 
-    void schedulePriorityCommand(const char* cmd, size_t len) override;
-
-    bool canSchedule() const override;
-
-    void scheduleCommand(const char* cmd, size_t len) override;
-
     void toggleRelative();
 
     void tempChange(uint8_t temp);
@@ -85,8 +79,6 @@ public:
     /// use this to set value from DRO to see current set value.
     void adjustSpindle(uint32_t val) { spindleVal = val; }
 
-    void setup();
-
     const Compatibility& getCompatibilities() const {
         return compatibility;
     }
@@ -95,21 +87,12 @@ public:
         return minExtrusionTemp <= (int16_t) floor(hotendTemp);
     }
 
-    // feedrate adjustment percent value
-    uint8_t feedrate = 100;
-    // flowrate adjustment percent value
-    uint8_t flowrate = 100;
+    void setup();
 
 protected:
-    void trySendCommand() override;
-
     void tryParseResponse(char* cmd, size_t len) override;
 
 private:
-    struct Command {
-        uint8_t len;
-        uint8_t str[99];
-    };
     Compatibility compatibility;
     float e = 0.0;
     float hotendTemp = 0.0,
@@ -122,7 +105,6 @@ private:
         bedPower = 0;
     int16_t minExtrusionTemp = -1;
     bool relative = false;
-    int ack = 0;
 
     void parseOk(const char* input, size_t len);
 };

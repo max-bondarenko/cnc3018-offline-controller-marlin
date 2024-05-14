@@ -51,21 +51,6 @@ bool GrblDevice::isCmdRealtime(const char* data, size_t len) {
     }
 }
 
-void GrblDevice::trySendCommand() {
-    size_t& len = curUnsentPriorityCmdLen != 0 ? curUnsentPriorityCmdLen : curUnsentCmdLen;
-    if (len == 0)
-        return;
-    char* cmd = curUnsentPriorityCmdLen != 0 ? &curUnsentPriorityCmd[0] : &curUnsentCmd[0];
-    cmd[len] = 0;
-    LOGLN("Try send");
-    if (serialCNC.availableForWrite()) {
-        LOGLN("> send");
-        serialCNC.write((const uint8_t*) cmd, len);
-        serialCNC.write('\n');
-        len = 0;
-    }
-}
-
 void GrblDevice::tryParseResponse(char* resp, size_t len) {
     if (startsWith(resp, "ok")) {
         lastStatus = DeviceStatus::OK;

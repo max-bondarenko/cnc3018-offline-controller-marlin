@@ -47,7 +47,7 @@ public:
             if (isCmdRealtime(cmd, len))
                 serialCNC.write((const uint8_t*) cmd, len);
             else
-                schedulePriorityCommand(cmd, len);
+                GCodeDevice::schedulePriorityCommand(cmd, len);
         }
     }
 
@@ -65,7 +65,6 @@ public:
     static bool checkProbeResponse(const char* input);
 
 protected:
-    void trySendCommand() override;
 
     void tryParseResponse(char* cmd, size_t len) override;
 

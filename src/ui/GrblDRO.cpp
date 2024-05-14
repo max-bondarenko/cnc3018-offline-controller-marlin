@@ -13,7 +13,7 @@ void GrblDRO::begin() {
         dev.reset();
     });
     menuItems.items[indx++] = MenuItem::simpleItem("Home", [this](MenuItem&, int8_t) {
-        dev.schedulePriorityCommand("$H", 3);
+        dev.scheduleCommand("$H", 3);
     });
     menuItems.items[indx++] = MenuItem::simpleItem("XYZ=0", [this](MenuItem&, int8_t) {
         // <G10 L2 P.. X.. Y.. Z..> L2 tells the G10 we’re setting standard work offsets
@@ -27,13 +27,11 @@ void GrblDRO::begin() {
         dev.scheduleCommand("G10 L20 P1 X0Y0Z0", 18);
     });
     menuItems.items[indx++] = MenuItem::simpleItem("Goto XY=0", [this](MenuItem&, int8_t) {
-
         dev.scheduleCommand("G0 X0Y0", 8);
     });
     menuItems.items[indx++] = MenuItem::simpleItem("Machine/Work", [this](MenuItem&, int8_t) {
         useWCS = !useWCS;
-        // todo ???
-//        dev.scheduleCommand(useWCS ? G54_USE_COORD_SYSTEM_1 : G53_USE_MACHINE_COORD, 4);
+        dev.scheduleCommand(useWCS ? G54_USE_COORD_SYSTEM_1 : G53_USE_MACHINE_COORD, 4); // TODO need to check
     });
 }
 

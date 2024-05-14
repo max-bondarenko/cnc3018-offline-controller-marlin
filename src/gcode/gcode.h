@@ -36,6 +36,7 @@ get extra details.
 */
 #define M114_GET_CURRENT_POS             "M114"
 // need to enable M114_REALTIME in marlin ConfigAdvanced.h
+// this UI is not so fast to show realtime.
 #define M114_GET_CURRENT_POS_REALTIME    "M114 R"
 
 #define M154_AUTO_REPORT_POSITION        "M154"

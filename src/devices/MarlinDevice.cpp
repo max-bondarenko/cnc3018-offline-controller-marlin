@@ -24,7 +24,7 @@ bool MarlinDevice::checkProbeResponse(const char* const input) {
 }
 
 MarlinDevice::MarlinDevice() : GCodeDevice() {
-    canTimeout = false; //todo switch it on after
+    canTimeout = true;
     useLineNumber = true;
     config.spindle = etl::vector<u_int16_t, 10>{0, 1, 64, 255};
 }
@@ -37,41 +37,6 @@ void MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
     scheduleCommand(msg, l);
 }
 
-void MarlinDevice::trySendCommand() {
-    if (lastStatus >= DeviceStatus::WAIT) {
-        return;
-    }
-    if (!buffer.empty()) {
-        for (auto i = buffer.readEnd<Command>(), end = buffer.end<Command>();
-             ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite();
-             ++i) {
-            const Command& cmd = *i;
-            uint8_t len = cmd.len;
-            IO_LOGF("> [%s]\n", cmd.str);
-            serialCNC.write(cmd.str, len);
-            serialCNC.write('\n');
-            --buffer;
-            ack++;
-        }
-        lastResponse = nullptr;
-    }
-}
-
-bool MarlinDevice::canSchedule() const {
-    return !buffer.full<Command>();
-}
-
-void MarlinDevice::scheduleCommand(const char* cmd, size_t len) {
-    Command a;
-    a.len = len;
-    memcpy(a.str, cmd, len);
-    a.str[len] = 0;
-    buffer.push(a);
-}
-
-void MarlinDevice::schedulePriorityCommand(const char* cmd, size_t len) {
-    return scheduleCommand(cmd, len);
-}
 
 void MarlinDevice::begin() {
     GCodeDevice::begin();
@@ -134,8 +99,7 @@ void MarlinDevice::requestStatusUpdate() {
 }
 
 void MarlinDevice::reset() {
-    buffer.clear();
-    ack = 0;
+    cleanupQueue();
     lastStatus = DeviceStatus::OK;
     lastResponse = nullptr;
     resendLine = -1;
@@ -146,7 +110,6 @@ void MarlinDevice::toggleRelative() {
 }
 
 void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
-    char* str;
     etl::string_view resp{_resp, len};
     lastResponse = "";
     LOGF("> [%s]\n", resp);
@@ -252,7 +215,7 @@ bool MarlinDevice::canJog() {
 /// \param input
 /// \param len
 void MarlinDevice::parseOk(const char* input, size_t len) {
-    char cpy[MAX_LINE_LEN * 2];
+    char cpy[MAX_LINE_LEN * 2 + 1];
     strncpy(cpy, input, MIN(len, MAX_LINE_LEN * 2));
     cpy[MIN(len, MAX_LINE_LEN * 2)] = 0;
 

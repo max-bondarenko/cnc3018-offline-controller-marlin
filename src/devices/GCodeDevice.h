@@ -22,14 +22,15 @@ extern WatchedSerial serialCNC;
 struct DeviceStatus {
     enum {
         NONE,
-        DISCONNECTED,
-        LOCKED,
         OK,
         MSG,
         RESEND,
         // -------- WAIT states
         WAIT = 10,
         BUSY,
+        // -------- Dysfunctional states
+        DISCONNECTED = 20,
+        LOCKED,
         // -------- Error states
         ALARM = 100,
         DEV_ERROR,
@@ -45,6 +46,16 @@ using DeviceObserver = etl::observer<DeviceEvent>;
 class GCodeDevice : public etl::observable<DeviceObserver, 2> {
 public:
     typedef Buffer<JOB_BUFFER_SIZE * MAX_LINE_LEN> DevBuffer;
+
+    struct Command {
+        uint8_t len;
+        uint8_t str[99];
+
+        Command(uint8_t _length, const char* buf) : len{_length} {
+            memcpy(str, buf, len);
+            str[len] = 0;
+        };
+    };
 
     struct Config {
         etl::vector<u_int16_t, 10> spindle{0, 1, 10, 100, 1000};
@@ -63,7 +74,7 @@ public:
 
     virtual void begin();
 
-    virtual bool canSchedule() const { return true; }
+    bool canSchedule() const;
 
     virtual void scheduleCommand(const char* cmd, size_t len);
 
@@ -107,6 +118,12 @@ public:
 
     const Config& getConfig() const { return config; }
 
+    // feedrate adjustment percent value
+    uint8_t feedrate = 100;
+    // flowrate adjustment percent value
+    uint8_t flowrate = 100;
+
+
 protected:
     DevBuffer buffer;
     bool canTimeout,
@@ -117,11 +134,7 @@ protected:
     bool wantUpdate = false;
     size_t responseLen = 0;
     char responseBuffer[MAX_LINE_LEN * 2];
-    char curUnsentCmd[MAX_LINE_LEN + 1],
-        curUnsentPriorityCmd[MAX_LINE_LEN + 1];
-
-    size_t curUnsentCmdLen = 0,
-        curUnsentPriorityCmdLen = 0;
+    Command priorityCmd{0, {0}};
 
     float x = 0.0,
         y = 0.0,
@@ -133,11 +146,13 @@ protected:
 
     int32_t resendLine = -1;
 
+    int ack = 0; // TODO check for grbl
+
     bool isRxTimeoutEnabled() const;
 
     void cleanupQueue();
 
-    virtual void trySendCommand() = 0;
+    virtual void trySendCommand();
 
     virtual void tryParseResponse(char* cmd, size_t len) = 0;
 
