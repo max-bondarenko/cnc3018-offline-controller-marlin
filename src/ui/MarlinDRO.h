@@ -4,7 +4,6 @@
 #include "devices/MarlinDevice.h"
 
 
-// TODO done list
 // todo done 1 extruder state (extrusion allowed temp)
 // todo done 2 show temp & extruder on main DRO while running job
 class MarlinDRO : public DRO {

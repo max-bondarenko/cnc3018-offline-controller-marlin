@@ -1,8 +1,7 @@
-#include "util.h"
 #include "constants.h"
+#include "debug.h"
 #include "GrblDevice.h"
 #include "etl/string_view.h"
-
 
 extern WatchedSerial serialCNC;
 
@@ -75,12 +74,14 @@ void GrblDevice::schedulePriorityCommand(const char* cmd, size_t _len) {
     }
 }
 
-void GrblDevice::tryParseResponse(char* resp, size_t len) {
-    if (startsWith(resp, "ok")) {
+void GrblDevice::tryParseResponse(char* _resp, size_t len) {
+    etl::string_view resp{_resp, len};
+    lastResponse = "";
+    if (resp.starts_with(OK_STR)) {
         lastStatus = DeviceStatus::OK;
         ack--;
-    } else if (startsWith(resp, "<")) {
-        parseStatus(resp + 1);
+    } else if (resp.starts_with("<")) {
+        parseStatus(_resp + 1);
         // make progres happens
         statusCount++;
         if (statusCount % 21 == 0) {
@@ -92,28 +93,27 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
         }
         prevAck = ack;
         lastStatus = DeviceStatus::OK;
-    } else if (startsWith(resp, "error")) {
+    } else if (resp.starts_with(ERROR_STR)) {
         LOGF("ERR '%s'\n", resp);
         lastStatus = DeviceStatus::DEV_ERROR;
-        lastResponse = resp;
+        lastResponse = _resp;
         ack = 0;
-    } else if (startsWith(resp, "ALARM:")) {
+    } else if (resp.starts_with(ALARM_STR)) {
         LOGF("ALARM '%s'\n", resp);
-        lastResponse = resp;
+        lastResponse = _resp;
         // no mor status updates will come in, so update status.
         status = GrblStatus::Alarm;
         lastStatus = DeviceStatus::ALARM;
         statusCount = 0;
         ack = 0;
-    } else if (startsWith(resp, "[MSG:")) {
-        LOGF("Msg '%s'\n", resp);
-        resp[len - 1] = 0; // strip last ']'
-        lastResponse = resp + 5;
+    } else if (resp.find(MSG_STR, 1) != etl::string_view::npos) {
+        _resp[len - 1] = 0; // strip last ']'
+        lastResponse = _resp + 5;
         // this is the first message after reset
         lastStatus = DeviceStatus::MSG;
     }
     lastStatusStr = getStatusStr();
-    LOGF("> '%s'\n", resp);
+    DEV_LOGF(">>> '%s'\n", lastResponse);
 }
 
 void GrblDevice::parseStatus(char* input) {
@@ -135,7 +135,7 @@ void GrblDevice::parseStatus(char* input) {
     setStatus(fromGrbl);
     // MPos:0.000,0.000,0.000 or WPos:0.000,0.000,0.000
     fromGrbl = strtok(nullptr, "|");
-    mpos = startsWith(fromGrbl, "MPos");
+    mpos = fromGrbl[0] == 'M' && fromGrbl[1] == 'P'; // starts with "MPos"
     {
         unsigned fromGrblLen = strlen(fromGrbl) + 1;
         char* pos = strtok(fromGrbl + 5, ",");
@@ -162,7 +162,7 @@ void GrblDevice::parseStatus(char* input) {
     //    v    v         v-- feed
     // FS:500,8000  or F:500
     while (fromGrbl != nullptr) {
-        if (startsWith(fromGrbl, "FS:") || startsWith(fromGrbl, "F:")) {
+        if (fromGrbl[0] == 'F') {
             if (fromGrbl[1] == 'S') {
                 unsigned fromGrblLen = strlen(fromGrbl) + 1;
                 char* pos = strtok(fromGrbl + 3, ",");
@@ -184,7 +184,7 @@ void GrblDevice::parseStatus(char* input) {
             } else {
                 feed = strtof(fromGrbl + 2, nullptr);
             }
-        } else if (startsWith(fromGrbl, "WCO:")) {
+        } else if (fromGrbl[0] == 'W' && fromGrbl[1] == 'C' && fromGrbl[2] == 'O') {
             unsigned fromGrblLen = strlen(fromGrbl) + 1;
             char* pos = strtok(fromGrbl + 4, ",");
             for (int i = 0; i < 3 && pos != nullptr; ++i) {
@@ -205,7 +205,7 @@ void GrblDevice::parseStatus(char* input) {
             }
             fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
             continue;
-        } else if (startsWith(fromGrbl, "Ov")) {
+        } else if (fromGrbl[0] == '0' && fromGrbl[1] == 'v') {
             //                                                  +-- feed
             //                                                  |   +--rapid moves max 100, min 25
             //                                                  v   v   v-- spindle speed
@@ -253,37 +253,38 @@ GUI Developers: Simply track and retain the last __WCO vector__ and use the abov
 }
 
 void GrblDevice::setStatus(const char* pch) {
-    if (startsWith(pch, "Hold")) status = GrblStatus::Hold;
-    else if (startsWith(pch, "Door")) status = GrblStatus::Door;
-    else if (strcmp(pch, "Idle") == 0) status = GrblStatus::Idle;
-    else if (strcmp(pch, "Run") == 0) status = GrblStatus::Run;
-    else if (strcmp(pch, "Jog") == 0) status = GrblStatus::Jog;
-    else if (strcmp(pch, "Alarm") == 0) status = GrblStatus::Alarm;
-    else if (strcmp(pch, "Check") == 0) status = GrblStatus::Check;
-    else if (strcmp(pch, "Home") == 0) status = GrblStatus::Home;
-    else if (strcmp(pch, "Sleep") == 0) status = GrblStatus::Sleep;
+    etl::string_view statusStr{pch};
+    if (statusStr.starts_with(HOLD_STR)) status = GrblStatus::Hold;
+    else if (statusStr.starts_with(DOOR_STR)) status = GrblStatus::Door;
+    else if (statusStr.starts_with(IDLE_STR)) status = GrblStatus::Idle;
+    else if (statusStr.starts_with(RUN_STR)) status = GrblStatus::Run;
+    else if (statusStr.starts_with(JOG_STR)) status = GrblStatus::Jog;
+    else if (statusStr.starts_with(Alarm_STR)) status = GrblStatus::Alarm;
+    else if (statusStr.starts_with(CHECK_STR)) status = GrblStatus::Check;
+    else if (statusStr.starts_with(HOME_STR)) status = GrblStatus::Home;
+    else if (statusStr.starts_with(SLEEP_STR)) status = GrblStatus::Sleep;
 }
 
 const char* GrblDevice::getStatusStr() const {
     switch (status) {
         case GrblStatus::Idle:
-            return "Idle";
+            return IDLE_STR;
         case GrblStatus::Run:
-            return "Run";
+            return RUN_STR;
         case GrblStatus::Jog:
-            return "Jog";
+            return JOG_STR;
         case GrblStatus::Alarm:
-            return "Alarm";
+            return Alarm_STR;
         case GrblStatus::Hold:
-            return "Hold";
+            return HOLD_STR;
         case GrblStatus::Door:
-            return "Door";
+            return DOOR_STR;
         case GrblStatus::Check:
-            return "Check";
+            return CHECK_STR;
         case GrblStatus::Home:
-            return "Home";
+            return HOME_STR;
         case GrblStatus::Sleep:
-            return "Sleep";
+            return SLEEP_STR;
         default:
             return "?";
     }

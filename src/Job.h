@@ -4,7 +4,6 @@
 #include "gcode/gcode.h"
 #include "debug.h"
 
-// TODO list
 // TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
 // TODO done refactor buffers
 // TODO done fix Pause

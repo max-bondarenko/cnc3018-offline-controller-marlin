@@ -1,16 +1,16 @@
 #include <vector>
+#include "constants.h"
 #include "DRO.h"
+#include "Screen.h"
 #include "devices/GCodeDevice.h"
-#include "util.h"
 
 #include "../assets/arrows_lr.XBM"
 #include "../assets/arrows_ud.XBM"
 #include "../assets/arrows_zud.XBM"
-
 #include "../assets/dist.XBM"
 #include "../assets/feed.XBM"
 #include "../assets/spindle.XBM"
-#include "Screen.h"
+
 
 extern GCodeDevice* dev;
 

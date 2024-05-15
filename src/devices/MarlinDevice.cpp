@@ -1,8 +1,6 @@
+#include "debug.h"
 #include "constants.h"
 #include "MarlinDevice.h"
-#include "util.h"
-#include "debug.h"
-
 
 #ifdef LOG_DEBUG
     #define LOG_EXTRA_INFO(a) a;
@@ -113,8 +111,8 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
     etl::string_view resp{_resp, len};
     lastResponse = "";
     LOGF("> [%s]\n", resp);
-    if (resp.starts_with(ERR_str)) {
-        lastStatusStr = ERR_str;
+    if (resp.starts_with(ERR_STR)) {
+        lastStatusStr = ERR_STR;
         lastResponse = _resp + 6;
         if (resp.find("Last Line:", 6) != etl::string_view::npos) {
             // next is resend number
@@ -124,19 +122,19 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
             buffer.clear();
             lastStatus = DeviceStatus::DEV_ERROR;
         }
-    } else if (resp.starts_with(ERROR_EXCLAMATION_str)) {
-        lastStatusStr = ERR_str;
+    } else if (resp.starts_with(ERROR_EXCLAMATION_STR)) {
+        lastStatusStr = ERR_STR;
         lastResponse = _resp + 3;
         lastStatus = DeviceStatus::DEV_ERROR;
         buffer.clear();
-    } else if (resp.starts_with(START_str) && resp.length() == strlen(START_str)) {
+    } else if (resp.starts_with(START_STR) && resp.length() == strlen(START_STR)) {
         //restart everything on marlin hard reset
         job.stop();
         ack = 0;
         reset();
         begin();
         return;
-    } else if (resp.starts_with(OK_str)) {
+    } else if (resp.starts_with(OK_STR)) {
         if (len > 2) {
             parseOk(_resp + 2, len - 2);
             LOG_EXTRA_INFO(lastResponse = resp + 2;)
@@ -145,17 +143,17 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
             ack = 0;
             return;
         }
-        lastStatusStr = OK_str;
+        lastStatusStr = OK_STR;
         ack > 0 ? ack-- : 0;
         lastStatus = DeviceStatus::OK;
-    } else if (resp.find(BUSY_str) != etl::string_view::npos) {
+    } else if (resp.find(BUSY_STR) != etl::string_view::npos) {
         // "echo:busy: processing"
-        lastStatusStr = BUSY_str;
+        lastStatusStr = BUSY_STR;
         lastResponse = _resp + 6;
         lastStatus = DeviceStatus::BUSY;
-    } else if (resp.starts_with(ECHO_str)) {
+    } else if (resp.starts_with(ECHO_STR)) {
         // echo: busy must be before this
-        lastStatusStr = ECHO_str;
+        lastStatusStr = ECHO_STR;
         lastResponse = _resp + 5;// has space after ':'
         //echo:Cold extrudes are enabled (min temp 170C)
         if (resp.find("disabled", 5) != etl::string_view::npos) {
@@ -169,17 +167,17 @@ void MarlinDevice::tryParseResponse(char* _resp, size_t len) {
             return;
         }
         lastStatus = DeviceStatus::OK;
-    } else if (resp.starts_with(RESEND_str)) {
+    } else if (resp.starts_with(RESEND_STR)) {
         //Error:Line Number is not Last Line Number+1, Last Line: 11
         //Resend: 12
         //ok
-        lastStatusStr = RESEND_str;
+        lastStatusStr = RESEND_STR;
         // MAY have "Resend:Error
         resendLine = strtol(_resp + 7, nullptr, STRTOLL_BASE);
         buffer.clear();
         lastStatus = DeviceStatus::RESEND;
-    } else if (resp.starts_with(DEBUG_str)) {
-        lastStatusStr = DEBUG_str;
+    } else if (resp.starts_with(DEBUG_STR)) {
+        lastStatusStr = DEBUG_STR;
         lastResponse = _resp + 5;
         lastStatus = DeviceStatus::OK;
     } else {

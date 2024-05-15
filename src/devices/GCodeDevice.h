@@ -3,14 +3,12 @@
 #include <etl/observer.h>
 #include "WatchedSerial.h"
 #include "gcode/gcode.h"
+#include "debug.h"
+#include "Buffer.h"
 
 class Job;
 
 extern WatchedSerial serialCNC;
-
-#include "util.h"
-#include "debug.h"
-#include "Buffer.h"
 
 // todo done switch to states from flags for protocol state
 // todo done 5 move read preset out of begin()
@@ -138,7 +136,7 @@ protected:
     bool wantUpdate = false;
     size_t responseLen = 0;
     char responseBuffer[MAX_LINE_LEN * 2];
-    Command priorityCmd{0, {0}};
+    Command priorityCmd{0, (nullptr)};
 
     float x = 0.0,
         y = 0.0,
@@ -151,7 +149,7 @@ protected:
     int32_t resendLine = -1;
 
     int ack = 0, prevAck;
-    uint8_t statusCount =0;
+    uint8_t statusCount = 0;
 
     bool isRxTimeoutEnabled() const;
 

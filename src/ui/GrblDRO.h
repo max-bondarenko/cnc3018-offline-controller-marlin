@@ -3,8 +3,7 @@
 #include "DRO.h"
 #include "devices/GrblDevice.h"
 
-// todo list
-// todo 1 add override feed/spindle for running job
+// todo done 1 add override feed/spindle for running job
 
 class GrblDRO : public DRO {
 public:
