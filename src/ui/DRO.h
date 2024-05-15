@@ -1,14 +1,12 @@
 #pragma once
 
 #include <etl/vector.h>
+#include "observeble_states.h"
 #include "utils.h"
 #include "constants.h"
 #include "Screen.h"
 #include "FileChooser.h"
 #include "devices/GCodeDevice.h"
-
-extern FileChooser fileChooser;
-extern Job job;
 
 // TODO done 1 dynamic allocation for menu
 // TODO done 2 and simplify it container

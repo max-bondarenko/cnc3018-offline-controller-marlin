@@ -3,16 +3,11 @@
 #include "JobFsm.h"
 #include "gcode/gcode.h"
 #include "debug.h"
+#include "observeble_states.h"
 
 // TODO done 1 add prev state. added as transition from WAIT to READY, then PAUSE
 // TODO done refactor buffers
 // TODO done fix Pause
-
-enum class JobEvent {
-    REFRESH,
-    DONE
-};
-typedef etl::observer<JobEvent> JobObserver;
 
 class InitState : public etl::fsm_state<JobFsm, InitState, StateId::INIT, SetFileMessage> {
 public:
@@ -32,7 +27,7 @@ public:
     etl::fsm_state_id_t on_enter_state() {
         get_fsm_context().endTime = millis();
         get_fsm_context().dev->reset();
-//        dro->enableRefresh(true);
+        get_fsm_context().notify_observers(JobEvent{JobEvent::DONE});
         return STATE_ID;
     }
 
@@ -54,7 +49,6 @@ public:
     etl::fsm_state_id_t on_enter_state() {
         get_fsm_context().endTime = millis();
         get_fsm_context().dev->reset();
-//        dro->enableRefresh(true);
         return STATE_ID;
     }
 
@@ -149,7 +143,7 @@ public:
 /// Represents gcode program read from SD card.
 /// Shim class abstracting FSM as method calls.
 ///
-class Job : public etl::observable<JobObserver, 2> {
+class Job {
     JobFsm* fsm;
     InitState initState;
     FinishState finishState;
@@ -167,6 +161,10 @@ public:
         fsm->start(false);
     }
 
+    void add_observer(JobObserver& dro) {
+        fsm->add_observer(dro);
+    }
+
     void inline setDevice(GCodeDevice* dev_) {
         fsm->dev = dev_;
         fsm->addLineN = dev_->supportLineNumber();
@@ -181,7 +179,6 @@ public:
 
     void start() {
         fsm->receive(StartMessage{});
-//        dro->enableRefresh(false);
     }
 
     void stop() {

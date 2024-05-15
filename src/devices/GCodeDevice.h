@@ -1,6 +1,6 @@
 #pragma once
 
-#include <etl/observer.h>
+#include "observeble_states.h"
 #include "WatchedSerial.h"
 #include "gcode/gcode.h"
 #include "debug.h"
@@ -35,13 +35,8 @@ struct DeviceStatus {
     };
 };
 
-enum class DeviceEvent {
-    REFRESH
-};
 
-using DeviceObserver = etl::observer<DeviceEvent>;
-
-class GCodeDevice : public etl::observable<DeviceObserver, 2> {
+class GCodeDevice : public etl::observable<DeviceObserver, 1> {
 public:
     typedef Buffer<JOB_BUFFER_SIZE * MAX_LINE_LEN> DevBuffer;
 

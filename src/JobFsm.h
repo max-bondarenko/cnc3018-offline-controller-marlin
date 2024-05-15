@@ -2,12 +2,9 @@
 #define CNC_3018_JOBFSM_H
 
 #include <SD.h>
-
-#include "etl/fsm.h"
-#include "etl/message.h"
+#include <etl/fsm.h>
 #include "constants.h"
-
-const etl::message_router_id_t JOB_FSM_NUMBER = 1;
+#include "observeble_states.h"
 
 struct StateId {
     enum {
@@ -57,7 +54,6 @@ struct ContinueMessage : public etl::message<EventId::ACK> {
 
 #include <Arduino.h>
 #include <SD.h>
-#include <etl/observer.h>
 #include <math.h>
 
 #include "debug.h"
@@ -72,7 +68,7 @@ struct CmdInFile {
     uint8_t length;
 };
 
-class JobFsm : public etl::fsm {
+class JobFsm : public etl::fsm, public etl::observable<JobObserver, 1> {
 
 public:
     JobFsm() : etl::fsm(JOB_FSM_NUMBER) {}

@@ -1,4 +1,3 @@
-#include <vector>
 #include "constants.h"
 #include "DRO.h"
 #include "Screen.h"
@@ -13,6 +12,8 @@
 
 
 extern GCodeDevice* dev;
+extern FileChooser fileChooser;
+extern Job job;
 
 void DRO::step() {
     if (nextRefresh != 0 && millis() > nextRefresh) {

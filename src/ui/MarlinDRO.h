@@ -10,7 +10,7 @@ class MarlinDRO : public DRO {
 public:
     constexpr static uint8_t MAX_TEMP = 250;
 
-    MarlinDRO(MarlinDevice& d) : DRO(), dev(d) {
+    MarlinDRO(MarlinDevice& d) : DRO(), marlinDev(d) {
         defaultAxisPrecision = 2;
     }
 
@@ -19,7 +19,7 @@ public:
     void begin() override;
 
 protected:
-    MarlinDevice& dev;
+    MarlinDevice& marlinDev;
 
     void drawContents() override;
 
