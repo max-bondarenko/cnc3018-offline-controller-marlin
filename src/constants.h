@@ -64,6 +64,10 @@ constexpr uint8_t MAX_LINE_LEN = 100;
 constexpr uint8_t MAX_ADJUST_PERCENT = 250;
 constexpr uint8_t MIN_ADJUST_PERCENT = 50;
 constexpr uint8_t ADJUST_PERCENT_STEP = 5;
+constexpr uint8_t GRBL_MAX_ADJUST_PERCENT = 200;
+constexpr uint8_t GRBL_MIX_ADJUST_PERCENT = 10;
+constexpr uint8_t GRBL_ADJUST_PERCENT_STEP = 10;
+constexpr uint8_t GRBL_RAPID = 25;
 
 
 #define PRESETS_FILE "presets.ini"

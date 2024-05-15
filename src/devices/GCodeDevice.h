@@ -118,10 +118,14 @@ public:
 
     const Config& getConfig() const { return config; }
 
-    // feedrate adjustment percent value
+    // feedrate adjustment percent value.max 200% for Grbl for all
     uint8_t feedrate = 100;
-    // flowrate adjustment percent value
+    // flowrate adjustment percent value.
     uint8_t flowrate = 100;
+    // flowrate adjustment percent value.
+    uint8_t rapidrate = 100;
+    //only in grbl
+    uint8_t spindlerate = 100;
 
 
 protected:

@@ -205,6 +205,32 @@ void GrblDevice::parseStatus(char* input) {
             }
             fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
             continue;
+        } else if (startsWith(fromGrbl, "Ov")) {
+            //                                                  +-- feed
+            //                                                  |   +--rapid moves max 100, min 25
+            //                                                  v   v   v-- spindle speed
+            //<Idle|MPos:9.800,0.000,0.000|FS:0,0|Bf:15,128|Ov:100,100,100>
+            unsigned fromGrblLen = strlen(fromGrbl) + 1;
+            char* pos = strtok(fromGrbl + 3, ",");
+            for (int i = 0; i < 3 && pos != nullptr; ++i) {
+                uint16_t len = strlen(pos) + 1;
+                switch (i) {
+                    //min 10%, max 200%
+                    case 0:
+                        feedrate = (uint8_t) strtol(pos, nullptr, STRTOLL_BASE);
+                        break;
+                    case 1:
+                        rapidrate = (uint8_t) strtol(pos, nullptr, STRTOLL_BASE);
+                        break;
+                    case 2:
+                        spindlerate = (uint8_t) strtol(pos, nullptr, STRTOLL_BASE);
+                    default:
+                        continue;
+                }
+                pos = strtok(pos + len, ",");
+            }
+            fromGrbl = strtok(fromGrbl + fromGrblLen, "|");
+            continue;
         }
         fromGrbl = strtok(nullptr, "|");
     }
