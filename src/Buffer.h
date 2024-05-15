@@ -54,12 +54,14 @@ public:
             ++_writeIndex;
             _writeIndex = _writeIndex % MAX_SIZE;
             size++;
-            _tailIndex = _tailIndex < MAX_SIZE ? ++_tailIndex : _tailIndex;
+            if (_tailIndex < MAX_SIZE)
+                ++_tailIndex;
         }
     }
 
     void operator--() {
-        size = size <= 0 ? 0 : --size;
+        if (size > 0)
+            --size;
     }
 
     template<typename G = Storage_Type>

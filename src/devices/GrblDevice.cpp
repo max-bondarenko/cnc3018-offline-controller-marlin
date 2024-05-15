@@ -29,6 +29,13 @@ bool GrblDevice::canJog() {
     return lastStatus == DeviceStatus::OK && (status == GrblStatus::Idle || status == GrblStatus::Jog);
 }
 
+void GrblDevice::reset() {
+    lastStatus = DeviceStatus::OK;
+    GCodeDevice::cleanupQueue();
+    // ^x, reset
+    schedulePriorityCommand(GRBL_RESET, 1);
+}
+
 bool GrblDevice::isCmdRealtime(const char* data, size_t len) {
     if (len != 1)
         return false;
@@ -51,22 +58,53 @@ bool GrblDevice::isCmdRealtime(const char* data, size_t len) {
     }
 }
 
+void GrblDevice::requestStatusUpdate() {
+    if (lastStatus == DeviceStatus::ALARM)
+        return; // grbl does not respond in panic anyway
+    schedulePriorityCommand(GRBL_STATUS, 1);
+    wantUpdate = true;
+}
+
+void GrblDevice::schedulePriorityCommand(const char* cmd, size_t _len) {
+    if (lastStatus != DeviceStatus::LOCKED) {
+        size_t len = _len == 0 ? strlen(cmd) : _len;
+        if (isCmdRealtime(cmd, len))
+            serialCNC.write((const uint8_t*) cmd, len);
+        else
+            GCodeDevice::schedulePriorityCommand(cmd, len);
+    }
+}
+
 void GrblDevice::tryParseResponse(char* resp, size_t len) {
     if (startsWith(resp, "ok")) {
         lastStatus = DeviceStatus::OK;
+        ack--;
     } else if (startsWith(resp, "<")) {
         parseStatus(resp + 1);
+        // make progres happens
+        statusCount++;
+        if (statusCount % 21 == 0) {
+            auto changed = ack ^ prevAck;
+            if (!changed && ack >= JOB_BUFFER_SIZE) {
+                ack--;
+                statusCount = 1;
+            }
+        }
+        prevAck = ack;
         lastStatus = DeviceStatus::OK;
     } else if (startsWith(resp, "error")) {
         LOGF("ERR '%s'\n", resp);
         lastStatus = DeviceStatus::DEV_ERROR;
         lastResponse = resp;
+        ack = 0;
     } else if (startsWith(resp, "ALARM:")) {
         LOGF("ALARM '%s'\n", resp);
         lastResponse = resp;
         // no mor status updates will come in, so update status.
         status = GrblStatus::Alarm;
         lastStatus = DeviceStatus::ALARM;
+        statusCount = 0;
+        ack = 0;
     } else if (startsWith(resp, "[MSG:")) {
         LOGF("Msg '%s'\n", resp);
         resp[len - 1] = 0; // strip last ']'
@@ -77,7 +115,6 @@ void GrblDevice::tryParseResponse(char* resp, size_t len) {
     lastStatusStr = getStatusStr();
     LOGF("> '%s'\n", resp);
 }
-
 
 void GrblDevice::parseStatus(char* input) {
     //        + work position
@@ -188,7 +225,6 @@ GUI Developers: Simply track and retain the last __WCO vector__ and use the abov
         z -= ofsZ;
     }
 }
-
 
 void GrblDevice::setStatus(const char* pch) {
     if (startsWith(pch, "Hold")) status = GrblStatus::Hold;

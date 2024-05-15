@@ -6,6 +6,24 @@
 #define GRBL_INFO                        "$I"
 #define GRBL_RESET                       "\x18"
 #define GRBL_STATUS                      "?"
+/*
+If override value does not change, the command is ignored.
+Feed override value can not be 10% or greater than 200%.
+
+Does not alter rapid rates, which include G0, G28, and G30, or jog motions.
+ */
+#define GRBL_FEED_100                    "\x90"
+#define GRBL_FEED_PLUS10                 "\x91"
+#define GRBL_FEED_MINUS10                "\x92"
+//Only effects rapid motions, which include G0, G28, and G30.
+#define GRBL_RAPID_100                   "\x95"
+#define GRBL_RAPID_MINUS50               "\x96"
+#define GRBL_RAPID_MINUS25               "\x97"
+//Spindle override value can not be 10% or greater than 200%
+#define GRBL_SPINDLE_100                 "\x99"
+#define GRBL_SPINDLE_PLUS10              "\x9A"
+#define GRBL_SPINDLE_MINUS10             "\x9B"
+
 
 #define G28_START_HOMING                 "G28"
 #define G53_USE_MACHINE_COORD            "G53"

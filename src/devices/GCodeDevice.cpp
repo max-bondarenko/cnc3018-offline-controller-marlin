@@ -36,9 +36,8 @@ void GCodeDevice::trySendCommand() {
              ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite();
              ++i) {
             const Command& cmd = *i;
-            uint8_t len = cmd.len;
             IO_LOGF("> [%s]\n", cmd.str);
-            serialCNC.write(cmd.str, len);
+            serialCNC.write(cmd.str, cmd.len);
             serialCNC.write('\n');
             --buffer;
             ack++;

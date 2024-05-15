@@ -28,28 +28,10 @@ public:
         requestStatusUpdate();
     }
 
-    void reset() override {
-        lastStatus = DeviceStatus::OK;
-        GCodeDevice::cleanupQueue();
-        // ^x, reset
-        schedulePriorityCommand(GRBL_RESET, 1);
-    }
+    void reset() override ;
 
-    void requestStatusUpdate() override {
-        if (lastStatus == DeviceStatus::ALARM)
-            return; // grbl does not respond in panic anyway
-        schedulePriorityCommand(GRBL_STATUS, 1);
-    }
-
-    void schedulePriorityCommand(const char* cmd, size_t _len) override {
-        if (lastStatus != DeviceStatus::LOCKED) {
-            size_t len = _len == 0 ? strlen(cmd) : _len;
-            if (isCmdRealtime(cmd, len))
-                serialCNC.write((const uint8_t*) cmd, len);
-            else
-                GCodeDevice::schedulePriorityCommand(cmd, len);
-        }
-    }
+    void requestStatusUpdate() override ;
+    void schedulePriorityCommand(const char* cmd, size_t _len) override ;
 
     /// WPos = MPos - WCO
     float getXOfs() const { return ofsX; }

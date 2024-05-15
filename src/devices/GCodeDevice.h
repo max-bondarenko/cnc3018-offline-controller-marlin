@@ -146,7 +146,8 @@ protected:
 
     int32_t resendLine = -1;
 
-    int ack = 0; // TODO check for grbl
+    int ack = 0, prevAck;
+    uint8_t statusCount =0;
 
     bool isRxTimeoutEnabled() const;
 
