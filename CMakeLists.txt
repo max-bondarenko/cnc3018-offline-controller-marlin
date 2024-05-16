@@ -11,7 +11,7 @@ if (UNIX)
 elseif (WIN32)
     set(SDK_PATH_HINTS "C:\\Program Files\\Arduino"
             "C:\\Program Files (x86)\\Arduino"
-            )
+    )
 endif ()
 
 set(LIB_DOWNLOAD_PATH ${CMAKE_CURRENT_SOURCE_DIR}/.lib)
@@ -121,8 +121,10 @@ file(GLOB ARDUINO_SRC
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/*.c
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/stm32/*.c
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/stm32/*.cpp
-        )
+)
 list(FILTER ARDUINO_SRC EXCLUDE REGEX ".*_template[.]c")
+
+set(ARDUINO_PRECOMPILE ${core_path}/Arduino.h)
 
 add_compile_definitions(USBCON)
 add_compile_definitions(USBD_USE_CDC)
@@ -131,8 +133,8 @@ add_compile_definitions(HAL_UART_MODULE_ENABLED)
 add_compile_definitions(HAL_PCD_MODULE_ENABLED)
 add_compile_definitions(USE_FULL_LL_DRIVER)
 
-
 add_library(core ${ARDUINO_SRC})
+target_precompile_headers(core PUBLIC ${ARDUINO_PRECOMPILE})
 include_directories(
         ${core_path}
         ${stm_core_path}
@@ -204,6 +206,7 @@ ard_lib(SPI SPI_path ${PLATFORM-PATH})
 ard_lib(Wire Wire_path ${PLATFORM-PATH})
 target_include_directories(SD PUBLIC ${SPI_path})
 
+# ================================ Lib U8g2 =======================
 set(u8g2_path ${ETL_PATH}/../U8g2)
 file(GLOB_RECURSE U8g2_src ${u8g2_path}/src/*.c ${u8g2_path}/src/*.cpp)
 add_library(U8g2 ${U8g2_src})
@@ -219,9 +222,10 @@ set(DEBUG_LIST
         src/devices/MarlinDevice.cpp
         )
 list(REMOVE_ITEM SRC_LIST ${DEBUG_LIST})
-
+#==============================  Controller   ==============================
 add_library(controller ${SRC_LIST})
 set(main_include src src/ui src/gcode src/devices)
+target_precompile_headers(controller PUBLIC ${SD_LIB_path}/SD.h )
 target_include_directories(controller PUBLIC ${main_include})
 target_compile_options(controller PRIVATE ${OPT_FLAG})
 
@@ -240,7 +244,7 @@ if (DEBUG_LIST)
     target_include_directories(for_debug PUBLIC ${main_include} ${ETL_PATH}/../SD/src ${ETL_PATH}/include ${LIB_ini_PATH} ${u8g2_path}/src)
     target_compile_options(for_debug PRIVATE ${DEBUG_OPT_FLAG})
     target_compile_definitions(for_debug PRIVATE LOG_IO)
-    target_link_libraries(for_debug PUBLIC ini U8g2)
+    target_link_libraries(for_debug PRIVATE ini U8g2)
 endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
@@ -249,11 +253,11 @@ if (CMAKE_BUILD_TYPE STREQUAL "debug")
             #            LOG_DEBUG
             #            LOG_DETECTOR
             #            USB_TO_SERIAL
-            )
+    )
 else ()
     target_compile_definitions(controller PUBLIC
             LOG_IO
-            )
+    )
 endif ()
 
 target_include_directories(controller PUBLIC ${ETL_PATH}/include ${ETL_PATH}/../SD/src ${u8g2_path}/src)
@@ -295,6 +299,7 @@ set(BIN_FILE ${PROJECT_NAME}.bin)
 
 add_executable(${PROJECT_NAME}.elf src/main.cpp)
 target_compile_options(${PROJECT_NAME}.elf PRIVATE ${DEBUG_OPT_FLAG})
+target_precompile_headers(${PROJECT_NAME}.elf REUSE_FROM controller)
 
 target_link_libraries(${PROJECT_NAME}.elf ${cortexM3_math})
 target_link_libraries(${PROJECT_NAME}.elf "$<LINK_LIBRARY:WHOLE_ARCHIVE,core>")
@@ -322,7 +327,7 @@ add_custom_target(${PROJECT_NAME}-size
         COMMAND ${TOOL-PATH}/bin/arm-none-eabi-size -B -d ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf -d ${PROJECT_BINARY_DIR}/${HEX_FILE}
         # ===================================
         DEPENDS ${PROJECT_NAME}.elf
-        )
+)
 
 find_program(OCD_PROG NAMES openocd)
 if (NOT EXISTS ${OCD_PROG})
@@ -340,4 +345,4 @@ add_custom_target(${PROJECT_NAME}-upload-ocd
         -d0
         -c \"program ${PROJECT_BINARY_DIR}/${PROJECT_NAME}.elf verify reset\; shutdown\;\"
         DEPENDS ${PROJECT_NAME}.elf
-        )
+)
