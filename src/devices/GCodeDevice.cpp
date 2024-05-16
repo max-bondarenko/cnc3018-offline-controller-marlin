@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "features.h"
 #include "GCodeDevice.h"
 #include "WString.h"
 
@@ -36,7 +37,7 @@ void GCodeDevice::trySendCommand() {
              ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite();
              ++i) {
             const Command& cmd = *i;
-            IO_LOGF("> [%s]\n", cmd.str);
+            LOGF("> [%s]\n", cmd.str);
             serialCNC.write(cmd.str, cmd.len);
             serialCNC.write('\n');
             --buffer;
@@ -131,7 +132,7 @@ void GCodeDevice::receiveResponses() {
         }
         if (ch == '\n') {
             responseBuffer[responseLen] = 0;
-            IO_LOGLN(responseBuffer);
+            USB_TO_PC(responseBuffer);
             tryParseResponse(responseBuffer, responseLen);
             responseLen = 0;
             extendRxTimeout();

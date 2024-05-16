@@ -1,5 +1,6 @@
 #include "debug.h"
 #include "constants.h"
+#include "features.h"
 #include "MarlinDevice.h"
 
 #ifdef LOG_DEBUG
@@ -58,27 +59,37 @@ void MarlinDevice::begin() {
 }
 
 void MarlinDevice::setup() {
+    uint8_t downCount = 3;
     WatchedSerial& s = serialCNC;
     char buffer[MAX_LINE_LEN + 1]; // assume less than 100B
     // do not check readBytesUntil.return value, let it read
-    for (int i = 50; i > 0; i--) {
+    for (int i = 50; i > 0 && downCount > 0; i--) {
         size_t read = s.readBytesUntil('\n', buffer, 100);
+        DEV_LOGF(">s [%d| %d]\n", i, read);
         if (read > 0) {
-            IO_LOGLN(buffer);
+            USB_TO_PC(buffer);
             etl::string_view compatString{buffer};
             if (compatString.starts_with("Cap:")) {
                 if (compatString.find("AUTOREPORT_") != etl::string_view::npos) {
-                    if (compatString.find("TEMP", 14) != etl::string_view::npos &&
-                        compatString.find(":1", 15) != etl::string_view::npos) {
-                        this->compatibility.auto_temp = true;
-                    } else if (compatString.find("POS", 14) != etl::string_view::npos &&
-                               compatString.find(":1", 15) != etl::string_view::npos) {
-                        this->compatibility.auto_position = true;
+                    if (compatString.find("TEMP", 14) != etl::string_view::npos) {
+                        if (compatString.find(":1", 15) != etl::string_view::npos) {
+                            this->compatibility.auto_temp = true;
+                        }
+                        downCount--;
+                    } else if (compatString.find("POS", 14) != etl::string_view::npos) {
+                        if (compatString.find(":1", 15) != etl::string_view::npos) {
+                            this->compatibility.auto_position = true;
+                        }
+                        downCount--;
                     }
-                } else if (compatString.find("EMERGENCY_PARSER") != etl::string_view::npos &&
-                           compatString.find(":1", 16) != etl::string_view::npos) {
-                    this->compatibility.emergency_parser = true;
+                } else if (compatString.find("EMERGENCY_PARSER") != etl::string_view::npos) {
+                    if (compatString.find(":1", 16) != etl::string_view::npos) {
+                        this->compatibility.emergency_parser = true;
+                    }
+                    downCount--;
                 }
+            } else {
+                i /= 2;
             }
         } else {
             i /= 2;

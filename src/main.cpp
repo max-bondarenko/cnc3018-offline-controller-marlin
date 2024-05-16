@@ -111,8 +111,7 @@ void loop() {
         detector->loop();
     }
 
-#ifdef LOG_IO
-    //send all data from pc to device
+#ifdef FEATURE_USB_TO_PC
     if (SerialUSB.available()) {
         while (SerialUSB.available()) {
             serialCNC.write(SerialUSB.read());

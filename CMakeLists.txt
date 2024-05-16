@@ -248,15 +248,17 @@ if (DEBUG_LIST)
 endif ()
 
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
+    target_compile_definitions(for_debug PUBLIC
+            LOG_DEVICE
+    )
     target_compile_definitions(controller PUBLIC
-            LOG_IO
+            FEATURE_USB_TO_PC
             #            LOG_DEBUG
             #            LOG_DETECTOR
-            #            USB_TO_SERIAL
     )
 else ()
     target_compile_definitions(controller PUBLIC
-            LOG_IO
+            FEATURE_USB_TO_PC
     )
 endif ()
 

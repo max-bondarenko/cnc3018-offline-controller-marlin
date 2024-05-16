@@ -36,13 +36,6 @@
     #define DEV_LOGLN(...)
 #endif
 
-#ifdef LOG_IO
-    #define IO_LOGF(...)   do{SerialUSB.printf(__VA_ARGS__);}while(0)
-    #define IO_LOGLN(...)  do{SerialUSB.println(__VA_ARGS__);}while(0)
-#else
-    #define IO_LOGF(...)
-    #define IO_LOGLN(...)
-#endif
 
 #ifdef LOG_TIME
     #define TIME_LOGF(...)   do{SerialUSB.printf(__VA_ARGS__);}while(0)
