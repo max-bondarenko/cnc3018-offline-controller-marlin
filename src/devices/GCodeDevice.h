@@ -69,6 +69,8 @@ public:
 
     bool canSchedule() const;
 
+    bool bufferEmpty() const;
+
     virtual void scheduleCommand(const char* cmd, size_t len);
 
     /// Schedule just put it to command var. sendCommands() do work for send.

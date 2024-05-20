@@ -26,6 +26,10 @@ bool GCodeDevice::canSchedule() const {
     return !buffer.full<Command>();
 }
 
+bool GCodeDevice::bufferEmpty()  const {
+    return buffer.empty();
+}
+
 void GCodeDevice::trySendCommand() {
     if (priorityCmd.len > 0 && serialCNC.availableForWrite()) {
         LOGF("> pr:[%s]\n", priorityCmd.str);
@@ -37,7 +41,7 @@ void GCodeDevice::trySendCommand() {
              ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite();
              ++i) {
             const Command& cmd = *i;
-            LOGF("> [%s]\n", cmd.str);
+            DEV_LOGF(">>[%s]\n", cmd.str);
             serialCNC.write(cmd.str, cmd.len);
             serialCNC.write('\n');
             --buffer;

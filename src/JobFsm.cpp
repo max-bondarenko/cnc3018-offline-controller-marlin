@@ -50,7 +50,7 @@ bool JobFsm::readCommandsToBuffer() {
                 curLine[curLinePos++] = readChar;
             }
             if (av == 0) {
-                return false;
+                return !_dev.bufferEmpty();
             }
             curLine[curLinePos] = 0;
             begin = filePos - end;

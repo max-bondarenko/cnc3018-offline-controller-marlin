@@ -9,6 +9,7 @@
 // TODO done 1 marlin features check
 // TODO  2 status polling according marlin state 70%
 // TODO     2.1 make it except Job commands feed. same as for grbl
+// TODO     2.2 assemble long priority command from short string str + /n + str2
 // TODO done kindaa 3 busy state is wierd. make it wait for "unbusy"
 
 extern Job job;
