@@ -65,7 +65,6 @@ public:
     }
 };
 
-
 class ReadyState : public etl::fsm_state<JobFsm, ReadyState, StateId::READY,
     StartMessage, SendMessage, PauseMessage, CompleteMessage> {
 public:

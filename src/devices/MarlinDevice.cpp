@@ -215,11 +215,11 @@ void MarlinDevice::bedTempChange(uint8_t temp) {
 bool MarlinDevice::canJog() {
     return lastStatus == DeviceStatus::OK;
 }
+
 /// ok T:201 /202 B:117 /120 @:255
 ///
 ///  "ok C: X:0.00 Y:0.00 Z:0.00 E:0.00"
 ///  " X:0.00 Y:0.00 RZ:0.00 LZ:0.00 Count X:0.00 Y:0.00 RZ:41.02 LZ:41.02"
-
 /// \param input
 /// \param len
 void MarlinDevice::parseOk(const char* input, size_t len) {

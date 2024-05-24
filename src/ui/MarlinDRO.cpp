@@ -283,7 +283,6 @@ void MarlinDRO::onButtonTemp(uint8_t bt, Evt evt) {
     }
 }
 
-
 void MarlinDRO::drawPower(uint16_t sx, uint16_t sy, uint8_t lineHeight, uint16_t val) const {
     val = val >= 127 ? lineHeight - 2 :
           val >= 64 ? lineHeight - 4 :
