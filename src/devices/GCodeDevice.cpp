@@ -19,6 +19,7 @@ void GCodeDevice::schedulePriorityCommand(const char* cmd, size_t len) {
     if (priorityCmd.len != 0)
         return;
     memcpy(priorityCmd.str, cmd, len);
+    priorityCmd.str[len] = 0;
     priorityCmd.len = len;
 }
 
@@ -26,21 +27,26 @@ bool GCodeDevice::canSchedule() const {
     return !buffer.full<Command>();
 }
 
-bool GCodeDevice::bufferEmpty()  const {
+bool GCodeDevice::bufferEmpty() const {
     return buffer.empty();
 }
 
 void GCodeDevice::trySendCommand() {
     if (priorityCmd.len > 0 && serialCNC.availableForWrite()) {
-        LOGF("> pr:[%s]\n", priorityCmd.str);
+        DEV_LOGF("> pr:[%s]\n", priorityCmd.str);
         serialCNC.write((const uint8_t*) (priorityCmd.str), priorityCmd.len);
         serialCNC.write('\n');
         priorityCmd.len = 0;
     } else if (!buffer.empty()) {
         for (auto i = buffer.readEnd<Command>(), end = buffer.end<Command>();
-             ack < JOB_BUFFER_SIZE && i != end && serialCNC.availableForWrite();
-             ++i) {
+             ack < JOB_BUFFER_SIZE && i != end ; ++i) {
             const Command& cmd = *i;
+            int availableForWrite = serialCNC.availableForWrite();
+            int ll = cmd.len + 1;
+            DEV_LOGF("> buf %d %d\n", availableForWrite,ll);
+            if (availableForWrite < ll){
+                break;
+            }
             DEV_LOGF(">>[%s]\n", cmd.str);
             serialCNC.write(cmd.str, cmd.len);
             serialCNC.write('\n');
@@ -136,6 +142,7 @@ void GCodeDevice::receiveResponses() {
         }
         if (ch == '\n') {
             responseBuffer[responseLen] = 0;
+            DEV_LOGLN(responseBuffer);
             USB_TO_PC(responseBuffer);
             tryParseResponse(responseBuffer, responseLen);
             responseLen = 0;

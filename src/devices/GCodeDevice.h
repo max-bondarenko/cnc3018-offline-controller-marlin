@@ -10,8 +10,8 @@ class Job;
 
 extern WatchedSerial serialCNC;
 
-// todo done switch to states from flags for protocol state
-// todo done 5 move read preset out of begin()
+// todo 6 remove device buffer. it duplicates function of Serial Out buffer.
+//  do just addup commands on schedule.
 
 /// Device abstraction statuses.
 /// Real Device can have different statuses,

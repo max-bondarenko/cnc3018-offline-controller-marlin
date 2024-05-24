@@ -99,6 +99,7 @@ add_compile_definitions(ARDUINO_${board_name}) #ARDUINO_GENERIC_F103CBTX
 add_compile_definitions(VARIANT_H=\"variant_generic.h\")
 
 add_compile_definitions(SERIAL_RX_BUFFER_SIZE=256)
+add_compile_definitions(SERIAL_TX_BUFFER_SIZE=128)
 
 set(core_path ${PLATFORM-PATH}/cores/arduino)
 set(stm_core_path ${core_path}/stm32)
@@ -236,7 +237,6 @@ target_compile_options(controller PRIVATE ${OPT_FLAG})
 #======================================================================
 if (CMAKE_BUILD_TYPE STREQUAL "debug")
     add_compile_definitions(
-            LOG_TIME
             LOG_JOB)
 endif ()
 if (DEBUG_LIST)

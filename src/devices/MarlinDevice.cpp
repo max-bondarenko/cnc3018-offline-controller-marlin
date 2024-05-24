@@ -97,11 +97,21 @@ void MarlinDevice::setup() {
 }
 
 void MarlinDevice::requestStatusUpdate() {
-    if (compatibility.auto_position == 0) {
-        scheduleCommand(M114_GET_CURRENT_POS, 5);
-    }
-    if (compatibility.auto_temp == 0) {
-        scheduleCommand(M105_GET_EXTRUDER_1_TEMP, 8);
+    if (compatibility.auto_position == 0 || compatibility.auto_temp == 0) {
+        char buffer[MAX_LINE_LEN];
+        char* tail = buffer;
+        if (compatibility.auto_position == 0) {
+            tail = stpncpy(buffer, M114_GET_CURRENT_POS, 5);
+            *tail = '\n';
+            tail++;
+        }
+        if (compatibility.auto_temp == 0) {
+            tail = stpncpy(tail, M105_GET_EXTRUDER_0_TEMP, 8);
+            *tail = '\n';
+            ++tail;
+        }
+        *tail = '\0';
+        schedulePriorityCommand(buffer, 0);
     }
     wantUpdate = true;
 }

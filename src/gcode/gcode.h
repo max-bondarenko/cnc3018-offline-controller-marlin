@@ -33,7 +33,7 @@ Does not alter rapid rates, which include G0, G28, and G30, or jog motions.
 #define M0_STOP_UNCONDITIONAL_FOR_60SEC  "M0 S60"
 
 #define M104_SET_EXTRUDER_TEMP           "M104"
-#define M105_GET_EXTRUDER_1_TEMP         "M105 T1"
+#define M105_GET_EXTRUDER_0_TEMP         "M105 T0"
 #define M108_CONTINUE                    "M108"
 #define M109_SET_EXTRUDER_TEMP_WAIT      "M109"
 #define M110_SET_LINE_NUMBER             "M110"
