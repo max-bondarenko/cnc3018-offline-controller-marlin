@@ -14,7 +14,7 @@
 extern GCodeDevice* dev;
 
 void MarlinDRO::begin() {
-    menuItems.size = marlinDev.getCompatibilities().emergency_parser ? 2 + 8 : 2 + 6;
+    menuItems.size = marlinDev.getCompatibilities().emergency_parser ? 2 + 8 : 2 + 7;
     menuItems.items = new MenuItem* [menuItems.size]; // not going to be deleted
     DRO::begin();
     uint8_t indx = 2U;
@@ -24,12 +24,12 @@ void MarlinDRO::begin() {
         marlinDev.toggleRelative();
         m.text = marlinDev.isRelative() ? "to Abs" : "to Relative";
     });
+    menuItems.items[indx++] = MenuItem::simpleItem("Continue", [this](MenuItem&, int8_t) {
+        dev->schedulePriorityCommand(M108_CONTINUE, 4);
+    });
     if (marlinDev.getCompatibilities().emergency_parser) {
         menuItems.items[indx++] = MenuItem::simpleItem("1 min STOP", [](MenuItem&, int8_t) {
             dev->schedulePriorityCommand(M0_STOP_UNCONDITIONAL_FOR_60SEC, 7);
-        });
-        menuItems.items[indx++] = MenuItem::simpleItem("Continue", [this](MenuItem&, int8_t) {
-            dev->schedulePriorityCommand(M108_CONTINUE, 4);
         });
     }
     // 14 char line is maximum for menu

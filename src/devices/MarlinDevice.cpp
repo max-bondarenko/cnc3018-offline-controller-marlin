@@ -36,7 +36,6 @@ void MarlinDevice::jog(uint8_t axis, float dist, uint16_t feed) {
     scheduleCommand(msg, l);
 }
 
-
 void MarlinDevice::begin() {
     GCodeDevice::begin();
     constexpr size_t LN = 8;
