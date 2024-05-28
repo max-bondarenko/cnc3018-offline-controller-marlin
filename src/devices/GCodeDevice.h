@@ -10,9 +10,6 @@ class Job;
 
 extern WatchedSerial serialCNC;
 
-// todo 6 remove device buffer. it duplicates function of Serial Out buffer.
-//  do just addup commands on schedule.
-
 /// Device abstraction statuses.
 /// Real Device can have different statuses,
 /// but they can be mapped to this.
@@ -126,7 +123,7 @@ public:
 protected:
     DevBuffer buffer;
     bool canTimeout,
-        xoff,
+        xoff = false,
         xoffEnabled = false,
         useLineNumber = false;
 
@@ -152,7 +149,9 @@ protected:
 
     void cleanupQueue();
 
-    virtual void trySendCommand();
+    void trySendCommand();
+
+    void trySendPriorityCommand();
 
     virtual void tryParseResponse(char* cmd, size_t len) = 0;
 

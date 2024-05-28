@@ -31,29 +31,35 @@ bool GCodeDevice::bufferEmpty() const {
     return buffer.empty();
 }
 
+// no need to check any availableForWrite(). write op is sync, and wait for buffer to be emptied.
+// so each write is go into empty buffer
+// NB HWSerial works unstable with buffer = 256
 void GCodeDevice::trySendCommand() {
-    if (priorityCmd.len > 0 && serialCNC.availableForWrite()) {
-        DEV_LOGF("> pr:[%s]\n", priorityCmd.str);
-        serialCNC.write((const uint8_t*) (priorityCmd.str), priorityCmd.len);
-        serialCNC.write('\n');
-        priorityCmd.len = 0;
-    } else if (!buffer.empty()) {
-        for (auto i = buffer.readEnd<Command>(), end = buffer.end<Command>();
-             ack < JOB_BUFFER_SIZE && i != end ; ++i) {
-            const Command& cmd = *i;
-            int availableForWrite = serialCNC.availableForWrite();
-            int ll = cmd.len + 1;
-            DEV_LOGF("> buf %d %d\n", availableForWrite,ll);
-            if (availableForWrite < ll){
-                break;
+    if (serialCNC.availableForWrite() > 0) { //just for safety
+        if (!buffer.empty()) {
+            for (auto i = buffer.readEnd<Command>(), end = buffer.end<Command>();
+                 ack < JOB_BUFFER_SIZE && i != end; ++i) {
+                const Command& cmd = *i;
+                DEV_LOGF(">>[%s]\n", cmd.str);
+                serialCNC.write(cmd.str, cmd.len); // !!! THIS operation is synchronous
+                serialCNC.write('\n');
+                --buffer;
+                ack++;
+                break; // 1 cmd per turn
             }
-            DEV_LOGF(">>[%s]\n", cmd.str);
-            serialCNC.write(cmd.str, cmd.len);
-            serialCNC.write('\n');
-            --buffer;
-            ack++;
+            lastResponse = nullptr;
         }
-        lastResponse = nullptr;
+    }
+}
+
+void GCodeDevice::trySendPriorityCommand() {
+    if (serialCNC.availableForWrite() > 0) { //just for safety
+        if (priorityCmd.len > 0) {
+            DEV_LOGF("> pr:[%s]\n", priorityCmd.str);
+            serialCNC.write((const uint8_t*) (priorityCmd.str), priorityCmd.len); // !!! THIS operation is synchronous
+            serialCNC.write('\n');
+            priorityCmd.len = 0;
+        }
     }
 }
 
@@ -61,9 +67,10 @@ void GCodeDevice::step() {
     readLockedStatus();
     if (lastStatus >= DeviceStatus::ALARM) {
         cleanupQueue();
-    } else if ((!xoffEnabled || !xoff)
-               && lastStatus < DeviceStatus::WAIT) {
-        trySendCommand();
+    } else if (xoffEnabled && !xoff) {
+        trySendPriorityCommand();
+        if (lastStatus < DeviceStatus::WAIT)
+            trySendCommand();
     }
     // how locked and disconnected should work together ??
     receiveResponses();
@@ -91,6 +98,7 @@ void GCodeDevice::cleanupQueue() {
     priorityCmd.len = 0;
     buffer.clear();
     ack = 0;
+    xoff = false;
 }
 
 void GCodeDevice::checkTimeout() {

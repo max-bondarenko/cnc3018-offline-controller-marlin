@@ -63,11 +63,12 @@ An SWD programmer will also be needed.
 ** [x] Homing ($H), unlocking ($X)
 ** [x] Grbl reset (Ctrl+X)
 * [x] Display coordinates in WCS (done, but not intuitively for now)
-* [ ] Bridge GRBL and USB UART
+* [x] Bridge GRBL and USB UART
 * [x] Detection of GRBL USB connection via dedicated pin (works to some extent)
-* [ ] Improve continuous jogging
+* [x] Improve continuous jogging, now add it to queue
 * [x] Marlin support
-** [ ] detect futures/status polling
+** [x] detect futures/status polling
+** [x] xon/xoff softflow controll
 ** [x] resend broken command support
 ** [x] STOP/Continue by M0/M108
 ** [x] set Bed and Extruder temperature

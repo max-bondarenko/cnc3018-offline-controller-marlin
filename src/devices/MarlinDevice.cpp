@@ -58,7 +58,7 @@ void MarlinDevice::begin() {
 }
 
 void MarlinDevice::setup() {
-    uint8_t downCount = 3;
+    uint8_t downCount = 4;
     WatchedSerial& s = serialCNC;
     char buffer[MAX_LINE_LEN + 1]; // assume less than 100B
     // do not check readBytesUntil.return value, let it read
@@ -84,6 +84,11 @@ void MarlinDevice::setup() {
                 } else if (compatString.find("EMERGENCY_PARSER") != etl::string_view::npos) {
                     if (compatString.find(":1", 16) != etl::string_view::npos) {
                         this->compatibility.emergency_parser = true;
+                    }
+                    downCount--;
+                } else  if (compatString.find("SERIAL_XON_XOFF") != etl::string_view::npos) {
+                    if (compatString.find(":1", 15) != etl::string_view::npos) {
+                        this->xoffEnabled = true;
                     }
                     downCount--;
                 }

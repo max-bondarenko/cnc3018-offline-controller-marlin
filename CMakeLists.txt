@@ -97,8 +97,8 @@ add_compile_definitions(${board}03xB)
 add_compile_definitions(BOARD_NAME=\"${board_name}\")
 add_compile_definitions(ARDUINO_${board_name}) #ARDUINO_GENERIC_F103CBTX
 add_compile_definitions(VARIANT_H=\"variant_generic.h\")
-
-add_compile_definitions(SERIAL_RX_BUFFER_SIZE=256)
+# dont make it 256, it fail HWSerial
+add_compile_definitions(SERIAL_RX_BUFFER_SIZE=128)
 add_compile_definitions(SERIAL_TX_BUFFER_SIZE=128)
 
 set(core_path ${PLATFORM-PATH}/cores/arduino)
