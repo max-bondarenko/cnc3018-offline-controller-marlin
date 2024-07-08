@@ -67,7 +67,7 @@ void GCodeDevice::step() {
     readLockedStatus();
     if (lastStatus >= DeviceStatus::ALARM) {
         cleanupQueue();
-    } else if (xoffEnabled && !xoff) {
+    } else if (!xoffEnabled || !xoff) {
         trySendPriorityCommand();
         if (lastStatus < DeviceStatus::WAIT)
             trySendCommand();
@@ -136,11 +136,13 @@ void GCodeDevice::receiveResponses() {
                 break;
             case XOFF:
                 if (xoffEnabled) {
+                    DEV_LOGLN("> xoff");
                     xoff = true;
                     break;
                 }
             case XON:
                 if (xoffEnabled) {
+                    DEV_LOGLN("> xon");
                     xoff = false;
                     break;
                 }
