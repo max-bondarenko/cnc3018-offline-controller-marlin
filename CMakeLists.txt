@@ -218,7 +218,7 @@ target_include_directories(U8g2 PRIVATE ${u8g2_path}/src)
 target_link_libraries(U8g2 PUBLIC SPI Wire)
 
 file(GLOB_RECURSE SRC_LIST RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} src/*.cpp)
-list(REMOVE_ITEM SRC_LIST "src/main.cpp")
+list(REMOVE_ITEM SRC_LIST "src/Main.cpp")
 set(DEBUG_LIST
         src/devices/MarlinDevice.cpp
         )
@@ -299,7 +299,7 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--cref -Wl,-Map=${CMAK
 set(HEX_FILE ${PROJECT_NAME}.hex)
 set(BIN_FILE ${PROJECT_NAME}.bin)
 
-add_executable(${PROJECT_NAME}.elf src/main.cpp)
+add_executable(${PROJECT_NAME}.elf src/Main.cpp)
 target_compile_options(${PROJECT_NAME}.elf PRIVATE ${DEBUG_OPT_FLAG})
 target_precompile_headers(${PROJECT_NAME}.elf REUSE_FROM controller)
 

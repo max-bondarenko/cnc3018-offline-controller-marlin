@@ -3,6 +3,7 @@
 .lib/
 
 cmake-*/
+build/
 *.map
 
 .idea/
