@@ -22,17 +22,17 @@ default_target: all
 % : s.%
 
 # PLATFORMIO ======================================================
-PIO-PATH := ${HOME}/.platformio
-PIO-LIB-PATH := .pio/libdeps/controller
-TOOL-PATH := ${PIO-PATH}/packages/toolchain-gccarmnoneeabi
-PLATFORM-PATH := ${PIO-PATH}/packages/framework-arduinoststm32
-CMSIS-PATH := ${PIO-PATH}/packages/framework-cmsis/CMSIS
-OCD-PATH := ${PIO-PATH}/packages/tool-openocd
-TOOL_PREFIX := arm-none-eabi
+PIO-PATH 		:= ${HOME}/.platformio
+PIO-LIB-PATH 	:= .pio/libdeps/controller
+TOOL-PATH 		:= ${PIO-PATH}/packages/toolchain-gccarmnoneeabi
+PLATFORM-PATH 	:= ${PIO-PATH}/packages/framework-arduinoststm32
+CMSIS-PATH 		:= ${PIO-PATH}/packages/framework-cmsis/CMSIS
+OCD-PATH 		:= ${PIO-PATH}/packages/tool-openocd
+TOOL_PREFIX 	:= arm-none-eabi
 # ARDUINO =========================================================
-ARDUINO-PATH := ${HOME}/.arduino15
-ARDUINO_HW_LIB := ${PLATFORM-PATH}/libraries
-ARDUINO_LIB := ${ARDUINO-PATH}/libraries
+ARDUINO-PATH 	:= ${HOME}/.arduino15
+ARDUINO_HW_LIB 	:= ${PLATFORM-PATH}/libraries
+ARDUINO_LIB 	:= ${ARDUINO-PATH}/libraries
 
 
 board := STM32F1
@@ -160,12 +160,10 @@ LIB_CXXSRC = HardwareSerial.cpp \
              SdFile.cpp \
              SdVolume.cpp
 
-
-
-
 LIB_ASRC := startup_stm32yyxx.S
 
 LIB_SRC += $(notdir $(shell find $(PIO-LIB-PATH)/U8g2/src/clib -name '*.c'))
+
 LIB_CXXSRC += U8g2lib.cpp U8x8lib.cpp
 
 
@@ -239,6 +237,17 @@ LDFLAGS += -Wl,--cref \
 
 LD_LIB = $(CMSIS-PATH)/DSP/Lib/GCC/libarm_cortexM3l_math.a
 
+# ========================= lib =============================
+LIB_DIR = .lib/lib_ini
+LIB_ini_github_version-URL = https://raw.githubusercontent.com/benhoyt/inih/r58
+
+$(LIB_DIR) :
+	$(MKDIR) -p $@
+
+$(LIB_DIR)/ini.h $(LIB_DIR)/ini.c: $(LIB_DIR)
+	curl -o $@ $(LIB_ini_github_version-URL)/$(notdir $@)
+
+# ========================= end =============================
 
 $(BUILD_DIR):
 	$(MKDIR) -p $@
@@ -288,13 +297,18 @@ upload: $(BUILD_DIR)/$(TARGET_ELF)
 -f target/stm32f1x.cfg \
 -d0 \
 -c "program $(BUILD_DIR)/$(TARGET_ELF) verify reset; shutdown;"
-
 .PHONY : upload
+
+get_dep: $(LIB_DIR)/ini.c $(LIB_DIR)/ini.h
+.PHONY: get_dep
+
 # Help Target
 help:
 	$(CC) --version
+	@echo -e "$(Red)Be aware that project depends on platform-io artifacts $(Color_Off)"
 	@echo "The following are some of the valid targets for this Makefile:"
-	@echo "... all (the default if no target is provided)"
-	@echo "... clean"
-	@echo "... upload"
+	@echo "all    ... (the default if no target is provided)"
+	@echo "clean  ... clean"
+	@echo "upload ... upload elf to controller  "
+	@echo "get_dep... download lib dependencies"
 .PHONY : help
