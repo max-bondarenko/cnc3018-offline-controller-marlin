@@ -117,9 +117,10 @@ file(GLOB ARDUINO_SRC
 
         "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/*.cpp"
         "${PLATFORM-PATH}/variants/${variant}/${name}8T_${name}B(T-U)/*.c"
-        ${PLATFORM-PATH}/system/Drivers/${variant}_HAL_Driver/Src/*.c
 
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/*.c
+        ${PLATFORM-PATH}/libraries/SrcWrapper/src/HAL/*.c
+        ${PLATFORM-PATH}/libraries/SrcWrapper/src/LL/*.c
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/stm32/*.c
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/stm32/*.cpp
 )
@@ -136,6 +137,8 @@ add_compile_definitions(USE_FULL_LL_DRIVER)
 
 add_library(core ${ARDUINO_SRC})
 target_precompile_headers(core PUBLIC ${ARDUINO_PRECOMPILE})
+target_compile_options(core PRIVATE -g)
+
 include_directories(
         ${core_path}
         ${stm_core_path}
@@ -153,7 +156,6 @@ include_directories(
         ${CMSIS-PATH}/Core/Include
         ${PLATFORM-PATH}/libraries/SrcWrapper/src
         ${PLATFORM-PATH}/system/Drivers/${variant}_HAL_Driver/Src
-        ${PLATFORM-PATH}/libraries/SrcWrapper/src/LL ## LL reference to _HAL_Driver/Src`s .c files
         ${PLATFORM-PATH}/libraries/SrcWrapper/src/stm32
 )
 
@@ -178,7 +180,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "")
 set(COMMON_FLAGS "-Wall -ffunction-sections -fdata-sections -flto -mcpu=cortex-m3 -mthumb")
 set(CMAKE_CXX_FLAGS "-fno-exceptions -fno-threadsafe-statics -fno-use-cxa-atexit -fno-rtti -std=gnu++11 ${COMMON_FLAGS}")
 set(CMAKE_C_FLAGS "-std=gnu11 -fno-fat-lto-objects -nostdlib --param max-inline-insns-single=500 ${COMMON_FLAGS}")
-set(CMAKE_ASM_FLAGS "-x assembler-with-cpp")
+set(CMAKE_ASM_FLAGS "-g -x assembler-with-cpp")
 
 if (NOT EXISTS ARDUINO_SDK_PATH)
     set(SD_LIB_path ${CMAKE_CURRENT_SOURCE_DIR}/.pio/libdeps/controller/SD/src)
