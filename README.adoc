@@ -114,6 +114,16 @@ It will install everything required to build the firmware.
 
 Now it relies on platformio artifacts by default. But easily could be changed to whatever source.
 
+N.B. CMake 3.31 added --dependency-file flag to link options which is not supported by arm gcc-ld.
+Do not update arm-gcc to 10.x, it has major changes in link optimization. It significantly increases elf size by
+adding cp-demangle & unwind despite *-fno-except* flag. *I'm using old cmake as workaround.*
+
+
+#### Use make.
+
+Now it relies on platformio artifacts by default. But easily could be changed to whatever source.
+
+
 ### Install
 
 The easiest way to flash the firmware is to solder 4 wires to SWD pads. They are located at the top right corner of the

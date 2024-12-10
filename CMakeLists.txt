@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.22)
 set(TOOL-PATH $ENV{HOME}/.platformio/packages/toolchain-gccarmnoneeabi)
 set(PLATFORM-PATH $ENV{HOME}/.platformio/packages/framework-arduinoststm32)
 set(CMSIS-PATH ${PLATFORM-PATH}/../framework-cmsis/CMSIS)
@@ -277,10 +277,12 @@ if (EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT "-T ${LINKER_SCRIPT}")
 endif ()
 
+#-Wl,--print-gc-sections
 set(CMAKE_EXE_LINKER_FLAGS "-g ${search_whole_arch} \
 ${LINKER_SCRIPT} \
 -Wl,--as-needed \
--Wl,--gc-sections,--relax \
+-Wl,--gc-sections \
+-Wl,--relax \
 -Wl,--check-sections \
 -Wl,--entry=Reset_Handler \
 -Wl,--unresolved-symbols=report-all \
@@ -306,11 +308,16 @@ target_compile_options(${PROJECT_NAME}.elf PRIVATE ${DEBUG_OPT_FLAG})
 target_precompile_headers(${PROJECT_NAME}.elf REUSE_FROM controller)
 
 target_link_libraries(${PROJECT_NAME}.elf ${cortexM3_math})
-target_link_libraries(${PROJECT_NAME}.elf "$<LINK_LIBRARY:WHOLE_ARCHIVE,core>")
 target_link_libraries(${PROJECT_NAME}.elf
         controller
         SD
         Wire)
+if(CMAKE_VERSION VERSION_GREATER 3.23)
+    # add_custom_target(genexdebug COMMAND ${CMAKE_COMMAND} -E echo "$<JOIN:core, --whole-archive>")
+     target_link_libraries(${PROJECT_NAME}.elf "$<LINK_LIBRARY:WHOLE_ARCHIVE,core>")
+else()
+    target_link_options(${PROJECT_NAME}.elf PRIVATE -Wl,--push-state,--whole-archive libcore.a -Wl,--pop-state)
+endif()
 
 add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
         COMMAND ${CMAKE_OBJCOPY} -Oihex $<TARGET_FILE:${PROJECT_NAME}.elf> -R .eeprom ${HEX_FILE}
